@@ -1,0 +1,2 @@
+blif.pdf sourced from http://www.ece.cmu.edu/~ee760/760docs/blif.pdf
+VPR 6.0 contained in VTR 1.0 sourced from http://code.google.com/p/vtr-verilog-to-routing/
