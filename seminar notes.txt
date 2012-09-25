@@ -1,0 +1,14 @@
+Title:
+What partitioning algorithm? Background information, talk about prior work.
+Slide of partitioning algorithm, talk about implementation
+Now, in order to implement this algorithm we need some way of determining the area usage and latency.
+How do we do that? Can just place and route at each step to find the actual area and latency, but extremely slow. For circuit with n components, place and route n, and n-1, and n-2 => n! complexity?
+We can place and route, and then add new placings and routings as we go, but that's not very effective. Adding a new sink to a net can completely change the routing.
+So the most practical way is to estimate, which brings us to the benchmarking part. Need accurate benchmarks, which provide better estimates of the latency and area usage once we finish.
+Better Estimates <-> Better Partitioning.
+
+Talk about VPR, blif file format, where we partition.
+
+Where are we at now? Simple partitioning algorithm. For a pre-split circuit with arbitrary number of inputs and outputs at each stage, can turn them into one big TMR'd pipeline. Used this to get some initial benchmarks:
+Slide: Benchmark results.
+Next step is to use these results to start partitioning our circuit. We can see that for voter << module, area ~3*number components. For latency, fairly similar, assume a 10% increase worst case, which gives an estimate of latency of...how does it relate to number of components? For cases where we aren't restricted by the number of channels latency is very close to estimated latency after placing.

@@ -1,0 +1,4 @@
+blif format is only .inputs, .outputs, .model, .end, .names, .latch, .subckt
+
+Look at packed netlist format
+Slides for seminar

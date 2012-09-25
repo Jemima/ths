@@ -1,0 +1,1 @@
+echo circuit.blif

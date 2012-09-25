@@ -1,0 +1,15 @@
+VPR asssessment of a novel partitioning algorithm.
+
+So, what does that actually mean? This topic is a follow on of sorts from [reference - space based applications for...], so first I'll give a quick fairly non-technical summary so people are familiar with the context, then I'll talk about the algorithm itself, followed by how VPR fits in with all this, and lastly, the actual assessment and some initial results.
+
+
+So, the previous work. FPGA's are fairly handy for space based stuff, as they're usually quite low volume applications. However [like most circuits?], they're vulnerable to Single Event Upsets (SEU's). All it takes is flipping a bit in a Look Up Table (LUT) and all your results are now wrong. This is a Bad Thing.
+
+So to solve this we can use something called Triple Modular Redundancy (TMR). Basically, have three copies of the circuit go into a voter, and you choose the majority. If one differs from the other two it's wrong, and you can then fix it. The specifics of how the voter circuit works and how you fix it are rather peripheral to the focus of this thesis so I'm going to just skip over them, however there are two important constraints they give us. First, there must only be a single event. If multiple bits get flipped then we may not be able to accurately detect which is correct. This gives us a time limit on each module, in that the critical path must be short enough that the odds of multiple occurances in the same time period are negligible. Secondly, the time it takes to fix the incorrect module depends on the area of the module, so we have a limit on the area so our fixing process is fast enough.
+
+This brings us to our partitioning algorithm. For any practical circuit the area usage and critical path length will be far beyond our boundaries, so we need to partition the circuit into smaller modules, and triplicate each one. [specifics of how partitioning algorithm works, make graph of nodes and progress]. Breadth first search through the set of nodes. Start with all input nodes then proceed through, add new nodes until adding a node would exceed either restriction. If we reach a node that's already been added to the current set or a previous one, then don't add it, so all cycles need to pass through the voter.
+
+This all seems easy enough, so why haven't I finished yet? VHDL (or Verilog) code is too high level. We only have accurate area and timing information after routing. Unfortunately routing takes a while, so adding a node, placing and routing the current set, and then repeating as we add nodes takes far too long. This means we need some way of estimating the area usage and timing information, which is quite difficult from VHDL or Verilog code. This is where VPR comes in.
+
+This picture shows the steps in turning some code into a bitstream ready to program a board. What we're interested in is the grey section.
+VPR stands for Versatile Place and Route, and is an open source Place and Route program, which uses open and well documented netlist formats.

@@ -1,0 +1,357 @@
+
+VPR FPGA Placement and Routing.
+Version: Version 6.1 Internal ReleaseCompiled: Jul 25 2012.
+Original VPR by V. Betz.
+Timing-driven placement enhancements by A. Marquardt.
+Single-drivers enhancements by Andy Ye with additions by.
+Mark Fang, Jason Luu, Ted Campbell
+Heterogeneous stucture support by Jason Luu and Ted Campbell.
+T-VPack clustering integration by Jason Luu.
+Area-driven AAPack added by Jason Luu.
+This is free open source code under MIT license.
+
+Building complex block graph 
+WARNING(1): io[0].clock[0] unconnected pin in architecture
+WARNING(2): memory[0].addr1[14] unconnected pin in architecture
+WARNING(3): memory[0].addr1[15] unconnected pin in architecture
+WARNING(4): memory[0].addr1[16] unconnected pin in architecture
+WARNING(5): memory[0].addr2[14] unconnected pin in architecture
+WARNING(6): memory[0].addr2[15] unconnected pin in architecture
+WARNING(7): memory[0].addr2[16] unconnected pin in architecture
+Loop for doall = 0, pass = 0 took 0 seconds.
+Loop for doall = 0, pass = 1 took 0 seconds.
+Loop for doall = 0, pass = 2 took 0 seconds.
+Loop for doall = 0, pass = 3 took 0 seconds.
+Loop for doall = 0, pass = 4 took 0 seconds.
+Loop for doall = 0 took 0 seconds.
+Loop for doall = 1, pass = 0 took 0 seconds.
+Loop for doall = 1, pass = 1 took 0 seconds.
+Loop for doall = 1, pass = 2 took 0 seconds.
+Loop for doall = 1, pass = 3 took 0 seconds.
+Loop for doall = 1, pass = 4 took 0 seconds.
+Loop for doall = 1 took 0.019 seconds.
+
+The hash table 'blif_hash' is of size 5000001. It has:
+	4999995 keys that are never used;
+	a total of 6 elements;
+	an average linked-list length of 1.0;
+	and a maximum linked-list length of 1. 
+
+Swept away 0 nets with no fanout
+Removed 0 LUT buffers 
+Blif circuit stats: 
+
+0 LUTs of size 0
+0 LUTs of size 1
+3 LUTs of size 2
+1 LUTs of size 3
+0 LUTs of size 4
+0 LUTs of size 5
+0 LUTs of size 6
+
+2 of type input
+1 of type output
+0 of type latch
+4 of type names
+0 of type dual_port_ram
+0 of type single_port_ram
+0 of type multiply
+Timing analysis: ON
+
+Circuit netlist file: C:\Users\Dave\Documents\Uni\Thesis\blifJoin\circuit2.net
+Circuit placement file: C:\Users\Dave\Documents\Uni\Thesis\blifJoin\circuit2.place
+Circuit routing file: C:\Users\Dave\Documents\Uni\Thesis\blifJoin\circuit2.route
+Operation:  RUN_FLOW
+
+Packer: ENABLED
+Placer: ENABLED
+Router: ENABLED
+PackerOpts.allow_early_exit:  FALSE
+PackerOpts.allow_unrelated_clustering:  TRUE
+PackerOpts.alpha_clustering:  0.750000
+PackerOpts.aspect:  1.000000
+PackerOpts.beta_clustering:  0.900000
+PackerOpts.block_delay:  0.000000
+PackerOpts.cluster_seed_type:  TIMING
+PackerOpts.connection_driven:  TRUE
+PackerOpts.global_clocks:  TRUE
+PackerOpts.hill_climbing_flag:  FALSE
+PackerOpts.inter_cluster_net_delay:  1.000000
+PackerOpts.intra_cluster_net_delay:  0.000000
+PackerOpts.recompute_timing_after:  32767
+PackerOpts.sweep_hanging_nets_and_inputs:  TRUE
+PackerOpts.timing_driven:  TRUE
+
+PlacerOpts.place_freq:  PLACE_ONCE
+PlacerOpts.place_algorithm:  PATH_TIMING_DRIVEN_PLACE
+PlacerOpts.pad_loc_type:  FREE
+PlacerOpts.place_cost_exp:  1.000000
+PlacerOpts.inner_loop_recompute_divider:  0
+PlacerOpts.recompute_crit_iter:  1
+PlacerOpts.timing_tradeoff:  0.500000
+PlacerOpts.td_place_exp_first:  1.000000
+PlacerOpts.td_place_exp_last:  8.000000
+PlaceOpts.seed:  1
+AnnealSched.type:  AUTO_SCHED
+AnnealSched.inner_num:  10.000000
+
+RouterOpts.route_type:  DETAILED
+RouterOpts.router_algorithm:  TIMING_DRIVEN
+RouterOpts.base_cost_type:  DELAY_NORMALIZED
+RouterOpts.fixed_channel_width:  NO_FIXED_CHANNEL_WIDTH
+RouterOpts.acc_fac:  1.000000
+RouterOpts.bb_factor:  3
+RouterOpts.bend_cost:  0.000000
+RouterOpts.first_iter_pres_fac:  0.500000
+RouterOpts.initial_pres_fac:  0.500000
+RouterOpts.pres_fac_mult:  1.300000
+RouterOpts.max_router_iterations:  50
+RouterOpts.astar_fac:  1.200000
+RouterOpts.criticality_exp:  1.000000
+RouterOpts.max_criticality:  0.990000
+
+RoutingArch.directionality:  UNI_DIRECTIONAL
+RoutingArch.switch_block_type:  WILTON
+RoutingArch.Fs:  3
+
+Initialize packing
+Begin packing of C:\Users\Dave\Documents\Uni\Thesis\blifJoin\circuit2.blif 
+
+After removing unused inputs:
+Total Blocks: 7.  Total Nets: 6.  Total inputs 2 outputs 1
+Begin prepacking
+Finish prepacking
+
+SDC file C:\Users\Dave\Documents\Uni\Thesis\blifJoin\circuit2.sdc not found.
+All clocks will be optimized to run as fast as possible.
+Paths between clock domains will be cut.
+
+Not enough resources expand FPGA size to x = 2 y = 2
+Complex Block 0: cb.out:out0 type io
+
+Passed route at end
+Complex Block 1: cb.out0 type clb
+...
+Passed route at end
+Complex Block 2: cb.in1 type io
+
+Passed route at end
+Complex Block 3: cb.in0 type io
+
+Passed route at end
+	<EMPTY>: # blocks 0, avg # input + clock pins used 0, avg # output pins used 0
+	io: # blocks 3, avg # input + clock pins used 0.333333, avg # output pins used 0.666667
+	clb: # blocks 1, avg # input + clock pins used 2, avg # output pins used 1
+	mult_36: # blocks 0, avg # input + clock pins used 0, avg # output pins used 0
+	memory: # blocks 0, avg # input + clock pins used 0, avg # output pins used 0
+Absorbed logical nets 3 out of 6 nets, 3 nets not absorbed
+
+Netlist conversion complete.
+
+Packing took 0.042 seconds
+Packing completed
+Begin parsing packed FPGA netlist file
+Finished parsing packed FPGA netlist file
+Netlist generated from file C:\Users\Dave\Documents\Uni\Thesis\blifJoin\circuit2.net
+
+Netlist num_nets:  3
+Netlist num_blocks:  4
+Netlist <EMPTY> blocks:  0
+Netlist clb blocks:  1
+Netlist mult_36 blocks:  0
+Netlist memory blocks:  0
+Netlist inputs pins:  2
+Netlist output pins:  1
+
+Auto-sizing FPGA, try x = 2 y = 2
+Auto-sizing FPGA, try x = 1 y = 1
+FPGA auto-sized to, x = 1 y = 1
+The circuit will be mapped into a 1 x 1 array of clbs.
+
+Resource Usage:
+Netlist      0	blocks of type <EMPTY>
+Architecture 4	blocks of type <EMPTY>
+Netlist      3	blocks of type io
+Architecture 32	blocks of type io
+Netlist      1	blocks of type clb
+Architecture 1	blocks of type clb
+Netlist      0	blocks of type mult_36
+Architecture 0	blocks of type mult_36
+Netlist      0	blocks of type memory
+Architecture 0	blocks of type memory
+
+
+SDC file C:\Users\Dave\Documents\Uni\Thesis\blifJoin\circuit2.sdc not found.
+All clocks will be optimized to run as fast as possible.
+Paths between clock domains will be cut.
+
+Computing delta_io_to_io lookup matrix, may take a few seconds, please wait...
+Computing delta_io_to_clb lookup matrix, may take a few seconds, please wait...
+Computing delta_clb_to_io lookup matrix, may take a few seconds, please wait...
+Computing delta_clb_to_clb lookup matrix, may take a few seconds, please wait...
+
+There are 3 point to point connections in this circuit
+
+WARNING(8): Starting t: 3 of 4 configurations accepted.
+Initial Placement Cost: 1.06964 bb_cost: 0.06 td_cost: 5.5926e-010 delay_cost: 5.5926e-010
+
+          T        Cost Av. BB Cost  Av. TD Cost   Av Tot Del  P to P Del        d_max   Ac Rate  Std Dev  R limit      Exp  Tot. Moves    Alpha
+   --------  ---------- -----------  -----------    ---------  ----------        -----   -------  -------  -------  -------  ----------    -----
+    0.80412    0.960523        0.06  5.15104e-010  5.15104e-010 1.8642e-010  1.167e-009    0.7619   0.0295        1        1          63     0.95
+    0.76391           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO         126      0.8
+    0.61113           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO         189      0.8
+    0.48891           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO         252      0.8
+    0.39112           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO         315      0.8
+     0.3129           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO         378      0.8
+    0.25032           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO         441      0.8
+    0.20026           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO         504      0.8
+     0.1602           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO         567      0.8
+    0.12816           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO         630      0.8
+    0.10253           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO         693      0.8
+   0.082025           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO         756      0.8
+    0.06562           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO         819      0.8
+   0.052496           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO         882      0.8
+   0.041997           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO         945      0.8
+   0.033597           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO        1008      0.8
+   0.026878           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO        1071      0.8
+   0.021502           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO        1134      0.8
+   0.017202           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO        1197      0.8
+   0.013761           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO        1260      0.8
+   0.011009           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO        1323      0.8
+  0.0088073           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO        1386      0.8
+  0.0070459           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO        1449      0.8
+  0.0056367           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO        1512      0.8
+  0.0045094           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO        1575      0.8
+  0.0036075           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO        1638      0.8
+   0.002886           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO        1701      0.8
+  0.0023088           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO        1764      0.8
+   0.001847           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO        1827      0.8
+          0           1        0.06      -1.#IND  4.9089e-010 1.6363e-010  1.098e-009         0        0        1   -1.#IO        1890  
+
+BB estimate of min-dist (placement) wirelength is ;6
+bb_cost recomputed from scratch is 0.06.
+timing_cost recomputed from scratch is -1.#IND. 
+delay_cost recomputed from scratch is 4.9089e-010. 
+
+Completed placement consistency check successfully.
+
+Placement Estimated Crit Path Delay: 1.0984e-009
+
+Placement. Cost: 1  bb_cost: 0.06  td_cost: -1.#IND  delay_cost: 4.9089e-010.
+Placement took 0.249 seconds
+
+SDC file C:\Users\Dave\Documents\Uni\Thesis\blifJoin\circuit2.sdc not found.
+All clocks will be optimized to run as fast as possible.
+Paths between clock domains will be cut.
+
+low, high, current -1 -1 182
+build rr_graph took 0.033 seconds
+Confirming Router Algorithm: TIMING_DRIVEN.
+wirelength after first iteration 3, total available wirelength 728, ratio 0.00412088
+Successfully routed after 1 routing iterations.
+Completed net delay value cross check successfully.
+low, high, current -1 182 92
+build rr_graph took 0.011 seconds
+Confirming Router Algorithm: TIMING_DRIVEN.
+wirelength after first iteration 3, total available wirelength 368, ratio 0.00815217
+Successfully routed after 1 routing iterations.
+Completed net delay value cross check successfully.
+low, high, current -1 92 46
+build rr_graph took 0.005 seconds
+Confirming Router Algorithm: TIMING_DRIVEN.
+wirelength after first iteration 7, total available wirelength 184, ratio 0.0380435
+Successfully routed after 1 routing iterations.
+Completed net delay value cross check successfully.
+low, high, current -1 46 24
+build rr_graph took 0.003 seconds
+Confirming Router Algorithm: TIMING_DRIVEN.
+wirelength after first iteration 7, total available wirelength 96, ratio 0.0729167
+Successfully routed after 1 routing iterations.
+Completed net delay value cross check successfully.
+low, high, current -1 24 12
+build rr_graph took 0.002 seconds
+Confirming Router Algorithm: TIMING_DRIVEN.
+wirelength after first iteration 7, total available wirelength 48, ratio 0.145833
+Successfully routed after 1 routing iterations.
+Completed net delay value cross check successfully.
+low, high, current -1 12 6
+build rr_graph took 0.002 seconds
+Confirming Router Algorithm: TIMING_DRIVEN.
+wirelength after first iteration 7, total available wirelength 24, ratio 0.291667
+Successfully routed after 1 routing iterations.
+Completed net delay value cross check successfully.
+low, high, current -1 6 4
+build rr_graph took 0.001 seconds
+Confirming Router Algorithm: TIMING_DRIVEN.
+wirelength after first iteration 3, total available wirelength 16, ratio 0.1875
+Successfully routed after 1 routing iterations.
+Completed net delay value cross check successfully.
+low, high, current -1 4 2
+build rr_graph took 0.001 seconds
+Confirming Router Algorithm: TIMING_DRIVEN.
+wirelength after first iteration 3, total available wirelength 8, ratio 0.375
+Successfully routed after 1 routing iterations.
+Completed net delay value cross check successfully.
+low, high, current -1 2 2
+build rr_graph took 0.001 seconds
+Confirming Router Algorithm: TIMING_DRIVEN.
+wirelength after first iteration 3, total available wirelength 8, ratio 0.375
+Successfully routed after 1 routing iterations.
+Completed net delay value cross check successfully.
+
+Checking to ensure routing is legal ...
+Completed routing consistency check successfully.
+
+Serial number (magic cookie) for the routing is: -8997
+Best routing used a channel width factor of 2.
+
+
+Average number of bends per net: 0.000000  Maximum # of bends: 0
+
+
+The number of routed nets (nonglobal): 3
+Wirelength results (all in units of 1 clb segments):
+	Total wirelength: 3   Average net length: 1.00000
+	Maximum net length: 1
+
+Wirelength results in terms of physical segments:
+	Total wiring segments used: 3   Av. wire segments per net: 1.00000
+	Maximum segments used by a net: 1
+
+	Total local nets with reserved CLB opins: 0
+
+
+X - Directed channels:
+
+j	max occ	av_occ		capacity
+0	1	1.00000  	2
+1	0	0.000000 	2
+
+Y - Directed channels:
+
+i	max occ	av_occ		capacity
+0	1	1.00000  	2
+1	1	1.00000  	2
+
+Total Tracks in X-direction: 4  in Y-direction: 4
+
+Logic Area (in minimum width transistor areas, excludes I/Os and empty grid tiles):
+Total Logic Block Area (Warning, need to add pitch of routing to blocks with height > 3): 14813.4 
+Total Used Logic Block Area: 14813.4 
+
+Routing area (in minimum width transistor areas):
+Total Routing Area: 2285.48  Per logic tile: 2285.48
+
+Segment usage by type (index):
+Segment type       Fractional utilization
+------------       ----------------------
+       0                  0.375
+
+Segment usage by length:
+Segment length       Fractional utilization
+--------------       ----------------------
+        4                   0.375
+
+Critical Path: 1.03003e-009 (s)
+Routing took 0.067 seconds
+The entire flow of VPR took 0.554 seconds.
