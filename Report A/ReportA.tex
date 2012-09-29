@@ -113,24 +113,52 @@ An n-input Look Up Table (written as n-LUT) can be programmed to represent any n
 
 
 There are three main components to an \ac{FPGA}. \ac{IO} blocks, usually around the edge, allowing for input and output from the \ac{FPGA}, \acp{CLB} containing all the logic elements (\acp{LUT}, latches, etc), and the routing between everything.
-The routing between everything consists of channels running horizontally and vertically with a number of wires. Programmable switches connect the wires to each other and to \acp{CLB} allowing for configurable paths between arbitrary components.
-\acp{CLB} are a cluster of smaller blocks, called \acp{BLE}, with each \ac{BLE} containing the basic logic elements, typically a programmable \ac{LUT} for combinational logic, and a latch for register operations and allowing sequential logic. These components are all connected together by programmable switches, allowing the user to specify the \ac{LUT} functions and interconnects.
+The routing between everything consists of channels running horizontally and vertically with a number of wires. Programmable switches connect the wires to each other and to \acp{CLB} allowing for configurable paths between arbitrary components. A typical switch or connection block has a buffer storing the state, and a connection can be made or unmade by writing a new value to the buffer for that switch.
+\acp{CLB} are a cluster of smaller blocks, called \acp{BLE}, with each \ac{BLE} containing the basic logic elements, typically a programmable \ac{LUT} for combinational logic, a latch for register operations and allowing sequential logic, and a \ac{mux} to switch between the two. As with the switches in routing, buffers store the values for the \ac{LUT}, whether the \ac{mux} is selecting the latch or \ac{LUT} output, and other switch states.
 
-Programming an \ac{FPGA} involves loading in a bitstream which describes the connections and parameters (e.g. \ac{LUT} values) for a circuit. This is accomplished through writing the configuration bitstream to a configuration port. A number of \acp{FPGA} also allow for run time programming, or reconfiguration of parts of a circuit, which involves loading the bitstream for just section of interest while the rest of the \ac{FPGA} keeps running.
+Programming an \ac{FPGA} involves loading in a bitstream which describes all the component values (i.e. contents of each buffer) for a circuit. A number of \acp{FPGA} also allow for run time programming, or reconfiguration of parts of a circuit, which involves loading the bitstream for just section of interest while the rest of the \ac{FPGA} keeps running.
+
+There are four main technologies used to implement the reprogrammable buffers in \acp{FPGA}: \ac{SRAM}, which gives the highest density devices and includes the Virtex 5 family this thesis focuses on, however are volatile and must be reprogrammed every power up from an external configuration memory; (anti)fuse, which are only one time programmable; EPROM, \ac{EEPROM}, which are reprogrammable, non-volatile this not requiring an external configuration memory, however have a lower density than \ac{SRAM} \acp{FPGA}.
+
+The reprogrammable buffers can be implemented using a storage technology of choice, however in practice there only three technologies which see common use:\fixme{TODO: reference} \ac{SRAM}, which gives the highest density devices and includes the Virtex 5 family this thesis focuses on, however are volatile and must be reprogrammed every power up from an external configuration memory; antifuse, which are only one time programmable; and \ac{EEPROM}, which are reprogrammable and non-volatile, thus not requiring an external configuration memory, however have a lower density than \ac{SRAM} \acp{FPGA}. \fixme{TODO: reference}
 
 \subsubsection{Partial Reconfiguration}
-Partial reconfiguration involves loading configuration information for part of a circuit during operation. Much like the complete configuration described above, which happens at power up, it involves writing a configuration bitstream to one of the available configuration ports, in this case also including the location to reconfigure. The configuration memory of recent Virtex devices is split into \italic{frames}, and one can only reconfigure entire frames. As more frames are being reconfigured the larger the bitstream, and consequently the longer the time to reconfigure. The main configuration ports used are the external SelectMAP interface, or the internal \ac{ICAP}, each with a bandwidth of 400MB/s in all Virtex devices \fixme{TODO: reference: tc-draft}.
+Partial reconfiguration involves loading configuration information for part of a circuit during operation. Much like the complete configuration described above, which happens at power up, it involves writing a configuration bitstream to one of the available configuration ports, in this case also including the location to reconfigure. The configuration memory of recent Virtex devices is split into frames, and one can only reconfigure entire frames. As more frames are being reconfigured the larger the bitstream, and consequently the longer the time to reconfigure. The main configuration ports used are the external SelectMAP interface, or the internal \ac{ICAP}, each with a bandwidth of 400MB/s in all Virtex devices \fixme{TODO: reference: tc-draft}.
 
 
 \subsection{Space Based Applications}
-A common application for \acp{FPGA} is in space based applications (satellites, etc). Typically the number of units created are quite small, so the cost of \acp{ASIC} is prohibitive. However, \acp{FPGA} do have some downsides. As one goes further into space circuits are bombarded with higher concentrations of space radiation...SEUs, etc.
+Space is quite different from a terrestrial environment, and one \acp{FPGA} have a number of advantages in due to their lower \ac{NRE} costs and flexibility. As \acp{FPGA} can be reconfigured during a mission, faulty/outdated designs can be replaced remotely. However, there is a significant downside. As systems go further into space, and are no longer protected by the earth's atmosphere\fixme{TODO: Check this}, they become increasingly likely to suffer from radiation induced errors, where ionising radiation intersecting with a component causes charge build up, potentially triggering incorrect operation\cite{SEEMechanism}. Of the potential effects, which range from unnoticeable to device destruction, this thesis is concerned with mitigating \acp{SEU}, where an incorrect signal is triggered, but the underlying hardware still operates correctly. \fixme{TODO: Add in table and diagram}. In an \ac{ASIC} \acp{SEU} are transient. While the erroneous pulse may cause run on effects, be latched, or otherwise affect the circuit in future, the component itself continues operating normally.
+\acp{FPGA} on the other hand, are vulnerable to permanent configuration errors as well. When the charged particle impacts a buffer it can flip the state of the buffer changing the actual circuit. Unlike transient errors, these errors persist indefinitely. \fixme{TODO: images of this. Picture of transient, picture of permanent. Need to be a slideshow?}
+Additionally for \ac{SRAM} devices, the off-chip configuration memory itself can be affected, so the next time the chip is reprogrammed (e.g. after power cycling), an incorrect circuit will be loaded.
 
-\subsubsection{Types of Errors}
-SEU, SEFI, Transient vs Configuration, etc.
+(Anti)fuse devices, being non reprogrammable, are immune to these errors, however both \ac{SRAM} and \ac{EEPROM} based \acp{FPGA} are vulnerable \fixme{TODO: reference}.
 
-\subsubsection{How we deal with FPGA downsides}
-Harden systems, use ASIC, partial TMR, TMR without partial reconfiguration, Virtual TMR
-\cite{FPGAReview},\cite{VTMR},\cite{HardeningTechniques}
+\subsection{How we deal with FPGA downsides}
+Clearly in order for \acp{FPGA} to be viable in space based systems the effects of \acp{SEU} must be mitigated. A number of technologies and techniques are available, each with their own advantages and disadvantages.
+There are three main categories of \ac{SEU} hardening techniques\cite{HardeningTechniques}:
+\begin{itemize}
+    \item Charge dissipation, which aims to keep the effect of the radiation below the level where it would have an effect. This includes techniques such as increasing the drive current. These techniques typically require custom hardware (increasing costs) and usually increase power usage.
+    \item Temporal Filtering, which aims to filter out transient \acp{SEU}, such as delay-and-vote\cite{HardeningTechniques}. These techniques often slow down operation and are ineffective against configuration errors.
+    \item Spatial Redundancy, which uses multiple redundant circuits to detect errors, and be able to continue operating. Spatial redundancy techniques are split into those which provide hardware level redundancy, such as \ac{DICE}, with slightly increased area usage, increased power, and often increased component time, and those which provide design level redundancy, such as \ac{TMR}, which increase area and power usage significantly (see Table \ref{HardeningComparison}), however require no custom hardware and greatly improve the circuit's hardness. As the area is increased a common side effect is a decrease in maximum operating frequency, however unlike some temporal filtering options the actual component speed remains the same.
+\end{itemize}
+While hardened \acp{FPGA} are available, they typically lag well behind mainstream commercial offerings\cite{VFPGATMR}, thus solutions which can be implemented on typical \ac{FGPA} hardware are desirable. Additionally, there is very little point hardening an \ac{FPGA} and not its configuration buffers and memory which take up far more surface area\fixme{TODO: reference} and are thus even more vulnerable.
+For these reasons \ac{TMR}, requiring no custom hardware and \ac{SEU} protection against both transient outputs, as well as to its configuration, is one of the more popular \ac{SEU} hardening techniques.
+
+\begin{table}
+    \begin{tabularx}{\textwidth}{X|XXXl}
+   & POWER & SPEED & HARDNESS (e/b-d) & AREA ($\mbox{mm}^2$)\\
+Std Low Power & Rise – 0.7 \mu W \newline Fall – 0.2 \mu W & Rise – 0.21 ns \newline Fall – 0.27 ns & 10E-8 \newline 1 node & 360\\
+Increased IDRIVE & Rise – 1.0 \mu W \newline Fall – 0.2 \mu W & Rise – 0.16 ns \newline Fall – 0.15 ns & 2\times10E-9 \newline 1 node & 460\\
+\ac{TMR} & Rise – 1.72 \mu W \newline Fall – 1.27 \mu W & Rise – 0.21 ns \newline Fall – 0.27 ns & 10E-11 \newline 2 node & 1200\\
+DICE & Rise - 1.4\mu W \newline Fall - 1.1\mu  W & Rise - 0.96 ns \newline Fall - 0.97ns & 1.6\times10E-10 \newline 2 node & 520 \\
+    \end{tabularx}
+    \caption{Comparison of hardening techniques\cite{HardeningTechniques}}
+    \label{HardeningComparison}
+\end{table}
+
+One additional technique specific to \ac{SRAM} based \acp{FPGA} relates to the protection of the off-chip configuration memory. As \ac{SRAM} is volatile and loads the state from off chip at power up, this external configuration memory must also be protected from \acp{SEU}. This can be accomplished by incorporating error detection and correction techniques in the RAM, something already in place on a number of mainstream \acp{FPGA} such as the Virtex-4 and 5\cite{
+
+
 \section{Triple Modular Redundancy}
 Triple Modular Redundancy is a commonly used method for creating fault tolerant systems in which a given circuit is implemented three times with independent components, with the outputs feeding into a voter circuit to determine the majority value. For any \ac{SEU} it will affect the output value of at most one circuit, so the majority vote is still correct. One can then incorporate partial reconfiguration in order to recover from detected errors, as described in \fixme{TODO: reference}. However, this only works when at most one \ac{SEU} occurs within the error detection and recovery time. Should \acp{SEU} occur in two of the three partitions then it can be impossible for the voter to determine the correct value. Therefore, we require the error detection and recovery time to be sufficiently small that the likelihood of multiple events occurring within that time period are negligible.
 The error recovery time consists of the time to reconfigure the circuit, which is a function of the circuit area, and the resynchronisation time, which is a function of critical path and clock frequency, so it is required that our area and critical path length are small enough, and frequency large enough, that our error recovery time is within a user specified system availability threshold.
@@ -148,16 +176,19 @@ The error recovery time consists of the time to reconfigure the circuit, which i
 \begin{eqnarray*}
     \mbox{Resynchronisation Time} <= \frac{1}{\mbox{Clock Frequency}}\times\mbox{Pipeline Steps}
 \end{eqnarray*}
-Additionally, as each voter circuit adds some constant overhead, in terms of area, power usage and clock frequency, so it is desirable to have each partition as large as possible. To this end, this thesis looks at implementing the partitioning algorithm described in \fixme{TODO: reference}, and assessing its performance.
-\section{Prior Work, lit review, etc?}
+Additionally, as each voter circuit adds some constant overhead, in terms of area, power usage and clock frequency slowdown, so it is desirable to have each partition as large as possible. This thesis is primarily concerned with implementing and assessing this form of \ac{TMR}, with a discussion of other \ac{TMR} methods and our reasons for not using them following.
+\subsection{Prior Work, lit review, etc?}
 Some lit review and prior work stuff.
 -----------------------------------------------------------------------------------------
-This thesis builds on the work of \fixme{TODO: reference} which details an overview of the partitioning algorithm we are implementing
-Our goal is to create an algorithm which gives good performance, stays within a user specified system availability limit, doesn't require existing code to be rewritten, allows for both voting logic and reconfiguration logic to be added, and can use industry standard \acp{FPGA}. There are a number of existing \ac{TMR} solutions, however none quite meet our requirements.
+This thesis builds on the work of \fixme{TODO: reference} which details a partitioning algorithm that traverses a circuit represented as a \ac{DFG} in a breadth first manner, creating partitions that stay within our constraints.
+Our goal is to create an algorithm which gives good performance, stays within a user specified system availability limit, doesn't require existing code to be rewritten, allows for both voting logic and reconfiguration logic to be added, can use industry standard \acp{FPGA}, and effectively protects the entire system from \acp{SEU}. There are a number of existing \ac{TMR} solutions, however none quite meet our requirements.
+Our first requirement is that standard \ac{FPGA} hardware can be used, with our implementation specifically targeting Virtex 5 chips. Options with custom hardware such as \cite{VFPGATMR}, are often prohibitively expensive, and prevent us from using our existing boards.
+Most manufacturer boards with inbuilt hardware, in addition to requiring custom hardware, typically only provide partial protection, e.g.\cite{Synplify}.
 \cite{ftmr} requires existing code to be rewritten.
 \cite{synplify} and \cite{tmrtool} don't seem to support staying within a system availability limit, nor for adding reconfiguration logic.
 Other options look at using partial \ac{TMR} to reduce the associated overhead (\cite{partialTMR}), require custom hardware (\cite{VFPGATMR}), or otherwise don't meet our criteria.
 
+\cite{FPGAReview},\cite{VTMR}
 
 \section{CAD Design Flow}
 Talking about the overall CAD design flow. ODIN -> ABC -> Partitioner -> VPR, etc.
@@ -460,3 +491,6 @@ Quick explanations of what things are (BLE, CLB, DFG, Wilton, etc)
 
 %TODO: critical path length -> pipeline steps.
 %consistent frequency vs critical path length/latency
+
+%NOTES/QUESTIONS:
+%Talk about other FPGA technologies? SRAM, EPROM, EEPROM, FLASH, FUSE, ANTIFUSE, etc.
