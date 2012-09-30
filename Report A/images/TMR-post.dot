@@ -1,0 +1,11 @@
+digraph G{
+   bgcolor="transparent"
+   A1 -> B1 -> Voter1;
+   A2 -> B2 -> Voter1;
+   A3 -> B3 -> Voter1;
+
+   Voter1 -> C1;
+   Voter1 -> C2;
+   Voter1 -> C3;
+   
+}

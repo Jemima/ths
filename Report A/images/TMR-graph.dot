@@ -1,0 +1,4 @@
+digraph G{
+   bgcolor="transparent"
+    A -> B -> C;
+}
