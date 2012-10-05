@@ -4,16 +4,16 @@
 0
 1
 ReportA.tex
-8
-2
+7
+0
 0
 
-ReportA.tex
-TeX:UTF-8:UNIX
-286371835 2 -1 26765 -1 26771 0 0 1313 620 1 689 1427 -1 -1 0 0 25188 -1 -1 25188 1 0 26771 -1   0
 :\Users\Dave\Documents\Uni\Thesis\Bibtex\thesis.bib
 BibTeX
-1049586 0 244 25 240 19 100 100 1463 586 0 169 459 -1 -1 0 0 -1 -1 -1 -1 1 0 19 240   0
+269485042 0 271 29 271 25 100 100 1463 586 0 217 374 -1 -1 0 0 18 0 0 18 1 0 25 271   0
+ReportA.tex
+TeX:UTF-8:UNIX
+286371835 0 -1 50717 -1 50686 0 0 1313 620 1 97 391 -1 -1 0 0 26290 -1 -1 26290 1 0 50686 -1   0
 :\Users\Dave\Documents\Visual Studio 2010\Projects\CV-proj\report-2\report.tex
 TeX:UTF-8
 286273531 0 -1 0 -1 0 175 175 1538 661 0 25 0 -1 -1 0 0 -1 -1 -1 -1 1 0 0 -1   0
@@ -29,8 +29,8 @@ BibTeX
 :\Users\Dave\Documents\Visual Studio 2010\Projects\vtr\vtr_flow\benchmarks\blif\clma.blif.log
 DATA
 273678578 0 4282 19 4270 19 75 75 1438 561 1 249 1309 -1 -1 0 0 -1 -1 -1 -1 1 0 19 4270   0
-:\Users\Dave\AppData\Roaming\WinEdt Team\WinEdt 7\Exec\Preview.edt
-ASCII:EDT
-269494138 0 0 1 0 1 25 25 1388 511 1 73 0 -1 -1 0 0 -1 -1 -1 -1 1 0 1 0   0
 
 *ReportA.tex
+>
+*../Bibtex/thesis.bib
+<
