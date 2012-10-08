@@ -4,7 +4,7 @@
 % This is a simple template for a LaTeX document using the "article" class.
 % See "book", "report", "letter" for other types of document.
 
-\documentclass[12pt,final,oneside]{memoir} % use larger type; default would be 10pt
+\documentclass[12pt,draft,oneside]{memoir} % use larger type; default would be 10pt
 
 \usepackage[utf8]{inputenc} % set input encoding (not needed with XeLaTeX)
 \usepackage[margin=2cm]{geometry}
@@ -28,7 +28,7 @@
 \usepackage[lofdepth,lotdepth]{subfig}
 \usepackage{multirow}
 \fxsetup{
-    status=final,
+    status=draft,
     author=,
     layout=marginclue,inline, % also try footnote or pdfnote
     theme=color
@@ -85,7 +85,7 @@ Thanks go to...
 \acro{MCNC}[MCNC]{Microelectronics Centre of North Carolina}
 \acro{BLE}[BLE]{Basic Logic Element}
 \acro{CLB}[CLB]{Configurable Logic Block}
-\acro{DFG}[DFG]{Directed Flow Graph\acextra{or a DataFlow Graph}}
+\acro{DFG}[DFG]{Directed Flow Graph\acroextra{or a DataFlow Graph}}
 \acro{SEU}[SEU]{Single Event Upset}
 \acro{LUT}[LUT]{Look Up Table}
 \acro{VTR}[VTR]{Verilog To Routing}
@@ -102,10 +102,13 @@ Thanks go to...
 \acro{CAD}[CAD]{Computer Aided Design}
 \acro{MBU}[MBU]{Multi Bit Upset}
 \acro{NRE}[NRE]{Non Recurring Engineering}
-\acrodef{DICE}[DICE]{Dual Interlock Storage Cell}
+\acro{DICE}[DICE]{Dual Interlock Storage Cell}
+\acro{VHDL}[VHDL]{VSIC Hardware Description Language}
+
+%Ones not to appear in the list
 \acrodef{SIS}[SIS]{SIS}
 \acused{SIS}
-%\acrodef{EEPROM}[EEPROM]{EEPROM}
+\acused{VHDL}
 \end{acronym}
 \chapter{Introduction}
 \section{Overview}
@@ -212,34 +215,31 @@ Increased IDRIVE & Rise – 1.0 $\mu$ W \newline Fall – 0.2 $\mu$ W & Rise –
 DICE & Rise - 1.4$\mu$ W \newline Fall - 1.1$\mu$  W & Rise - 0.96 ns \newline Fall - 0.97ns & $1.6\times10E-10$ \newline 2 node & 520 \\
 \bottomrule
 \end{tabularx}
-    \caption{Comparison of hardening techniques\cite{HardeningTechniques}\fixme{Explain columns}}
+    \caption{Comparison of hardening techniques\cite{HardeningTechniques}}
     \label{HardeningComparison}
 \end{table}
-
+\fixme{Explain columns}
 One additional technique specific to \ac{SRAM} based \acp{FPGA} relates to the protection of the off-chip configuration memory. As \ac{SRAM} is volatile and loads the state from off chip at power up, this external configuration memory must also be protected from \acp{SEU}. This can be accomplished by incorporating error detection and correction techniques in the RAM, something already in place on a number of mainstream \acp{FPGA} such as the Virtex-4 and -5\cite{DuttonSEU}.
 
 
 \section{\acl{TMR}}
 \fixme{Explain better, see Diessel comments}
-Triple Modular Redundancy is a commonly used method for creating fault tolerant systems in which a given circuit is implemented three times with independent components, with the outputs feeding into a voter circuit to determine the majority value. Any \ac{SEU} will affect the output value of at most one version, so the majority vote is still correct. For transient errors that are not in a feedback loop correcting the output is enough to fix the error; however \acp{SEU} in feedback paths or in the configuration memory will persist, and this require some method for eliminating them. One possible approach is resetting the system, however while this occurs the system is unavailable so a reset may not be a feasible solution. Instead, partial reconfiguration can reconfigure only the faulty circuit while the redundant circuits continue operating and providing output. After reconfiguration the circuit must then be resynchronised to the same state as the other two. We use the approach presented by \cite{DiesselChange} which involves running the circuit until the state converges, which is guaranteed to occur within a timeframe given by the number of register stages and the clock frequency. In order for this approach to guarantee resynchronisation the circuit must be acyclic: there can be no feedback loops which may carry incorrect data. To solve this we simply ensure that all feedback loops are \emph{cut}, that is, the value is voted on before being passed back into the circuit. This has the additional benefit of correcting transient errors which would otherwise be caught in a feedback cycle, by ensuring the cycle data is correct.
- 
- 
- 
- 
- 
- 
- This on its own is enough for transient errors, assuming they and one can then incorporate partial reconfiguration in order to recover from detected errors; however, this only works when at most one \ac{SEU} occurs within the error detection and recovery time; Should \acp{SEU} occur in two of the three partitions then it is impossible for the voter to determine the correct value, necessitating a complete reload of the configuration memory (\emph{scrubbing}). Therefore, we require the error detection and recovery time to be sufficiently small that the likelihood of multiple events occurring within that time period are negligible.
-Once the error has been detected and the circuit reconfigured it must then be resynchronised with the other partitions. For this thesis we will assume a method similar to that described in\cite{DiesselChange}, where the resynchronising circuit is run on the same input for a number of steps equal to the number of register stages so no potentially incorrect data is left in the pipeline, but our implementation will work for any method where Equation \ref{ERT} holds.
-The error recovery time consists of the time to reconfigure the circuit, which is a function of the circuit area, and the resynchronisation time, which is a function of the number of register stages and clock frequency, so it is required that our area and number of register stages are small enough, and frequency large enough, that our error recovery time is within a user specified limit.
+Triple Modular Redundancy is a commonly used method for creating fault tolerant systems in which a given circuit is implemented three times with independent components, with the outputs feeding into a voter circuit to determine the majority value. Any \ac{SEU} will affect the output value of at most one version, so the majority vote is still correct. For transient errors that are not in a feedback loop correcting the output is enough to fix the error; however, \acp{SEU} in feedback paths or in the configuration memory will persist, and this require some method for eliminating them. One possible approach is resetting the system however while this occurs the system is unavailable so a reset may not be a feasible solution. Instead, partial reconfiguration can reconfigure only the faulty circuit while the redundant circuits continue operating and providing output. After reconfiguration the circuit must then be resynchronised to the same state as the other two. We use the approach presented by \cite{DiesselChange} which involves running the circuit until the state converges, which is guaranteed (for acyclic circuits) to occur within a timeframe given by the number of register stages and the clock frequency. In order for this approach to always resynchronise correctly the circuit must have no feedback loops which may carry incorrect data. To solve this we simply ensure that all feedback loops are \emph{cut}, that is, the value is voted on before being passed back into the circuit. This has the additional benefit of correcting transient errors which would otherwise be caught in a feedback cycle by ensuring the cycle data is correct.
+
+Once an error occurs it takes up to $T_{path}$ to reach the voter and be detected, where $T_{path}$ is given by the frequency and number of register stages. This is called the \emph{error detection time}. Detection of an error can be used to trigger reconfiguration, where \emph{reconfiguration time} $= T_R$ is dependent upon the circuit size. Once the error has been detected and the circuit reconfigured it must then be resynchronised with the other partitions, which takes up to $T_{path}$ using the previously described technique.
+
+The error recovery time consists of the time to detect the error then reconfigure and resynchronise the circuit, thus is a function of the circuit area, clock frequency, and number of register stages. Therefore it is required that the number of register stages and area are small enough, and frequency large enough, that our error recovery time is within a user specified limit.
 \begin{align}
     \mbox{Error Recovery Time} &=\mbox{Error Detection Time} + \mbox{Reconfiguration Time} + \mbox{Resynchronisation Time}\notag\\
-    \mbox{Error Detection Time} &<= \frac{1}{\mbox{Clock Frequency}}\times\mbox{Register Stages}\notag\\
+    \mbox{Error Detection Time} &<= T_{path} = \frac{1}{\mbox{Clock Frequency}}\times\mbox{Register Stages}\notag\\
     \mbox{Reconfiguration Time} &= \frac{1}{\mbox{Reconfiguration Speed}}\times\mbox{Bitstream Size}+Constant\notag\\
      &\propto \mbox{Partition Size in Frames}\notag\\
-    \mbox{Resynchronisation Time} &<= \frac{1}{\mbox{Clock Frequency}}\times\mbox{Register Stages}\notag\\
+    \mbox{Resynchronisation Time} &<= T_{path} = \frac{1}{\mbox{Clock Frequency}}\times\mbox{Register Stages}\notag\\
     \therefore \mbox{Error Recovery Time} &<= \frac{2\times\mbox{Register Stages}}{\mbox{Clock Frequency}} + \frac{\mbox{Bitstream Size}}{\mbox{Reconfiguration Speed}}+Constant\label{ERT}
 \end{align}\cite{DiesselChange}
 Additionally, as each voter circuit adds some constant overhead in terms of area, power usage and clock frequency slowdown it is desirable to have each partition as large as possible. This thesis is concerned with implementing and assessing this \ac{TMR} design; a discussion of other \ac{TMR} methods and our reasons for not using them is included below.
+ 
+This method only works when at most one \ac{SEU} occurs within the error detection and recovery time; should \acp{SEU} occur in two of the three partitions then it is impossible for the voter to determine the correct value necessitating a complete reload of the configuration memory (\emph{scrubbing}). Therefore, we require the error detection and recovery time to be sufficiently small that the likelihood of multiple events occurring within that time period are negligible.
 \subsection{\acl{TMR} Implementations}
 This thesis builds on the work of\cite{DiesselChange} which details a partitioning algorithm that traverses a circuit represented as a \ac{DFG} in a breadth first manner, creating partitions that stay within our constraints.
 Our goal is to create an algorithm which stays within a user specified error recovery time, doesn't require existing code to be rewritten, allows for both custom voting and reconfiguration logic to be added, can use industry standard \acp{FPGA} rather than custom hardware, and effectively protects the entire system from \acp{SEU} with as close to no downtime as achievable. There are a number of existing \ac{TMR} solutions, however none quite meet our requirements.

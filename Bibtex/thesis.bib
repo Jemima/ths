@@ -1,28 +1,36 @@
 ﻿@TECHREPORT{ftmr,
-  title =        {Functional Triple Modular Redundancy},
+  author =       {Habinc, Sandi},
+  title =        {Functional Triple Modular Redundancy {(FTMR)}},
   institution =  {Gaisler Research},
   year =         {2002},
+  number =       {FPGA-003-01},
+  version =      {0.2},
   month =        {December},
-  howpublished =       {http://klabs.org/richcontent/fpga\_content/DesignNotes/seu\_hardening/functional\_tmr\_fpga\_003\_01-0-2.pdf},
+  source =       {\url{http://klabs.org/richcontent/fpga_content/DesignNotes/seu_hardening/functional_tmr_fpga_003_01-0-2.pdf}},
 }
-
-@TECHREPORT{tmrtool,
-  title =        {Xilinx TMRTool Product Brief},
+@MISC{tmrtool,
+  title =        {Xilinx {TMRTool} Product Brief},
   institution =  {Xilinx},
-  howpublished =       {http://www.xilinx.com/publications/prod\_mktg/CS11XX\_TRMTool\_Product\_Brief\_FINAL.pdf},
+  howpublished =       {\url{http://www.xilinx.com/publications/prod_mktg/CS11XX_TRMTool_Product_Brief_FINAL.pdf}},
   year = {2012}
 }
 
-@MISC{synplify,
-  title =        {Using Synplify to Design in Microsemi Radiation-Hardened FPGAs},
+@TECHREPORT{synplify,
+  title =        {Using Synplify to Design in Microsemi Radiation-Hardened {FPGA}s},
   institution =  {Microsemi},
-  howpublished  =       {http://www.actel.com/documents/SynplifyRH\_AN.pdf},
+  howpublished  =       {\url{http://www.actel.com/documents/SynplifyRH_AN.pdf}},
+  year =         {2012},
+  type =         {Application Note},
+  number =       {AC139},
+  month =        {May},
+  source =       {\url{http://www.actel.com/documents/SynplifyRH_AN.pdf}},
 }
+
 
 @ARTICLE{partialTMR,
     author={Pratt, B. and Caffrey, M. and Carroll, J.F. and Graham, P. and Morgan, K. and Wirthlin, M.},
     journal={Nuclear Science, IEEE Transactions on},
-    title={Fine-Grain SEU Mitigation for FPGAs Using Partial TMR},
+    title={Fine-Grain {SEU} Mitigation for {FPGA}s Using Partial {TMR}},
     year={2008},
     month={August},
     volume={55},
@@ -32,41 +40,42 @@
     doi={10.1109/TNS.2008.2000852},
     ISSN={0018-9499}
 }
-
 @TECHREPORT{VFPGATMR,
+  year =         {2004},
+  number =       {AFRL-VS-PSTR-TR-2004-1093},
   author =       {Marty, Barbara},
   title =        {Virtual Field Programmable Gate Array Triple Modular Redundant Cell Design},
   institution =  {Schafer, AIR FORCE RESEARCH LABORATORY/VSSE},
   year =         {2004},
   month =        {March},
-  source =       {http://www.dtic.mil/dtic/tr/fulltext/u2/a426619.pdf},
+  source =       {\url{http://www.dtic.mil/dtic/tr/fulltext/u2/a426619.pdf}},
 }
 
-@TECHREPORT{VTMR,
-  author =       {},
-  title =        {Single Event Upset (SEU) Mitigation by Virtual Triple Modular Redundancy (TMR) in Design Reduces Manufacturing Cost and Lowers Power},
-  institution =  {Alternative System Concepts, Inc.},
-  source =       {http://klabs.org/richcontent/fpga_content/SEU_Hardening/papers/virtual_tmr_asc.pdf},
+@MISC{VTMR,
+  title =        {Single Event Upset {(SEU)} Mitigation by Virtual Triple Modular Redundancy {(TMR)} in Design Reduces Manufacturing Cost and Lowers Power},
+  author =  {{Alternative System Concepts, Inc.}},
+  url =       {\url{http://klabs.org/richcontent/fpga_content/SEU_Hardening/papers/virtual_tmr_asc.pdf}},
 }
 
 @TECHREPORT{FPGAReview,
   author =       {Habinc, Sandi},
-  title =        {Suitability of reprogrammable FPGAs in space applications},
+  title =        {Suitability of reprogrammable {FPGA}s in space applications},
   institution =  {Gaisler Research},
   year =         {2002},
-  number =       {0.4},
+  number =       {FPGA-002-01},
+  version =      {0.4},
   month =        {September},
-  source =       {http://microelectronics.esa.int/techno/fpga_002_01-0-4.pdf},
+  source =       {\url{http://microelectronics.esa.int/techno/fpga_002_01-0-4.pdf}},
 }
 
 @INCOLLECTION{HardeningTechniques,
   author =       {Baze, M. P. and Killens, J. C. and Paup,  R. A. and Snapp, W. P.},
-  title =        {SEU Hardening Techniques for Retargetable, Scalable, Sub-Micron Digital Circuits and Libraries},
+  title =        {{SEU} Hardening Techniques for Retargetable, Scalable, Sub-Micron Digital Circuits and Libraries},
   institution =  {Boeing Space and Communications},
   booktitle =    {21st SEE Symposium},
   year =         {2002},
   address =      {Manhattan Beach, CA, US},
-  source =       {http://klabs.org/DEI/References/Radiation/baze_see_mit_seesymp02.pdf},
+  source =       {\url{http://klabs.org/DEI/References/Radiation/baze_see_mit_seesymp02.pdf}},
 }
 
 @BOOK{VPRBook,
@@ -84,7 +93,7 @@
 
 @inproceedings{VPR5,
      author = {Luu, Jason and Kuon, Ian and Jamieson, Peter and Campbell, Ted and Ye, Andy and Fang, Wei Mark and Rose, Jonathan},
-     title = {VPR 5.0: FPGA cad and architecture exploration tools with single-driver routing, heterogeneity and process scaling},
+     title = {{VPR} 5.0: {FPGA CAD} and architecture exploration tools with single-driver routing, heterogeneity and process scaling},
      booktitle = {Proceedings of the ACM/SIGDA international symposium on Field programmable gate arrays},
      series = {FPGA '09},
      year = {2009},
@@ -92,7 +101,7 @@
      location = {Monterey, California, USA},
      pages = {133--142},
      numpages = {10},
-     url = {http://doi.acm.org/10.1145/1508128.1508150},
+     url = {\url{http://doi.acm.org/10.1145/1508128.1508150}},
      doi = {10.1145/1508128.1508150},
      acmid = {1508150},
      publisher = {ACM},
@@ -101,9 +110,10 @@
 }
 @MISC{WiltonLecture,
   author =       {Wilton, Steve},
-  title =        {FPGA Architectures},
+  title =        {{FPGA} Architectures},
   howpublished = {Course Lecture Notes},
-  source =       {http://www.cse.cuhk.edu.hk/~phwl/teaching/ceg5010/fpgaarch.pdf},
+  url =          {\url{http://www.cse.cuhk.edu.hk/~phwl/teaching/ceg5010/fpgaarch.pdf}},
+  note =         {\url{http://www.cse.cuhk.edu.hk/~phwl/teaching/ceg5010/fpgaarch.pdf}},
 }
 
 @inproceedings{lima2003single,
@@ -121,46 +131,49 @@
   year =         {2011},
 }
 
-@INCOLLECTION{SEEMechanism,
-  author =       {F. Sturesson},
+@MISC{SEEMechanism,
+  author =       {Sturesson, F},
   title =        {Single Event Effects {(SEE)} Mechanism and Effects},
   year =         {2009},
   type =         {Short Course},
   month =        {June},
+  howpublished = {EPFL Short Course},
+  organization = {\'{E}cole Polytechnique F\'{e}d\'{e}rale de Lausanne (EPFL)}/
   source   =     {Space Radiation and its Effects on EEE Components},
+  note =         {\url{http://space.epfl.ch/webdav/site/space/shared/industry_media/07\%20SEE\%20Effect\%20F.Sturesson.pdf}}
 }
 
 @INPROCEEDINGS{DuttonSEU,
   author =       {Dutton, Bradley F. and Stroud, Charles E.},
   title =        {SINGLE EVENT UPSET DETECTION AND CORRECTION IN VIRTEX-4 AND VIRTEX-5 {FPGA}S},
   year =         {2009},
+  month =        {June},
   series =       {ISCA International Conference on Computers and Their Applications},
-  source =       {http://www.eng.auburn.edu/~strouce/class/bist/CATA09seu.pdf},
+  source =       {\url{http://www.eng.auburn.edu/~strouce/class/bist/CATA09seu.pdf}},
 }
 
 @MANUAL{VPRManual,
-  title =        {VPR User’s Manual},
+  title =        {{VPR} User’s Manual},
   author =       {Luu, Jason and Betz, Vaughn and Campbell, Ted and Fang, Wei Mark and Jamieson, Peter and Kuon, Ian and Marquardt, Alexander and Ye, Andy and Rose, Jonathon },
-  organization = {VPR},
-  month =        {january},
+  month =        {January},
   year =         {2012},
-  source =       {http://vtr-verilog-to-routing.googlecode.com/files/VPR_User_Manual_6.0.pdf},
+  source =       {\url{http://vtr-verilog-to-routing.googlecode.com/files/VPR_User_Manual_6.0.pdf}},
 }
 
 @INBOOK{FPGAArch,
   author =       {Farooq, Umer and Marrakchi, Zied and Mehrez, Habib},
-  title =        {Tree-based Heterogeneous FPGA Architectures},
+  title =        {Tree-based Heterogeneous {FPGA} Architectures},
   chapter =      {2},
   publisher =    {Springer},
   year =         {2012},
   edition =      {2012},
   doi      =     {10.1007/978-1-4614-3594-5_5},
-  source =       {http://www.springer.com/cda/content/document/cda_downloaddocument/9781461435938-c2.pdf?SGWID=0-0-45-1333135-p174308376},
+  source =       {\url{http://www.springer.com/cda/content/document/cda_downloaddocument/9781461435938-c2.pdf?SGWID=0-0-45-1333135-p174308376}},
 }
 
 @INPROCEEDINGS{DiesselChange,
   author =       {Cetin, Ediz and Diessel, Oliver},
-  title =        {Guaranteed Fault Recovery Time for FPGA-based TMR Circuits Employing Partial Reconfiguration},
+  title =        {Guaranteed Fault Recovery Time for {FPGA}-based {TMR} Circuits Employing Partial Reconfiguration},
   booktitle =    {2nd International Workshop on Computing in Heterogeneous, Autonomous 'N' Goal-oriented Environments (CHANGE)},
   year =         {2012},
   series =       {CHANGE},
@@ -171,10 +184,10 @@
 
 @MASTERSTHESIS{AAPackThesis,
   author =       {Luu, Jason},
-  title =        {A Hierarchical Description Language and Packing Algorithm for Heterogenous FPGAs},
+  title =        {A Hierarchical Description Language and Packing Algorithm for Heterogenous {FPGAs}},
   school =       {Electrical and Computer Engineering, University of Toronto},
   year =         {2010},
-  source =       {http://www.eecg.toronto.edu/~jayar/pubs/theses/Luu/JasonLuuMASc.pdf},
+  source =       {\url{http://www.eecg.toronto.edu/~jayar/pubs/theses/Luu/JasonLuuMASc.pdf}{,
 }
 
 @MANUAL{BLIF,
@@ -183,12 +196,12 @@
   organization = {University of California, Berkeley},
   month =        {February},
   year =         {2005},
-  source =       {http://www.cs.uic.edu/~jlillis/courses/cs594/spring05/blif.pdf},
+  source =       {\url{http://www.cs.uic.edu/~jlillis/courses/cs594/spring05/blif.pdf}},
 }
 
 @INCOLLECTION{XCell33,
-  author =       {Wallace Westfeldt},
-  title =        {Who's Using Virtex and Spartan FPGAs in Xilinx Online Applications?},
+  author =       {Westfeldt, Wallace},
+  title =        {Who's Using Virtex and Spartan {FPGA}s in Xilinx Online Applications?},
   booktitle =    {XCell},
   publisher =    {Xilinx},
   year =         {1999},
@@ -197,7 +210,7 @@
   series =       {XCell},
   type =         {Magazine},
   pages =        {10},
-  source =       {http://www.xilinx.com/publications/archives/xcell/Xcell33.pdf},
+  source =       {\url{http://www.xilinx.com/publications/archives/xcell/Xcell33.pdf}},
 }
 
 @PHDTHESIS{WiltonPhd,
@@ -205,14 +218,14 @@
   title =        {Architectures and Algorithms for Field-Programmable Gate Arrays with Embedded Memory},
   school =       {Department of Electrical and Computer Engineering, University of Toronto},
   year =         {1997},
-  source =       {http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.34.3389&rep=rep1&type=pdf},
+  source =       {\url{http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.34.3389&rep=rep1&type=pdf}},
   doi =          {10.1.1.34.3389},
 }
 
 @incollection {WiltonSwitch,
    author = {Masud, M. and Wilton, Steven},
    affiliation = {Department of Electrical and Computer Engineering, University of British Columbia, Vancouver, B.C., Canada},
-   title = {A New Switch Block for Segmented FPGAs},
+   title = {A New Switch Block for Segmented {FPGA}s},
    booktitle = {Field Programmable Logic and Applications},
    series = {Lecture Notes in Computer Science},
    editor = {Lysaght, Patrick and Irvine, James and Hartenstein, Reiner},
@@ -221,28 +234,28 @@
    keywords = {Computer Science},
    pages = {274-281},
    volume = {1673},
-   url = {http://dx.doi.org/10.1007/978-3-540-48302-1_28},
+   url = {\url{http://dx.doi.org/10.1007/978-3-540-48302-1_28}},
    doi = {10.1007/978-3-540-48302-1_28},
    year = {1999}
 }
 
 @TECHREPORT{LanguageBenchmark,
-  author =       {Lutz Prechelt},
-  title =        {An empirical comparison of C, C++, Java, Perl, Python, Rexx, and Tcl for a search/string-processing program},
+  author =       {Prechelt, Lutz},
+  title =        {An empirical comparison of {C}, {C}++, {J}ava, {P}erl, {P}ython, {R}exx, and {T}cl for a search/string-processing program},
   institution =  {Fakult\"{a}t f\"{u}r Informatik Universit\"{a}t Karlsruhe},
   year =         {2000},
   number =       {2000-5},
   address =      {D-76128 Karlsruhe, Germany},
   month =        {March},
-  source =       {http://note.tc.edu.tw/upload/2009Nov/20091109144609.pdf},
+  source =       {\url{http://note.tc.edu.tw/upload/2009Nov/20091109144609.pdf}},
 }
 
 @BOOKLET{OECDSpace,
-  title =        {http://www.oecd.org/futures/48301203.pdf},
+  title =        {THE SPACE ECONOMY AT A GLANCE 2011},
   author =       {OECD},
   howpublished = {Online},
   year =         {2011},
-  source =       {http://www.oecd.org/futures/48301203.pdf},
+  source =       {\url{http://www.oecd.org/futures/48301203.pdf}},
 }
 
 @INPROCEEDINGS{HFPP,
@@ -252,13 +265,13 @@
   year =         {2007},
   address =      {Monterey, California},
   month =        {August},
-  source =       {http://ewh.ieee.org/conf/hfpp/presentations/107.pdf},
+  source =       {\url{http://ewh.ieee.org/conf/hfpp/presentations/107.pdf}},
 }
 
 @ARTICLE{DICE,
     author={Calin, T. and Nicolaidis, M. and Velazco, R.},
     journal={Nuclear Science, IEEE Transactions on},
-    title={Upset hardened memory design for submicron CMOS technology},
+    title={Upset hardened memory design for submicron {CMOS} technology},
     year={1996},
     month={dec},
     volume={43},
@@ -271,7 +284,7 @@
 
 @inproceedings{PostSynth,
      author = {Johnson, Jonathan M. and Wirthlin, Michael J.},
-     title = {Voter insertion algorithms for FPGA designs using triple modular redundancy},
+     title = {Voter insertion algorithms for {FPGA} designs using triple modular redundancy},
      booktitle = {Proceedings of the 18th annual ACM/SIGDA international symposium on Field programmable gate arrays},
      series = {FPGA '10},
      year = {2010},
