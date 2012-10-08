@@ -71,7 +71,7 @@ escapeinside={\%*}{*)}          % if you want to add a comment within your code
 \begin{document}
 \maketitle
 \begin{abstract}
-	\ac{FPGA} systems would be well suited to space based applications except for their vulnerability to space based radiation. Various techniques for dealing with their susceptibility have been discussed in literature. This thesis aims to implement a key part of a theoretical technique to protect against radiation induced \acp{SEU} and assess the overheads of said technique.
+	\ac{FPGA} systems would be well suited to space based applications except for their vulnerability to space based radiation. Various techniques for dealing with their susceptibility have been discussed in literature. This thesis aims to implement and assess a key part of a theoretical technique to protect against radiation induced \acp{SEU} and assess the overheads of said technique.
 \acresetall
 \end{abstract}
 \chapter*{Acknowledgements}
@@ -85,7 +85,7 @@ Thanks go to...
 \acro{MCNC}[MCNC]{Microelectronics Centre of North Carolina}
 \acro{BLE}[BLE]{Basic Logic Element}
 \acro{CLB}[CLB]{Configurable Logic Block}
-\acro{DFG}[DFG]{Directed Flow Graph}
+\acro{DFG}[DFG]{Directed Flow Graph\acextra{or a DataFlow Graph}}
 \acro{SEU}[SEU]{Single Event Upset}
 \acro{LUT}[LUT]{Look Up Table}
 \acro{VTR}[VTR]{Verilog To Routing}
@@ -99,7 +99,7 @@ Thanks go to...
 \acro{ICAP}[ICAP]{Internal Configuration Access Port}
 \acro{SRAM}[SRAM]{Static RAM}
 \acro{mux}[mux]{Multiplexer}
-\acro{CAD}[CAD]{Computer Assisted Design}
+\acro{CAD}[CAD]{Computer Aided Design}
 \acro{MBU}[MBU]{Multi Bit Upset}
 \acro{NRE}[NRE]{Non Recurring Engineering}
 \acrodef{DICE}[DICE]{Dual Interlock Storage Cell}
@@ -109,11 +109,11 @@ Thanks go to...
 \end{acronym}
 \chapter{Introduction}
 \section{Overview}
-Space plays an increasingly important role in the functioning of modern societies, being vital for fields including navigation, meteorology, and communications\cite{OECDSpace}. \acl{FPGA} systems (\acsp{FPGA}) have many beneficial features, such as their flexibility and low \ac{NRE} costs which would make them highly desired for space based applications except for their greater susceptibility to space radiation. Hardened \acp{FPGA} have dropped far behind main commercial offerings prompting a search for a solution to the radiation susceptibility of \acp{FPGA} using mainstream hardware\cite{VFPGATMR}, one of the most popular of which is \ac{TMR}. In \ac{TMR} vulnerable components are triplicated allowing for errors to be detected and mitigated. This thesis is based on the work of\cite{DiesselChange} who introduce an approach to \ac{TMR}, and aims to both implement a key part of their approach then assess the implementation with the aid of an open source \ac{CAD} toolchain for \acp{FPGA}.
-The remainder of this chapter provides an overview of these technologies, discusses alternative approaches to our approach, and details why we have chosen the technique we have. The following chapter introduces our approach to benchmarking circuits, and presents our initial results along with a brief discussion. The next chapter then describes our implementation and design choices made in the implementation. The chapter after that outlines our schedule and current progress, and our final chapter presents our closing remarks.
+Space plays an increasingly important role in the functioning of modern societies, being vital for fields including navigation, meteorology, and communications\cite{OECDSpace}. \acl{FPGA} systems (\acsp{FPGA}) have many beneficial features, such as their flexibility and low \ac{NRE} costs which make them highly desirable for space based applications except for their greater susceptibility to space radiation. Hardened \acp{FPGA} offer only a fraction of the gate counts (and hence capability of implementing large or complex circuits) of non hardened offerings prompting a search for a solution to the radiation susceptibility of \acp{FPGA} using mainstream hardware\cite{VFPGATMR}, one of the most popular of which is \ac{TMR}. In \ac{TMR}, vulnerable components are triplicated allowing for errors to be detected and mitigated. This thesis is based on the work of\cite{DiesselChange} which introduces an approach to \ac{TMR}, and aims to implement a key part of the approach and assess the implementation with the aid of an open source \ac{CAD} toolchain for \acp{FPGA}.
+The remainder of this chapter provides an overview of these technologies, discusses alternatives to our approach, and details why we have chosen the technique we have. Chapter 2 introduces our approach to benchmarking circuits, and presents our initial results along with a brief discussion; Chapter 3 describes our implementation and design choices made in the implementation and Chapter 4 outlines our schedule and current progress, and our final chapter presents our closing remarks.
 \acresetall
 \subsection{\acsp{FPGA}}
-\acp{FPGA} are popular devices capable of implementing a wide variety of circuits. Unlike \acp{ASIC} which must be specially designed and manufactured for an application---a lengthy and expensive process---\acp{FPGA} are a generic device which can be mass produced by manufacturers and then adapted for an individual user's needs. Their flexibility, low cost, and faster development process make them popular for a number of applications.
+\acp{FPGA} are popular devices capable of implementing a wide variety of circuits. Unlike \acp{ASIC} which must be specially designed and manufactured for an application---a lengthy and expensive process---\acp{FPGA} are a generic off the shelf device which can be mass produced by manufacturers and then adapted for an individual user's needs. Their flexibility, low cost, and faster development time make them the most economic for a number of applications.
 
 
 \fxnote{TODO: Use own image. Wilton lecture notes have no license/copyright notice/etc attached, so don't know if this usage is actually allowed. Plus, doesn't look that good.}
@@ -125,22 +125,26 @@ The remainder of this chapter provides an overview of these technologies, discus
     \end{center}
 \end{figure}
 
-There are three main components to an \ac{FPGA}: \ac{IO} blocks---usually around the edge---allowing for input and output from the \ac{FPGA}, \acp{CLB} containing all the logic elements or \emph{primitives}, and the routing between everything.
+There are three main components to an \ac{FPGA}: \ac{IO} blocks, usually around the edge, allowing for input and output from the \ac{FPGA}, \acp{CLB} containing all the logic elements or \emph{primitives}, and the routing between everything.
 Most \acp{FPGA} also contain other structures embedded in the \ac{CLB} array to provide commonly used resources such as multipliers. While they can be implemented using latches and \acp{LUT}, embedding them as discrete components allows for denser designs.
-The routing between everything consists of channels running horizontally and vertically with a number of wires and programmable switches connecting the wires to each other and to \acp{CLB} allowing for configurable paths between arbitrary components. A typical switch or connection block has a buffer storing the state, and a connection can be made or unmade by writing a new value to the buffer for that switch. The most common style of routing is known as island style---as the \acp{CLB} are located as islands in a sea of routing---with the routing area making up some 80\%-90\% of the \ac{FPGA}'s area\cite{FPGAArch}.
-Each \ac{CLB} is a cluster of smaller blocks, called \acp{BLE}, with each \ac{BLE} containing the logic primitives, typically a programmable \ac{LUT} for combinational logic, a latch for register operations and allowing sequential logic, and a \ac{mux} to switch between the two. As with the switches in routing, buffers store the values for the \ac{LUT}, whether the \ac{mux} is selecting the latch or \ac{LUT} output, and other component states.
+The routing between componenets consists of channels running horizontally and vertically with a number of wires and programmable switches connecting the wires to each other and to \acp{CLB} allowing for configurable paths between arbitrary components. A typical switch or connection block has a configuration cell storing the state, and a connection can be made or unmade by writing a new value to the cell for that switch. The most common style of routing is known as island style (as the \acp{CLB} are located as islands in a sea of routing) with the routing area making up some 80\%-90\% of the \ac{FPGA}'s area\cite{FPGAArch}.
+Each \ac{CLB} is a cluster of smaller blocks, called \acp{BLE}, with each \ac{BLE} containing the logic primitives, typically a programmable \ac{LUT} to implement combinational logic, a latch for register operations and implementing sequential logic, and a \ac{mux} to switch between the two. As with the switches in routing the values for the \ac{LUT}, whether the \ac{mux} is selecting the latch or \ac{LUT} output, and other component states are all stored in configuration memory, typically implemented in \acs{SRAM}.
 
-Programming an \ac{FPGA} involves loading in a bitstream which describes all the component values (i.e. contents of each buffer) for a circuit, accomplished through writing the bitstream to a special configuration port on the \ac{FPGA}. A number of \acp{FPGA} also allow for run time programming, or reconfiguration, of parts of a circuit through loading the bitstream for just section of interest while the rest of the \ac{FPGA} keeps running.
+Programming an \ac{FPGA} involves loading in a bitstream which describes all the component values (i.e. contents of the configuration memory for each cell) for a circuit, accomplished through writing the bitstream to a special configuration port on the \ac{FPGA}. A number of \acp{FPGA} also allow for run time programming, or reconfiguration, of parts of a circuit through loading the bitstream for only the section of interest while the rest of the \ac{FPGA} keeps running.
 
 \fxnote{Check grammar in this next section.}
-There are four main technologies used to implement the buffers in \acp{FPGA}: \ac{SRAM}, which gives the highest density devices and includes the Virtex-5 family this thesis focuses on, however they are volatile and must be reprogrammed every power up from an external configuration memory; (anti)fuse, which are only one time programmable; and flash, which is non-volatile, thus not requiring an external configuration memory, and reprogrammable, however has a lower density than \ac{SRAM} based \acp{FPGA}\cite{FPGAArch}.
-
+There are four main technologies used to implement the configuration memory in \acp{FPGA}:
+\begin{itemize}
+\item \ac{SRAM}, which gives the highest density devices and includes the Virtex-5 family this thesis focuses on; however they are volatile and must be reprogrammed every power up from an external configuration memory;
+\item (anti)fuse, which are only one time programmable;
+\item flash, which is non-volatile (thus not requiring an external configuration memory) and reprogrammable; however has a lower density than \ac{SRAM} based \acp{FPGA}\cite{FPGAArch}.
+\end{itemize}
 \subsubsection{Partial Reconfiguration}
-Partial reconfiguration involves loading configuration information for part of a circuit during operation. Much like the complete configuration described above, it involves writing a configuration bitstream to one of the available configuration ports, in this case also including the location to reconfigure. The configuration memory of recent Virtex devices is split into frames, and one can only reconfigure entire frames. As more frames are being reconfigured the larger the bitstream, and consequently the longer the time to reconfigure. The main configuration ports used are the external SelectMAP interface, or the internal \ac{ICAP}, each with a bandwidth of 400MB/s in all Virtex devices \cite{XCell33,DiesselChange}
+Partial reconfiguration involves loading configuration information for part of a circuit during operation. Much like the complete configuration described above, it involves writing a configuration bitstream to one of the available configuration ports, in this case also including the location to reconfigure. The configuration memory of recent Virtex devices is split into frames, and one can only reconfigure entire frames. A configuration frame is 41 (32-bit) words long on a Virtex-5 device and configures a bit slice of the device that spans 20 \ac{CLB} rows. As more frames are being reconfigured the larger the bitstream, and consequently the longer the time to reconfigure. The main configuration ports used are the external SelectMAP interface, or the internal \ac{ICAP}, each with a bandwidth of 400MB/s in all Virtex devices \cite{XCell33,DiesselChange}
 
 
 \subsection{Space Based Applications}
-Space is quite different from a terrestrial environment, and \acp{FPGA} have a number of advantages due to their lower \ac{NRE} costs and flexibility. As \acp{FPGA} can be reconfigured during a mission faulty or outdated designs can be replaced remotely. However, there is a significant downside; as systems go further into space and are no longer protected by the earth's atmosphere, they become increasingly likely to suffer from radiation induced errors where ionising radiation intersecting with a component causes charge build up, potentially triggering incorrect operation\cite{SEEMechanism}. As outlined in Table \ref{SEURate}, for higher orbits the mean time to upset is on the order of only a second, and this rate increases as technology advances and chip density further increases.
+Space is quite different from a terrestrial environment, and \acp{FPGA} have a number of advantages due to their lower \ac{NRE} costs and flexibility. As \acp{FPGA} can be reconfigured during a mission, faulty or outdated designs can be replaced remotely; however, there is a significant downside: as systems go further into space and are no longer protected by the earth's atmosphere they become increasingly likely to suffer from radiation induced errors where ionising radiation intersecting with a component causes charge build up, potentially triggering incorrect operation\cite{SEEMechanism}. As outlined in Table \ref{SEURate}, for higher orbits the mean time to upset is on the order of only a second, and this rate increases as technology advances and chip density further increases.
 \begin{table}
     \begin{center}
         \begin{tabular}{lll}
@@ -157,7 +161,7 @@ Space is quite different from a terrestrial environment, and \acp{FPGA} have a n
         \label{SEURate}
     \end{center}
 \end{table}
-Of the potential effects, which range from unnoticeable to device destruction, this thesis is concerned with mitigating \acp{SEU}, where an incorrect signal is triggered but the underlying hardware still operates correctly. We also concern ourselves primarily with errors affecting only single bits or components rather than \acp{MBU} in which multiple components are affected at the same time.
+Of the potential effects, which range from unnoticeable to device destruction, this thesis is concerned with mitigating \acp{SEU}, where an incorrect signal is triggered but the underlying circuitry is not damaged. We also concern ourselves primarily with errors affecting only single bits or components rather than \acp{MBU} in which multiple components are affected at the same time.
 
 %\begin{table}
 %    \subfloat[][ASIC]{
@@ -166,7 +170,7 @@ Of the potential effects, which range from unnoticeable to device destruction, t
 %        Actual Output   & LLLLLHLLL\\
 %        \end{tikztimingtable}
 %    }
-%    
+%
 %    \subfloat[][FPGA]{
 %        \begin{tikztimingtable}
 %        Expected Output & LLLLLLLLL\\
@@ -177,11 +181,11 @@ Of the potential effects, which range from unnoticeable to device destruction, t
 %\end{table}
 In an \ac{ASIC}, while \acp{SEU} may be picked up and latched, or otherwise continue affecting the circuit in future, the component itself continues operating normally.
 
-\acp{FPGA} on the other hand are vulnerable to configuration errors as well. When the charged particle impacts a buffer it can flip the state of that buffer changing the actual circuit. Unlike transient errors, these functional errors persist until corrected.
+\acp{FPGA} on the other hand are vulnerable to configuration errors as well. When the charged particle impacts configuration memory it can flip the state of that cell changing the actual circuit. Unlike transient errors, these functional errors persist until corrected.
 
-Additionally for \ac{SRAM} devices, the off-chip configuration memory itself can be affected, so the next time the chip is reprogrammed (e.g. after power cycling), an incorrect circuit will be loaded.
+Additionally for \ac{SRAM} devices, the off-chip configuration memory itself can be affected, so the next time the chip is reprogrammed (e.g. after power cycling), an incorrect circuit configuration will be loaded.
 
-(Anti)fuse devices, being non reprogrammable, are immune to configuration errors, however both \ac{SRAM} and flash based \acp{FPGA} are vulnerable and all three are susceptible to transient \ac{SEU}\cite{HFPP}.
+(Anti)fuse devices, being non reprogrammable, are immune to configuration errors, though both \ac{SRAM} and flash based \acp{FPGA} are vulnerable and all three are susceptible to transient \ac{SEU}\cite{HFPP}.
 
 \subsection{How We Deal With \acs{FPGA} Downsides}
 Clearly, in order for \acp{FPGA} to be viable in space based systems the effects of \acp{SEU} must be mitigated. A number of technologies and techniques are available, each with their own advantages and disadvantages. A number of options exist which detect errors but are unable to determine the correct result, requiring a reload of the configuration memory while the circuit is non operational until the reconfiguration completes. For many applications this downtime is impractical, thus we will be looking at options which allow the circuit to continue operating correctly.
@@ -208,7 +212,7 @@ Increased IDRIVE & Rise – 1.0 $\mu$ W \newline Fall – 0.2 $\mu$ W & Rise –
 DICE & Rise - 1.4$\mu$ W \newline Fall - 1.1$\mu$  W & Rise - 0.96 ns \newline Fall - 0.97ns & $1.6\times10E-10$ \newline 2 node & 520 \\
 \bottomrule
 \end{tabularx}
-    \caption{Comparison of hardening techniques\cite{HardeningTechniques}}
+    \caption{Comparison of hardening techniques\cite{HardeningTechniques}\fixme{Explain columns}}
     \label{HardeningComparison}
 \end{table}
 
@@ -216,8 +220,16 @@ One additional technique specific to \ac{SRAM} based \acp{FPGA} relates to the p
 
 
 \section{\acl{TMR}}
-Triple Modular Redundancy is a commonly used method for creating fault tolerant systems in which a given circuit is implemented three times with independent components, with the outputs feeding into a voter circuit to determine the majority value. Any \ac{SEU} will affect the output value of at most one version, so the majority vote is still correct and one can then incorporate partial reconfiguration in order to recover from detected errors. However, this only works when at most one \ac{SEU} occurs within the error detection and recovery time; Should \acp{SEU} occur in two of the three partitions then it is impossible for the voter to determine the correct value, necessitating a complete reload of the configuration memory (\emph{scrubbing}). Therefore, we require the error detection and recovery time to be sufficiently small that the likelihood of multiple events occurring within that time period are negligible.
-Once the error has been detected and the circuit reconfigured it must then be resynchronised with the other partitions. For this thesis we will assume a method similar to that described in\cite{DiesselChange}, where the resynchronising circuit is run on the same input for a number of steps equal to the number of register stages so no potentially incorrect data is left in the pipeline, however our implementation will work for any method where Equation \ref{ERT} holds.
+\fixme{Explain better, see Diessel comments}
+Triple Modular Redundancy is a commonly used method for creating fault tolerant systems in which a given circuit is implemented three times with independent components, with the outputs feeding into a voter circuit to determine the majority value. Any \ac{SEU} will affect the output value of at most one version, so the majority vote is still correct. For transient errors that are not in a feedback loop correcting the output is enough to fix the error; however \acp{SEU} in feedback paths or in the configuration memory will persist, and this require some method for eliminating them. One possible approach is resetting the system, however while this occurs the system is unavailable so a reset may not be a feasible solution. Instead, partial reconfiguration can reconfigure only the faulty circuit while the redundant circuits continue operating and providing output. After reconfiguration the circuit must then be resynchronised to the same state as the other two. We use the approach presented by \cite{DiesselChange} which involves running the circuit until the state converges, which is guaranteed to occur within a timeframe given by the number of register stages and the clock frequency. In order for this approach to guarantee resynchronisation the circuit must be acyclic: there can be no feedback loops which may carry incorrect data. To solve this we simply ensure that all feedback loops are \emph{cut}, that is, the value is voted on before being passed back into the circuit. This has the additional benefit of correcting transient errors which would otherwise be caught in a feedback cycle, by ensuring the cycle data is correct.
+ 
+ 
+ 
+ 
+ 
+ 
+ This on its own is enough for transient errors, assuming they and one can then incorporate partial reconfiguration in order to recover from detected errors; however, this only works when at most one \ac{SEU} occurs within the error detection and recovery time; Should \acp{SEU} occur in two of the three partitions then it is impossible for the voter to determine the correct value, necessitating a complete reload of the configuration memory (\emph{scrubbing}). Therefore, we require the error detection and recovery time to be sufficiently small that the likelihood of multiple events occurring within that time period are negligible.
+Once the error has been detected and the circuit reconfigured it must then be resynchronised with the other partitions. For this thesis we will assume a method similar to that described in\cite{DiesselChange}, where the resynchronising circuit is run on the same input for a number of steps equal to the number of register stages so no potentially incorrect data is left in the pipeline, but our implementation will work for any method where Equation \ref{ERT} holds.
 The error recovery time consists of the time to reconfigure the circuit, which is a function of the circuit area, and the resynchronisation time, which is a function of the number of register stages and clock frequency, so it is required that our area and number of register stages are small enough, and frequency large enough, that our error recovery time is within a user specified limit.
 \begin{align}
     \mbox{Error Recovery Time} &=\mbox{Error Detection Time} + \mbox{Reconfiguration Time} + \mbox{Resynchronisation Time}\notag\\
@@ -227,15 +239,15 @@ The error recovery time consists of the time to reconfigure the circuit, which i
     \mbox{Resynchronisation Time} &<= \frac{1}{\mbox{Clock Frequency}}\times\mbox{Register Stages}\notag\\
     \therefore \mbox{Error Recovery Time} &<= \frac{2\times\mbox{Register Stages}}{\mbox{Clock Frequency}} + \frac{\mbox{Bitstream Size}}{\mbox{Reconfiguration Speed}}+Constant\label{ERT}
 \end{align}\cite{DiesselChange}
-Additionally, as each voter circuit adds some constant overhead in terms of area, power usage and clock frequency slowdown it is desirable to have each partition as large as possible. This thesis is concerned with implementing and assessing this \ac{TMR} design with a discussion of other \ac{TMR} methods and our reasons for not using them following.
-\subsection{\acl{TMR} Implementions}
+Additionally, as each voter circuit adds some constant overhead in terms of area, power usage and clock frequency slowdown it is desirable to have each partition as large as possible. This thesis is concerned with implementing and assessing this \ac{TMR} design; a discussion of other \ac{TMR} methods and our reasons for not using them is included below.
+\subsection{\acl{TMR} Implementations}
 This thesis builds on the work of\cite{DiesselChange} which details a partitioning algorithm that traverses a circuit represented as a \ac{DFG} in a breadth first manner, creating partitions that stay within our constraints.
 Our goal is to create an algorithm which stays within a user specified error recovery time, doesn't require existing code to be rewritten, allows for both custom voting and reconfiguration logic to be added, can use industry standard \acp{FPGA} rather than custom hardware, and effectively protects the entire system from \acp{SEU} with as close to no downtime as achievable. There are a number of existing \ac{TMR} solutions, however none quite meet our requirements.
-Our first requirement is that standard \ac{FPGA} hardware can be used, with our implementation specifically targeting Virtex 5 chips. Options with custom hardware such as \cite{VFPGATMR}, are often prohibitively expensive, and prevent us from using our existing boards.
-Many \acp{FPGA} marketed specifically at space based applications are, in addition to requiring custom hardware, only latchup\fxnote{explain?} immune or only include inbuilt \ac{TMR} on registers, leaving them still vulnerable to \acp{SEU} \cite{FPGAReview}.
-Non hardware solutions are typically implemented pre-synthesis, such as \cite{ftmr}, and require existing code to be rewritten, or during synthesis such as \cite{synplify} and \cite{tmrtool} which support neither specifying an error recovery limit, nor for adding reconfiguration logic.
-Other options look at using partial \ac{TMR} (e.g. \cite{partialTMR}) which, while it does reduce the overhead of \ac{TMR}, means the entire circuit is no longer protected, or have excessive downtimes to recover from errors such as \cite{VTMR}.
-One approach similar to ours is presented by \cite{PostSynth} who also partition a post-synthesis netlist (represented by a \ac{DFG}), however they focus on cutting feedback loops rather than partitioning to utilise partial reconfiguration, although we do cut feedback loops as part of our partitioning process\fxnote{Confirm}.
+Our first requirement is that standard \ac{FPGA} hardware can be used, with our implementation specifically targeting Virtex 5 chips. Options with custom hardware such as \cite{VFPGATMR} (with three \acp{FPGA} and an \ac{ASIC} voter in a single package), are often prohibitively expensive, and prevent us from using our existing boards.
+Many \acp{FPGA} marketed specifically at space based applications are, in addition to featuring specialised hardware, only latchup\fxnote{explain?} immune or only include inbuilt \ac{TMR} on registers, leaving them still vulnerable to \acp{SEU} \cite{FPGAReview}.
+Non hardware solutions are typically implemented pre-synthesis, such as \cite{ftmr} (which introduces a \ac{TMR} library featuring pre defined \ac{TMR}'d \ac{VHDL} components), and require existing code to be rewritten, or during synthesis such as \cite{synplify} and \cite{tmrtool} which support neither specifying an error recovery limit, nor for adding reconfiguration logic.
+Other options look at using partial \ac{TMR} (such as \cite{partialTMR}) which, while it does reduce the overhead of \ac{TMR}, means the entire circuit is no longer protected, or have excessive downtimes to recover from errors such as \cite{VTMR}, which uses idle cycles in a data path to calculate redundant results.
+One approach similar to ours is presented by \cite{PostSynth} who also partition a post-synthesis netlist (represented by a \ac{DFG}), but they focus on cutting feedback loops rather than partitioning to utilise partial reconfiguration, although we do cut feedback loops as part of our partitioning process\fxnote{Confirm}.
 
 \subsection{Our Algorithm}\label{Algorithm}
 \begin{figure}
@@ -250,7 +262,7 @@ Given a netlist description of a circuit, it is possible to represent the circui
 To do so we traverse the \ac{DFG} in a breadth first manner, keeping track of the number of register stages, area, and maximum frequency, extending our partition area as we do so, until our recovery time constraint would be violated. At that point we triplicate our partition, insert our additional voting logic, and then repeat for a new partition, until all nodes have been partitioned.  While doing so we must make sure that no loops exist within a partition and that all values are voted on before being reused, as otherwise the circuit may not resynchronise. This is accomplished by making sure that each node is only added once, and when inserting the voting logic that all outputs are voted on before being used as inputs.
 
 \section{\acs{CAD} Flow}
-\acp{FPGA} are typically programmed in a higher level description language such as VHDL or Verilog, and then a number of programs---collectively making up the \ac{CAD} flow or development toolchain---turn the source into a bitstream to program a target \ac{FPGA}.
+\acp{FPGA} are typically programmed in a higher level description language such as VHDL or Verilog, and then a number of programs (collectively making up the \ac{CAD} flow or development toolchain) turn the source into a bitstream to program a target \ac{FPGA}.
 The design flow process can be split into a number of sub processes as illustrated in Figure \ref{CADFlow}\cite{VPRBook,VPRManual,FPGAArch}.
 \begin{enumerate}
     \item The synthesiser turns a hardware description language such as VHDL or Verilog into a netlist of basic gates and flip flops.
@@ -268,7 +280,7 @@ The design flow process can be split into a number of sub processes as illustrat
         \label{CADFlow}
     \end{center}
 \end{figure}
-\subsection{How \acs{VPR} Works}
+\subsection{How \acs{VPR} Works}\label{VPRSection}
 For this thesis we will be assessing the results of our algorithm implementation after processing by \ac{VPR}, an open source packer, placer and router. \ac{VPR} was chosen as it is open source allowing modifications to be made if necessary, and it is well documented and popular in research, making it much easier for us to determine what's happening and why, rather than relying on proprietary black box processes from commercial vendors.
 A brief understanding of the algorithms used in \ac{VPR} and the effects of different settings is useful, though not critical, for understanding the results. \cite{VPRManual} has a more detailed list of all the options \ac{VPR} takes.
 \subsubsection{Packer}
@@ -285,8 +297,8 @@ The main thing to note, as relates to our results, is that as much as possible A
 \subsubsection{Placer}
 \ac{VPR}'s placer uses a simulated annealing algorithm where the options allow us to specify annealing schedule parameters and cost function. The default options were chosen via experimentation, are likely superior to custom options we may choose to use, and affect the quality of the result rather than materially affecting the behaviour \cite{VPRManual, VPRBook}. For these reasons we will be leaving them at their default.
 \subsubsection{Router}
-\ac{VPR}'s router supports three different algorithms:\fxnote{Awkward phrasing, fix} breadth\_first, which focuses solely on routing a design; timing\_driven, the default, which tends to use slightly more tracks (~5\%) than breadth\_first while much faster routes (2$\times$--10$\times$) with less CPU time; and directed\_search, which like breadth\_first is routability driven however uses A* to improve runtime. We will be using the default timing\_driven algorithm \fxnote{TODO: Reason?}
-There are a number of options setting algorithm parameters, all of which we will leave at their defaults, however we will be changing the route\_chan\_width parameter as we collect results. route\_chan\_width specifies the width of the channels in the architecture. If omitted \ac{VPR} will perform a binary search on channel capacity to determine the minimum channel width.
+\ac{VPR}'s router supports three different algorithms:\fxnote{Awkward phrasing, fix} breadth\_first, which focuses solely on routing a design; timing\_driven, the default, which tends to use slightly more tracks (~5\%) than breadth\_first while providing much faster routes (2$\times$--10$\times$) with less CPU time; and directed\_search, which like breadth\_first is routability driven however uses A* to improve runtime. We will be using the default timing\_driven algorithm \fxnote{TODO: Reason?}.
+There are a number of options setting algorithm parameters, all of which we will leave at their defaults, though we will be changing the route\_chan\_width parameter as we collect results. route\_chan\_width specifies the width of the channels in the architecture. If omitted \ac{VPR} will perform a binary search on channel capacity to determine the minimum channel width.
 
 \chapter{Benchmarking}
 \section{Overview}
@@ -328,12 +340,12 @@ There are a number of options setting algorithm parameters, all of which we will
 We have a number of benchmark circuits (detailed in Table \ref{benchmarkList} and obtained as part of the \ac{VTR} project\footnote{\url{http://code.google.com/p/vtr-verilog-to-routing/}}) which we will be using to evaluate the performance of our partitioner and our \ac{TMR} scheme in general.
 Additionally, we're looking for ways of estimating area usage and timing information from a \ac{BLIF} file or \ac{DFG}, without needing to actually place and route the partial circuit after each iteration, as doing so is computationally prohibitive.
 
-To start with we made simple test circuits to compare to our benchmarks by triplicating each entire benchmark and adding in simple voter logic. As progress is made on the partitioner we can start collecting results from further partitioned circuits, however triplicating the entire circuit should be sufficient for rough approximations provided $elements_{circuit} >> elements_{voter}$.
+To start with we made simple test circuits to compare to our benchmarks by triplicating each entire benchmark and adding in simple voter logic. As progress is made on the partitioner we can start collecting results from further partitioned circuits; however triplicating the entire circuit should be sufficient for rough approximations provided $elements_{circuit} >> elements_{voter}$.
 
-To make the test circuits we created a small Python script to, given an input circuit and input voter circuit, triplicate the circuit and add voting logic. It creates a hierarchical \ac{BLIF} file, that is, it contains nested subcircuits, which are then passed through an external program called \ac{SIS}\footnote{Available from \url{http://www1.cs.columbia.edu/~cs4861/sis/}} to flatten it into a format \ac{VPR} can read.
+To make the test circuits we created a small Python script which, given an input circuit and input voter circuit, triplicates the circuit and adds voting logic. It creates a hierarchical \ac{BLIF} file, that is, it contains nested subcircuits, which are then passed through an external program called \ac{SIS}\footnote{Available from \url{http://www1.cs.columbia.edu/~cs4861/sis/}} to flatten it into a format \ac{VPR} can read.
 
 \subsection{Expected Results}
-As well described in literature (\cite{HardeningTechniques}) and as is intuitive, the area usage should increase by a factor of slightly more than three. There are three copies of each component, plus additional components for the voting circuitry. Maximum frequency is expected to decrease slightly due to the additional components increasing wire length and crowding routing channels, however this is likely to vary depending on circuit.
+As is well described in literature (\cite{HardeningTechniques}) and as is intuitive, the area usage should increase by a factor of slightly more than three. There are three copies of each component, plus additional components for the voting circuitry. Maximum frequency is expected to decrease slightly due to the additional components increasing wire length and crowding routing channels however this is likely to vary depending on circuit.
 
 \section{Architecture}\label{ArchFile}
 \begin{figure}
@@ -343,7 +355,7 @@ As well described in literature (\cite{HardeningTechniques}) and as is intuitive
         \label{Arch}
     \end{center}
 \end{figure}
-\ac{VPR} allows us to specify a custom architecture for it to run against in an XML format. Initially we are keeping the default architecture detailed by \cite{VPRManual} consisting of a grid of \acp{CLB} each consisting of ten fully interconnected \acp{BLE}, and each \ac{BLE} having a latch and 6-\ac{LUT}.
+\ac{VPR} allows us to specify a custom architecture for it to run against in an XML format. Initially we are keeping the default architecture detailed in \cite{VPRManual} consisting of a grid of \acp{CLB} each consisting of ten fully interconnected \acp{BLE}, and each \ac{BLE} having a latch and 6-\ac{LUT}.
 Each \ac{BLE} has 6 inputs and 1 output and each \ac{CLB} has 33 inputs and 10 outputs.
 
 
@@ -370,7 +382,7 @@ To start with, we wanted to collect rough estimates on the impact of partitionin
 \begin{lstlisting}
 VPR architecture.xml circuit.blif --full_stats[ --route_chan_width x]
 \end{lstlisting} where x is the width of the routing channels and - -full\_stats tells \ac{VPR} to be more verbose in its output.
-As mentioned earlier, if - -route\_chan\_width is excluded then \ac{VPR} determines the minimum channel width needed to successfully route the circuit \cite{VPRManual}. We then place and route our benchmark circuits and our partitioned circuits. \ac{VPR} itself then reports the area usage, critical path time (inverse of the frequency), and other statistics we analysed. \ac{VPR} does not unfortunately report the number of register stages, however our partitioner will as it needs to calculate the number of steps for its time estimation function.
+As mentioned earlier, if - -route\_chan\_width is excluded then \ac{VPR} determines the minimum channel width needed to successfully route the circuit \cite{VPRManual}. We then place and route our benchmark circuits and our partitioned circuits. \ac{VPR} itself then reports the area usage, critical path time (inverse of the frequency), and other statistics we analysed. \ac{VPR} does not unfortunately report the number of register stages however our partitioner will, as it needs to calculate the number of steps for its time estimation function.
 
 \section{Results}\label{BenchmarkResults}
 The results listed in this section highlight information of interest in a few key circuits, rather than including page after page of tables. Any aggregate statistics (e.g. median) are calculated on the entire result set, not just the results included. No collected results were considered to be outliers and the only exclusions from the median calculation are those where the operation was not able to be completed, so there is no data.
@@ -409,30 +421,29 @@ tseng 200 width & 300\% & 312\% & 169\% & 126\% & 308\% &  102\% & 388\%\\
 \section{Discussion}
 Our simple voter circuit consists of one 3-\ac{LUT} per output. Therefore we expect the number of logic elements (latches and combinational logic) to be exactly three times larger, with an additional 3-\ac{LUT} per original circuit output. As shown in table \ref{medianRes} our triplicated circuits are just slightly over three times as large. Circuit area should be roughly tripled as well, which again, matches, with the width increasing by $1.69 \approx \sqrt{3}$ and the used area increasing by just over triple. The partitioned circuits require slightly larger channels, in order to route the extra wires needed, and the additional elements and wires lead to slightly more segments per wire, and a slightly lower maximum frequency. Of note is that the time to place and route the partitioned circuits was much higher, taking around four times longer.
 
-Circuits were 15\% slower on average, with a worst case of 25\% overall and a best case (in 200 width circuits) of a 2\% speedup. For minimum channel routing the smallest median slowdown was observed as on average the minimum channel width needed for partitioned versions was higher, giving the router more flexibility. For 60 width circuits some were unable to be routed, therefore the results don't represent all circuits. For those reasons the reported statistics are taken from the 200 width circuits.
+Circuits were 15\% slower on average, with a worst case of 25\% overall and a best case (in 200 width circuits) of a 2\% speedup. For minimum channel routing the smallest median slowdown was observed as on average the minimum channel width needed for partitioned versions was higher, giving the router more flexibility. For 60 width circuits some were unable to be routed, therefore the results do not represent all circuits. For those reasons the reported statistics are taken from the 200 width circuits.
 
 The speedup, while small, is unusual. It is likely due to the packer having more options, and due to the larger available area (as the packer will only increase the number of \acp{CLB}, and hence \ac{FPGA} area used, when it can no longer fit new primitives in the current block).
 
 
 \chapter{Partitioning Algorithm}
 \section{Overview}
-In this section we discuss the partitioning algorithm, including how we're implementing it, progress, and the reasoning behind design choices made.
+In this section we discuss the partitioning algorithm, including how we are implementing it, progress, and the reasoning behind design choices made.
 \section{Design}
-See Section \ref{Algorithm}\fxnote{Recap?}
-We will be implementing the algorithm introduced in Section \ref{Algorithm}, in which we traverse a \ac{DFG} in a depth first manner splitting the \ac{DFG} into subgraphs which we triplicate and insert voter logic into, while ensuring the error recovery time for each subgraph is below a threshold.
+We will be implementing the algorithm introduced in Section \ref{Algorithm}, in which we traverse a \ac{DFG} in a breadth first manner splitting the \ac{DFG} into subgraphs which we triplicate and insert voter logic into, while ensuring the error recovery time for each subgraph is below a threshold.
 
 \subsection{Design Choices}
-As much as possible, we'd like our partitioner to be easily extensible to multiple architectures. The actual partitioner operates on a \ac{DFG} so it can be mostly architecture agnostic, only requiring the estimation functions to be architecture aware.
-We already have python scripts written to create our benchmark circuits which are able to manipulate \ac{BLIF} files, so we opted for a toolchain incorporating them to reduce development time before we have a working implementation. Specifically, our partitioner operates on \ac{BLIF} files, then just generates separate \ac{BLIF} files for each partition, leaving our Python scripts to perform the actual triplication, insertion of additional elements, and stitching them together. Given time we would like to combine the functionality into one program, however this is a lower priority than developing a working implementation.
+As much as possible, we would like our implementation to be easily extensible to multiple architectures. The actual partitioner operates on a \ac{DFG} so it can be mostly architecture agnostic, only requiring the estimation functions to be architecture aware.
+We already have python scripts written to create our benchmark circuits which are able to manipulate \ac{BLIF} files, so we opted for a toolchain incorporating them to reduce development time before we have a working implementation. Specifically, our partitioner operates on \ac{BLIF} files, then generates separate \ac{BLIF} files for each partition, leaving our Python scripts to perform the actual triplication, insertion of additional elements, and stitching them together. Given time we would like to combine the functionality into one program, but this is a lower priority than developing a working implementation.
 
-Other design choices include deciding on \ac{VPR} due to its open nature as discussed earlier in Section \ref{VPRSection}, and how we traverse our \ac{DFG}. A depth first traversal would tend to generate long narrow pipelines within each partition, thus increasing the number of register stages, whereas a breadth first traversal would lend itself to fewer register stages for the same number of nodes. A possible future improvement is implementing a more advanced traversal algorithm, for example A* with an appropriate heuristic could allow for more elements per partition.
+Other design choices include deciding on \ac{VPR} due to its open nature as discussed earlier in Section \ref{VPRSection}, and how we traverse our \ac{DFG}. A depth first traversal tends to generate long narrow pipelines within each partition, thus increasing the number of register stages, whereas a breadth first traversal lends itself to fewer register stages for the same number of nodes. A possible future improvement is implementing a more advanced traversal algorithm, for example A* with an appropriate heuristic could allow for more elements per partition.
 
-Additionally, we were faced with a choice of when in the \ac{CAD} process to partition. The closer to the end of the process the more control we have, and the better our ability to estimate area and timing, however the harder it is to partition. As we are inserting new elements we want to partition before packing/placement to allow \ac{VPR} to pack and place our inserted elements.
+Additionally, we are faced with a choice as to when in the \ac{CAD} process to partition. The closer to the end of the process the more control we have, and the better our ability to estimate area and timing, but the harder it is to partition. As we are inserting new elements we want to partition before packing/placement to allow \ac{VPR} to pack and place our inserted elements.
 
 \subsubsection{Choice of Language}
-We're using a combination of languages, mainly Python and C++. Language choice primarily came down to preference regarding familiarity and personal taste, however a few other considerations were kept in mind.
+We are using a combination of languages, mainly Python and C++. Language choice primarily came down to preference regarding familiarity and personal taste although a few other considerations were kept in mind.
 For \ac{BLIF} joining and insertion of the voting logic Python was used. \ac{BLIF} files are plain text and the text parsing to join and insert is computationally simple, so the primary concern was short development time while still being readable and maintainable (although Python's performance on text is still quite reasonable)\cite{LanguageBenchmark}.
-For the actual partitioner C++ was chosen for a few reasons. Firstly, it was expected that the area and time estimations could be quite computationally expensive, so a lower level compiled language was chosen for performance reasons\cite{LanguageBenchmark}. Secondly, \ac{VPR} is written in C, so using C or C++ allowed for easy code reuse, or merging the partitioner and \ac{VPR}. Our reason for choosing C++ over C was that we preferred an object oriented language as we felt it would be easier to maintain, and would better lend itself to our goal of extensibility, as well as its libraries making our implementation much easier).
+For the actual partitioner C++ was chosen for a few reasons. Firstly, it was expected that the area and time estimations could be quite computationally expensive, so a lower level compiled language was chosen for performance reasons\cite{LanguageBenchmark}. Secondly, \ac{VPR} is written in C, so using C or C++ allowed for easy code reuse, or merging the partitioner and \ac{VPR}. Our reason for choosing C++ over C was that we preferred an object oriented language as we felt it would be easier to maintain, and would better lend itself to our goal of extensibility, as well as its libraries making our implementation much easier.
 
 \section{Input file format}\label{BLIFSection}
 The \ac{BLIF} file format is a textual format which describes an arbitrary sequential or combinational network of logic functions\cite{BLIF}.
@@ -463,13 +474,14 @@ commands
     \multicolumn{2}{l}{Latch:} & .latch $\langle$InputSignal$\rangle$ $\langle$OutputSignal$\rangle$ [Field ClockSignal] [Field]\\
     \multicolumn{2}{l}{Optional End Marker:} & .end
 \end{tabular}
-\{Name\} Indicates 1 or more of Name. $\langle$Name$\rangle$ indicates a compulsory field. [Name] indicates an optional field.
+
+\{Name\} indicates 1 or more of Name. $\langle$Name$\rangle$ indicates a compulsory field. [Name] indicates an optional field.
 A combinational logic element (.name) is followed by one or more lines describing the logic function it implements. However, our partitioner only cares about node type and the signals (named with Signal above) as it builds and traverses the \ac{DFG}. All other element information is stored and written back out when the node is written. Likewise for \emph{Field}s.
 
 \ac{VPR} only supports flat \ac{BLIF} files, so only one module declaration is allowed per \ac{BLIF} file. \ac{SIS} can be used to flatten \ac{BLIF} files for use by \ac{VPR}.
 
 \section{Implementation}
-Our implementation is still incomplete and so is both liable to change and doesn't currently match our intended design. Most notably, we partition first, then triplicate, then join into one file, rather than triplicating as we partition. A simple pseudocode description is included in \ref{Pseudocode} (omitting code to read and write \ac{BLIF} files) and is discussed below.
+Our implementation is still incomplete and so is both liable to change and is not currently match for   our intended design. Most notably, we partition first, then triplicate, then join into one file; not triplicating as we partition. A simple pseudocode description is included in \ref{Pseudocode} (omitting code to read and write \ac{BLIF} files) and is discussed below.
 
 Reading in the \ac{BLIF} file is a relatively simple process as subcircuits aren't supported. We make one pass through the input file, first reading in the list of inputs, outputs and clocks, and then creating a node for each primitive. We then iterate through the set of nodes building a list of signals, with each signal storing its sources and sinks.
 
@@ -494,13 +506,13 @@ while(Queue.Size > 0)
 CombinePartitions()
 \end{lstlisting}
 
-As mentioned in Section \ref{BLIFSection}, our input file format is a text file listing all the nodes. We read the file into memory, store it as a \ac{DFG}, with all nodes and signals additionally stored in a hashmap to allow for quick random access. Each node contains a list of all connected signals, and each signal contains a list of all its sources and sinks making the \ac{DFG} quite easy to traverse. Additionally we store a status for each node indicating whether it's part of the current partition, a previous partition, or new, allowing us to detect feedback loops and avoid adding nodes multiple times.
+As mentioned in Section \ref{BLIFSection}, our input file format is a text file listing all the nodes. We read the file into memory and store it as a \ac{DFG}, with all nodes and signals additionally stored in a hashmap to allow for quick random access. Each node contains a list of all connected signals, and each signal contains a list of all its sources and sinks making the \ac{DFG} quite easy to traverse. Additionally, we store a status for each node indicating whether it is part of the current partition, a previous partition, or new, allowing us to detect feedback loops and avoid adding nodes multiple times.
 We then traverse the \ac{DFG} in a breadth first matter while keeping running track of an estimate of the current partition's area and timing information. Once adding a new node would exceed our constraints we write the set of contained nodes to an output \ac{BLIF} file, and proceed with partitioning the rest. Eventually we have one \ac{BLIF} file for each partition. We then pass these to a set of existing Python scripts, written for initial benchmarking purposes and described in section \ref{BenchmarkMethod} which triplicates each partition and inserts voting logic, then connects each partition back up in a hierarchical \ac{BLIF} file. This file is then passed to \ac{SIS} to be flattened, at which point the partitioned circuit is ready for \ac{VPR}.
 
 
 \section{Estimating restrictions}
 As mentioned earlier, in order to partition our circuit we need a method of calculating the partition's (including voter logic) recovery time, which is based on circuit area (affects time to reconfigure), number of register stages (affects time to resynchronise), and frequency (affects time to detect error and resynchronise). Calculating the number of register stages is accomplished while traversing the \ac{DFG}.
-Area and timing information are more difficult to determine as they rely on the placement and routing of the circuit. Placing and routing each partial partition every step as we traverse is not computationally feasible in a reasonable amount of time, as placement and routing are relatively slow processes and one of our goals is for our partitioning stage to be approximately as fast as the other stages. Therefore, we need a way of estimating them. To do so we've collected preliminary benchmark information for a number of test circuits and analysed them for patterns allowing us to accurately guess area and timing from a given circuit without placing and routing.
+Area and timing information are more difficult to determine as they rely on the placement and routing of the circuit. Placing and routing each partial partition every step as we traverse is not computationally feasible in a reasonable amount of time, as placement and routing are relatively slow processes and one of our goals is for our partitioning stage to be approximately as fast as the other stages. Therefore, we need a way of estimating them. To do so we have collected preliminary benchmark information for a number of test circuits and analysed them for patterns allowing us to accurately guess area and timing from a given circuit without placing and routing.
 
 \subsection{Results for Time and Area Estimation}
 \begin{figure}
@@ -526,16 +538,16 @@ pdc 200 width   & N/A   & 300\% & 176\% & 104\% & 301\% &  75\% & 425\%\\
     \end{adjustwidth}
 \end{table}
 \subsection{Discussion of Time and Area Estimation}
-As is shown in Figure \ref{AreaVElements} the area usage is can be accurately estimated, as there is a clear relationship between the number of nodes and the area usage. The architecture we're using has one latch and one \ac{LUT} per \ac{BLE}, so for our supported logic elements the number of \acp{BLE} used close to linear in $max(num_{latch}, num_{names})$. \ac{VPR}'s packer can be either timing or area driven, currently we are using default settings (mostly area driven) giving us the linear relationship shown in Figure \ref{AreaVElements}, however even when completely timing driven the packer still tries to fill every \ac{CLB}\cite{AAPackThesis}.
+As shown in Figure \ref{AreaVElements} the area usage can be accurately estimated, as there is a clear relationship between the number of nodes and the area usage. The architecture we are using has one latch and one \ac{LUT} per \ac{BLE}, so for our supported logic elements the number of \acp{BLE} used is close to linear in $max(num_{latch}, num_{names})$. \ac{VPR}'s packer can be either timing or area driven. Currently we are using default settings (mostly area driven) giving us the linear relationship shown in Figure \ref{AreaVElements}; however even when completely timing driven the packer still tries to fill every \ac{CLB}\cite{AAPackThesis}.
 
-After we have a basic partitioning algorithm an area of further investigation is the impact of changing \ac{VPR}'s settings on the benchmark results, and the accuracy of our estimation functions.
+After we have a basic partitioning algorithm, an area of further investigation is the impact of changing \ac{VPR}'s settings on the benchmark results, and the accuracy of our estimation functions.
 
-Timing information, on the other hand, is harder to estimate with no obvious pattern, with maximum frequency appearing independent of the number of nodes. In Section \ref{BenchmarkResults} we saw that the median slowdown was 15\% with a 25\% worst result. Conversely, for a few rare cases the partitioned version is actually faster. Initially we will do a rough place and (optionally) route of the original circuit to determine a base time, then multiply it by an experimentally determined slowdown factor to obtain an estimate for the frequency. Initially we're using a slowdown factor of 2 (so half speed after partitioning) which easily encompasses all test circuits we've tried. We can then modify this factor by hand to examine if the impact of it on the final partition's performance warrants improving our estimation function.
+Timing information, on the other hand, is harder to estimate with no obvious pattern, with maximum frequency appearing independent of the number of nodes. In Section \ref{BenchmarkResults} we saw that the median slowdown was 15\% with a 25\% worst result. Conversely, for a few rare cases the partitioned version is actually faster. Initially we will do a rough place and (optionally) route of the original circuit to determine a base time, then multiply it by an experimentally determined slowdown factor to obtain an estimate for the frequency. Initially we are using a slowdown factor of 2 (so half speed after partitioning) which easily encompasses all test circuits we've tried. We can then modify this factor by hand to examine if the impact of it on the final partition's performance warrants improving our estimation function.
 
 \chapter{What next}
 
 \section{Progress}
-The initial partitioner implementation is still in progress. We anticipate a basic working version by November 2012, and then spending the next months collecting results and improving the partitioner.
+The initial partitioner implementation is still in progress. We anticipate a basic working version by November 2012, and then will spend the next months collecting results and improving the partitioner.
 Done:
 \begin{itemize}
     \item Can read a \ac{BLIF} file into a \ac{DFG}.
@@ -559,12 +571,12 @@ To Do:
     \begin{center}
         \includegraphics[width=\textwidth]{images/schedule.png}
         \caption{Schedule}
-        \label{AreaVElements}
+        \label{Schedule}
     \end{center}
 \end{figure}
 
 \chapter{Conclusion}
-We are currently on track with our initial schedule, and expect to begin collecting results on our partitioner implementation, rather than the effects of generic \ac{TMR}, at the end of this year. During the Christmas holidays progress will likely be quite limited, however as we are very close to a working implementation it is believed to be achievable.
+We are currently on track with our initial schedule, and expect to begin collecting results on our partitioner implementation, rather than the effects of generic \ac{TMR}, at the end of this year. During the Christmas holidays progress will likely be quite limited however as we are very close to a working implementation it is believed to be achievable.
 Our results collected so far reflect only \ac{TMR} in general, rather than our specific implementation, and they match those of literature and our expectations. We expect slightly worse performance from our partitioner due to additional logic being inserted, but not significantly so.
 
 \appendix
@@ -727,8 +739,4 @@ tseng TMR & 1155 & 3260 & 22 & 42 & 4.36026 & 163 & 183.167\\\bottomrule
 
 \end{document}
 
-%TODO: Frequency instead of critical path length or latency. Register stages vs critical path.
-% More detailed results as appendix.
-% Leave out irrelevant results (e.g. inputs/output elements)
-% Be careful of wording for feedback loops
-% Tables - Headers more concise, use percenmtages not scale factors, more lines to make them look nicer
+%TODO: Tables so they don't split up paragraphs. Table captions at the top? Consistent page numbering? Fix up bibliography. Floats all on one page.
