@@ -1,10 +1,8 @@
 % !TEX TS-program = pdflatex
 % !TEX encoding = UTF-8 Unicode
 
-% This is a simple template for a LaTeX document using the "article" class.
-% See "book", "report", "letter" for other types of document.
 
-\documentclass[12pt,draft,oneside]{memoir} % use larger type; default would be 10pt
+\documentclass[12pt,final,oneside]{dwThesis} % use larger type; default would be 10pt
 
 \usepackage[utf8]{inputenc} % set input encoding (not needed with XeLaTeX)
 \usepackage[margin=2cm]{geometry}
@@ -27,8 +25,9 @@
 \usepackage{tikz-timing}
 \usepackage[lofdepth,lotdepth]{subfig}
 \usepackage{multirow}
+\usepackage{tameflts}
 \fxsetup{
-    status=draft,
+    status=final,
     author=,
     layout=marginclue,inline, % also try footnote or pdfnote
     theme=color
@@ -62,21 +61,29 @@ escapeinside={\%*}{*)}          % if you want to add a comment within your code
 %%% END Article customizations
 
 %%% The "real" document content comes below...
-
+\setlength\overfullrule{0pt}
 \title{VPR Assessment of a Novel Partitioning Algorithm}
 \author{David Munro}
+\collegeordept{School of Computer Science and Engineering}
+\university{The University of New South Wales}
+\degree{Bachelor of Engineering (Computer)}
+\degreedate{9th October, 2012}
+\supervisor{Oliver Diessel}
 %\date{} % Activate to display a given date or no date (if empty),
          % otherwise the current date is printed
 
 \begin{document}
+\pagenumbering{roman}
 \maketitle
-\begin{abstract}
+\begin{acknowledgements}
+I would like to thank my supervisor Oliver Diessel for his assistance and advice throughout the entire process. I also wish to thank Patricia Munro and Salima Yeung for their proofreading.
+
+\end{acknowledgements}
+\begin{abstracts}
 	\ac{FPGA} systems would be well suited to space based applications except for their vulnerability to space based radiation. Various techniques for dealing with their susceptibility have been discussed in literature. This thesis aims to implement and assess a key part of a theoretical technique to protect against radiation induced \acp{SEU} and assess the overheads of said technique.
 \acresetall
-\end{abstract}
-\chapter*{Acknowledgements}
-Thanks go to...
-
+\end{abstracts}
+\newpage
 \tableofcontents*
 \newpage
 
@@ -111,6 +118,7 @@ Thanks go to...
 \acused{VHDL}
 \end{acronym}
 \chapter{Introduction}
+\pagenumbering{arabic}
 \section{Overview}
 Space plays an increasingly important role in the functioning of modern societies, being vital for fields including navigation, meteorology, and communications\cite{OECDSpace}. \acl{FPGA} systems (\acsp{FPGA}) have many beneficial features, such as their flexibility and low \ac{NRE} costs which make them highly desirable for space based applications except for their greater susceptibility to space radiation. Hardened \acp{FPGA} offer only a fraction of the gate counts (and hence capability of implementing large or complex circuits) of non hardened offerings prompting a search for a solution to the radiation susceptibility of \acp{FPGA} using mainstream hardware\cite{VFPGATMR}, one of the most popular of which is \ac{TMR}. In \ac{TMR}, vulnerable components are triplicated allowing for errors to be detected and mitigated. This thesis is based on the work of\cite{DiesselChange} which introduces an approach to \ac{TMR}, and aims to implement a key part of the approach and assess the implementation with the aid of an open source \ac{CAD} toolchain for \acp{FPGA}.
 The remainder of this chapter provides an overview of these technologies, discusses alternatives to our approach, and details why we have chosen the technique we have. Chapter 2 introduces our approach to benchmarking circuits, and presents our initial results along with a brief discussion; Chapter 3 describes our implementation and design choices made in the implementation and Chapter 4 outlines our schedule and current progress, and our final chapter presents our closing remarks.
@@ -136,6 +144,7 @@ Each \ac{CLB} is a cluster of smaller blocks, called \acp{BLE}, with each \ac{BL
 Programming an \ac{FPGA} involves loading in a bitstream which describes all the component values (i.e. contents of the configuration memory for each cell) for a circuit, accomplished through writing the bitstream to a special configuration port on the \ac{FPGA}. A number of \acp{FPGA} also allow for run time programming, or reconfiguration, of parts of a circuit through loading the bitstream for only the section of interest while the rest of the \ac{FPGA} keeps running.
 
 \fxnote{Check grammar in this next section.}
+\newpage\fxnote{newpage is just here to fix formatting}
 There are four main technologies used to implement the configuration memory in \acp{FPGA}:
 \begin{itemize}
 \item \ac{SRAM}, which gives the highest density devices and includes the Virtex-5 family this thesis focuses on; however they are volatile and must be reprogrammed every power up from an external configuration memory;
@@ -218,12 +227,11 @@ DICE & Rise - 1.4$\mu$ W \newline Fall - 1.1$\mu$  W & Rise - 0.96 ns \newline F
     \caption{Comparison of hardening techniques\cite{HardeningTechniques}}
     \label{HardeningComparison}
 \end{table}
-\fixme{Explain columns}
+\fxwarning{Explain columns}
 One additional technique specific to \ac{SRAM} based \acp{FPGA} relates to the protection of the off-chip configuration memory. As \ac{SRAM} is volatile and loads the state from off chip at power up, this external configuration memory must also be protected from \acp{SEU}. This can be accomplished by incorporating error detection and correction techniques in the RAM, something already in place on a number of mainstream \acp{FPGA} such as the Virtex-4 and -5\cite{DuttonSEU}.
 
 
 \section{\acl{TMR}}
-\fixme{Explain better, see Diessel comments}
 Triple Modular Redundancy is a commonly used method for creating fault tolerant systems in which a given circuit is implemented three times with independent components, with the outputs feeding into a voter circuit to determine the majority value. Any \ac{SEU} will affect the output value of at most one version, so the majority vote is still correct. For transient errors that are not in a feedback loop correcting the output is enough to fix the error; however, \acp{SEU} in feedback paths or in the configuration memory will persist, and this require some method for eliminating them. One possible approach is resetting the system however while this occurs the system is unavailable so a reset may not be a feasible solution. Instead, partial reconfiguration can reconfigure only the faulty circuit while the redundant circuits continue operating and providing output. After reconfiguration the circuit must then be resynchronised to the same state as the other two. We use the approach presented by \cite{DiesselChange} which involves running the circuit until the state converges, which is guaranteed (for acyclic circuits) to occur within a timeframe given by the number of register stages and the clock frequency. In order for this approach to always resynchronise correctly the circuit must have no feedback loops which may carry incorrect data. To solve this we simply ensure that all feedback loops are \emph{cut}, that is, the value is voted on before being passed back into the circuit. This has the additional benefit of correcting transient errors which would otherwise be caught in a feedback cycle by ensuring the cycle data is correct.
 
 Once an error occurs it takes up to $T_{path}$ to reach the voter and be detected, where $T_{path}$ is given by the frequency and number of register stages. This is called the \emph{error detection time}. Detection of an error can be used to trigger reconfiguration, where \emph{reconfiguration time} $= T_R$ is dependent upon the circuit size. Once the error has been detected and the circuit reconfigured it must then be resynchronised with the other partitions, which takes up to $T_{path}$ using the previously described technique.
@@ -345,24 +353,24 @@ To start with we made simple test circuits to compare to our benchmarks by tripl
 To make the test circuits we created a small Python script which, given an input circuit and input voter circuit, triplicates the circuit and adds voting logic. It creates a hierarchical \ac{BLIF} file, that is, it contains nested subcircuits, which are then passed through an external program called \ac{SIS}\footnote{Available from \url{http://www1.cs.columbia.edu/~cs4861/sis/}} to flatten it into a format \ac{VPR} can read.
 
 \subsection{Expected Results}
-As is well described in literature (\cite{HardeningTechniques}) and as is intuitive, the area usage should increase by a factor of slightly more than three. There are three copies of each component, plus additional components for the voting circuitry. Maximum frequency is expected to decrease slightly due to the additional components increasing wire length and crowding routing channels however this is likely to vary depending on circuit.
+As is well described in literature (e.g. \cite{HardeningTechniques}) and as is intuitive, the area usage should increase by a factor of slightly more than three. There are three copies of each component, plus additional components for the voting circuitry. Maximum frequency is expected to decrease slightly due to the additional components increasing wire length and crowding routing channels however this is likely to vary depending on circuit.
 
 \section{Architecture}\label{ArchFile}
 \begin{figure}
     \begin{center}
         \includegraphics[clip,trim=8cm 4cm 8cm 8cm]{images/CLB.pdf}
         \caption{\ac{CLB} Architecture}
-        \label{Arch}
+        \label{ArchFig}
     \end{center}
 \end{figure}
-\ac{VPR} allows us to specify a custom architecture for it to run against in an XML format. Initially we are keeping the default architecture detailed in \cite{VPRManual} consisting of a grid of \acp{CLB} each consisting of ten fully interconnected \acp{BLE}, and each \ac{BLE} having a latch and 6-\ac{LUT}.
-Each \ac{BLE} has 6 inputs and 1 output and each \ac{CLB} has 33 inputs and 10 outputs.
+\ac{VPR} allows us to specify a custom architecture for it to run against in an XML format. Initially we are keeping the default architecture detailed in \cite{VPRManual} consisting of a grid of \acp{CLB} each consisting of ten fully interconnected \acp{BLE}, and each \ac{BLE} having a latch and 6-\ac{LUT} as ilustrated in Figure \ref{ArchFig}.
+Table \ref{ArchTab} details the number of primitives per \ac{CLB}. Primarily of interest is that each \ac{BLE} has 6 inputs and 1 output and each \ac{CLB} has 33 inputs and 10 outputs.
 
 
 \ctable[
     botcap,
     caption = Architecture Elements,
-    label = Arch
+    label = ArchTab
 ]{llll}{
 }{
     \FL
@@ -377,7 +385,7 @@ Each \ac{BLE} has 6 inputs and 1 output and each \ac{CLB} has 33 inputs and 10 o
 
 \section{Methodology}\label{BenchmarkMethod}
 To start with, we wanted to collect rough estimates on the impact of partitioning a circuit to provide a baseline with which to compare our partitioning algorithm, and to develop the rough estimates needed for our partitioning algorithm. To that end we first created a simple Python script to take an arbitrary input circuit, triplicate it, and insert arbitrary voter logic. These triplicated circuits were then placed and routed by \ac{VPR}, as were the original benchmarks, and the results compared.
-
+\newpage\fxnote{newpage just her to fix formatting}
 \ac{VPR} is used with our architecture file (described in Section \ref{ArchFile}) and the command line options
 \begin{lstlisting}
 VPR architecture.xml circuit.blif --full_stats[ --route_chan_width x]
@@ -385,12 +393,11 @@ VPR architecture.xml circuit.blif --full_stats[ --route_chan_width x]
 As mentioned earlier, if - -route\_chan\_width is excluded then \ac{VPR} determines the minimum channel width needed to successfully route the circuit \cite{VPRManual}. We then place and route our benchmark circuits and our partitioned circuits. \ac{VPR} itself then reports the area usage, critical path time (inverse of the frequency), and other statistics we analysed. \ac{VPR} does not unfortunately report the number of register stages however our partitioner will, as it needs to calculate the number of steps for its time estimation function.
 
 \section{Results}\label{BenchmarkResults}
-The results listed in this section highlight information of interest in a few key circuits, rather than including page after page of tables. Any aggregate statistics (e.g. median) are calculated on the entire result set, not just the results included. No collected results were considered to be outliers and the only exclusions from the median calculation are those where the operation was not able to be completed, so there is no data.
-These tables list scale factors, that is, $\frac{TMR}{Non-TMR}$.
-\fxnote{Make this pretty}
+The results listed in Tables \ref{medianRes} and \ref{timing} highlight information of interest in a few key circuits, rather than including page after page of tables. Any aggregate statistics (e.g. median) are calculated on the entire result set, not just the results included. No collected results were considered to be outliers and the only exclusions from the median calculation are those where the operation was not able to be completed, so there is no data.
+These tables list the median characteristics of the \ac{TMR} versions of our benchmark circuits as a percentage of the original (100\% is the same, 200\% is double, 50\% is half); additionally, they detail the time taken to pack, place and route.
 \begin{table}
-    \begin{adjustwidth}{-1cm}{-1.1cm}
-        \begin{tabularx}{1.1\textwidth}{XXXXXXXXXXXXXXXXXXXXXXXXXX}
+    \begin{adjustwidth}{-1.0cm}{-1.05cm}
+        \begin{tabularx}{1.1\textwidth}{lXXXXXXllX}
            \toprule
             Width & Num. Latches & Num. \acp{LUT} & FPGA Width & Channel Width & Num. Wire Segments & Used Area & Frequency & CPU Time\\
           \midrule
@@ -399,14 +406,14 @@ These tables list scale factors, that is, $\frac{TMR}{Non-TMR}$.
             60 Width           & 300\% & 301\% & 169\% & N/A   & 113\% & 302\% & 86\% & 444\%\\
           \bottomrule
         \end{tabularx}
-        \caption{Median increase for specified channel widths}
+        \caption{Median values for specified channel widths as a percentage of non \ac{TMR} equivalent}
         \label{medianRes}
     \end{adjustwidth}
 \end{table}
 
 \begin{table}
     \begin{adjustwidth}{-1cm}{-1.1cm}
-        \begin{tabularx}{1.1\textwidth}{XXXXXXXXXXXXXXXXXXXXXXXXXX}
+        \begin{tabularx}{1.1\textwidth}{lXXXXXXXXX}
            \toprule
             Name & Num. Latches & Num. \acp{LUT} & FPGA Width & Num. Wire Segments & Used Area & Frequency & CPU Time\\
             \midrule
@@ -463,6 +470,8 @@ commands
 ...
 .end
 \end{lstlisting}
+
+
 \begin{tabular}{lll}
     Model name: & .model $\langle$Name$\rangle$ & The name of the model.\\
     Input List: & .inputs \{Signal\} & The model inputs.\\
@@ -515,6 +524,7 @@ As mentioned earlier, in order to partition our circuit we need a method of calc
 Area and timing information are more difficult to determine as they rely on the placement and routing of the circuit. Placing and routing each partial partition every step as we traverse is not computationally feasible in a reasonable amount of time, as placement and routing are relatively slow processes and one of our goals is for our partitioning stage to be approximately as fast as the other stages. Therefore, we need a way of estimating them. To do so we have collected preliminary benchmark information for a number of test circuits and analysed them for patterns allowing us to accurately guess area and timing from a given circuit without placing and routing.
 
 \subsection{Results for Time and Area Estimation}
+Figure \ref{AreaVElements} illustrates the relationship between used circuit area and the number of the most common primitive. In every benchmark circuit there were more combinational logic elements than any other primitive, hence we looked at the relationship with the number of combinational logic elements. Table \ref{timing2} duplicates what was shown in Table \ref{timing}, and is shown again for convenience. It details the increase in circuit characteristics between the \ac{TMR} and non \ac{TMR} versions of the circuit, as a percentage of the original (100\% is no change, 200\% is double, and so on) that displayed the greatest decrease in maximum frequency.
 \begin{figure}
     \begin{center}
         \includegraphics[width=0.7\textwidth]{images/area-v-elements.png}
@@ -525,7 +535,7 @@ Area and timing information are more difficult to determine as they rely on the 
 
 
 \begin{table}
-    \begin{adjustwidth}{-1cm}{-1.1cm}
+    \begin{adjustwidth}{-1cm}{-1cm}
         \begin{tabularx}{1.1\textwidth}{XXXXXXXXXXXXXXXXXXXXXXXXXX}
            \toprule
             Name & Num. Latches & Num. \acp{LUT} & FPGA Width & Num. Wire Segments & Used Area & Frequency & CPU Time\\
@@ -533,8 +543,8 @@ Area and timing information are more difficult to determine as they rely on the 
 pdc 200 width   & N/A   & 300\% & 176\% & 104\% & 301\% &  75\% & 425\%\\
           \bottomrule
         \end{tabularx}
-        \caption{Percent increase in circuit with maximum path slowdown}
-        \label{timing}
+        \caption{Circuit characteristics of benchmark with greatest frequency slowdown, expressed as a percentage of non \ac{TMR} base\fxwarning{TODO: Make this clearer for this and \ref{timing}}}
+        \label{timing2}
     \end{adjustwidth}
 \end{table}
 \subsection{Discussion of Time and Area Estimation}
@@ -567,6 +577,7 @@ To Do:
     \item Incorporate that single program into \ac{VTR}'s design flow, likely as part of \ac{VPR}.
 \end{itemize}
 \section{Schedule}
+Figure \ref{Schedule} illustrates our anticipated schedule from the beginning of October 2011 until Thesis B is due. The rest of the year is allocated towards an initial partitioner implementation and preliminary results. December is set aside for Christmas holidays, and then most of 2012 will be used for collecting results and further refining the partitioning algorithm on the basis of the collected results.
 \begin{figure}
     \begin{center}
         \includegraphics[width=\textwidth]{images/schedule.png}
@@ -581,12 +592,13 @@ Our results collected so far reflect only \ac{TMR} in general, rather than our s
 
 \appendix
 \chapter{Results}
+This appendix tabulates the data used to calculate the relationships discussed in this thesis.
 \begin{table}
 \footnotesize
 \begin{adjustwidth}{-1cm}{-1.2cm}
-    \begin{tabularx}{1.1\textwidth}{XXXXlXXXX}
+    \begin{tabularx}{1.1\textwidth}{llllp{1.5cm}p{2.2cm}p{1.5cm}X}
     \toprule
-Name & Num. Latches & Num. LUTs & FPGA Width & $\begin{matrix}\text{Channel}\\\text{Width}\end{matrix}$ & Av. No. Wire\newline Segments & Maximum Frequency (MHz) & CPU Time (s)\\\midrule
+Name & Num. Latches & Num. LUTs & FPGA Width & Channel Width & Av. No. Wire\newline Segments & Frequency (MHz) & CPU Time (s)\\\midrule
 alu4 & 0 & 1522 & 15 & 200 & 4.76391 &225 & 34.566\\
 alu4TMR & 0 & 4574 & 25 & 200 & 5.29148 &188 & 132.41\\\midrule
 apex2 & 0 & 1878 & 16 & 200 & 5.5124 &216 & 47.45\\
@@ -635,9 +647,9 @@ tsengTMR & 1155 & 3260 & 22 & 200 & 3.82465 &164 & 118.583\\\bottomrule
 \begin{table}
 \footnotesize
 \begin{adjustwidth}{-1cm}{-1.2cm}
-    \begin{tabularx}{1.1\textwidth}{XXXXlXXXX}
+    \begin{tabularx}{1.1\textwidth}{llllp{1.5cm}p{2.2cm}p{1.5cm}X}
     \toprule
-Name & Num. Latches & Num. LUTs & FPGA Width & $\begin{matrix}\text{Channel}\\\text{Width}\end{matrix}$ & Av. No. Wire\newline Segments & Maximum Frequency (MHz) & CPU Time (s)\\\midrule
+Name & Num. Latches & Num. LUTs & FPGA Width & Channel Width & Av. No. Wire\newline Segments & Frequency (MHz) & CPU Time (s)\\\midrule
 alu4 & 0 & 1522 & 15 & 60 & 4.79098 & 241 & 22.625\\
 alu4TMR & 0 & 4574 & 25 & 60 & 5.38017 & 193 & 101.828\\\midrule
 apex2 & 0 & 1878 & 16 & 60 & 5.53926 & 212 & 34.256\\
@@ -686,9 +698,9 @@ tsengTMR & 1155 & 3260 & 22 & 60 & 3.93092 & 164 & 79.889\\\bottomrule
 \begin{table}
 \footnotesize
 \begin{adjustwidth}{-1cm}{-1.2cm}
-    \begin{tabularx}{1.1\textwidth}{XXXXlXXXX}
+    \begin{tabularx}{1.1\textwidth}{llllp{1.5cm}p{2.2cm}p{1.5cm}X}
     \toprule
-Name & Num. Latches & Num. LUTs & FPGA Width & $\begin{matrix}\text{Channel}\\\text{Width}\end{matrix}$ & Av. No. Wire\newline Segments & Maximum Frequency (MHz) & CPU Time (s)\\\midrule
+Name & Num. Latches & Num. LUTs & FPGA Width & Channel Width & Av. No. Wire\newline Segments & Frequency (MHz) & CPU Time (s)\\\midrule
 alu4 & 0 & 1522 & 15 & 34 & 5.61203 & 196 & 88.236\\
 alu4TMR & 0 & 4574 & 25 & 48 & 5.6293 & 182 & 245.343\\\midrule
 apex2 & 0 & 1878 & 16 & 48 & 5.78099 & 204 & 80.968\\
