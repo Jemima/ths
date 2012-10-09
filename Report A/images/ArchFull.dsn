@@ -17,7 +17,7 @@ download a copy.-->
 			<SHEETS>1 of 1</SHEETS>
 			<SHOWS>1</SHOWS>
 			<DATE></DATE>
-			<GRID spacing='100.00000' snap='1'/>
+			<GRID spacing='100.00000' snap='0'/>
 		</DETAILS>
 		<STYLE id='2'>
 			<STYLE>0</STYLE>

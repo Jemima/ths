@@ -130,8 +130,8 @@ The remainder of this chapter provides an overview of these technologies, discus
 \fxnote{TODO: Use own image. Wilton lecture notes have no license/copyright notice/etc attached, so don't know if this usage is actually allowed. Plus, doesn't look that good.}
 \begin{figure}
     \begin{center}
-        \includegraphics[width=0.6\textwidth]{images/fpga-arch.png}
-        \caption{Island Style FPGA\cite{WiltonLecture}}
+        \includegraphics[width=0.6\textwidth]{images/ArchFull.pdf}
+        \caption{Island Style FPGA}
         \label{FPGAArch}
     \end{center}
 \end{figure}
@@ -144,7 +144,6 @@ Each \ac{CLB} is a cluster of smaller blocks, called \acp{BLE}, with each \ac{BL
 Programming an \ac{FPGA} involves loading in a bitstream which describes all the component values (i.e. contents of the configuration memory for each cell) for a circuit, accomplished through writing the bitstream to a special configuration port on the \ac{FPGA}. A number of \acp{FPGA} also allow for run time programming, or reconfiguration, of parts of a circuit through loading the bitstream for only the section of interest while the rest of the \ac{FPGA} keeps running.
 
 \fxnote{Check grammar in this next section.}
-\newpage\fxnote{newpage is just here to fix formatting}
 There are four main technologies used to implement the configuration memory in \acp{FPGA}:
 \begin{itemize}
 \item \ac{SRAM}, which gives the highest density devices and includes the Virtex-5 family this thesis focuses on; however they are volatile and must be reprogrammed every power up from an external configuration memory;
@@ -209,19 +208,19 @@ There are three main categories of \ac{SEU} hardening techniques\cite{HardeningT
 \end{itemize}
 While hardened \acp{FPGA} are available, they typically lag well behind mainstream commercial offerings\cite{VFPGATMR}, thus solutions which can be implemented on mainstream commercial \ac{FPGA} hardware are desirable. Additionally, there is very little point hardening an \ac{FPGA} and not its configuration buffers and memory which take up far more surface area\cite{FPGAArch} and are thus even more vulnerable.
 For these reasons \ac{TMR}, requiring no custom hardware and providing \ac{SEU} protection against both transient and functional errors, is one of the more popular \ac{SEU} hardening techniques even though it comes at the cost of more than tripling area and greatly increasing power usage.
-
+Table \ref{HardeningComparison} details power usage, operating speed, hardness, and required area for flip flops which have been hardened using the techniques listing within the table.
 \begin{table}
     \begin{tabularx}{\textwidth}{X|XXXl}
     \toprule
-   & POWER & SPEED & HARDNESS (e/b-d) & AREA ($\mbox{mm}^2$)\\
+   & Power ($\mu$W) & Speed (ns) & HARDNESS (e/b-d) & AREA ($\mbox{mm}^2$)\\
    \midrule
-Std Low Power & Rise – 0.7 $\mu$ W \newline Fall – 0.2 $\mu$ W & Rise – 0.21 ns \newline Fall – 0.27 ns & $10E-8$ \newline 1 node & 360\\
+Standard & Rise – 0.7 \newline Fall – 0.2 & Rise – 0.21\newline Fall – 0.27& $10^{-8}$ \newline 1 node & 360\\
    \midrule
-Increased IDRIVE & Rise – 1.0 $\mu$ W \newline Fall – 0.2 $\mu$ W & Rise – 0.16 ns \newline Fall – 0.15 ns & $2\times10E-9$ \newline 1 node & 460\\
+Increased Drive Current & Rise – 1.0 \newline Fall – 0.2 & Rise – 0.16\newline Fall – 0.15& $2\times10^{-9}$ \newline 1 node & 460\\
    \midrule
-\ac{TMR} & Rise – 1.72 $\mu$ W \newline Fall – 1.27 $\mu$ W & Rise – 0.21 ns \newline Fall – 0.27 ns & $10E-11$ \newline 2 node & 1200\\
+\ac{TMR} & Rise – 1.72 \newline Fall – 1.27 & Rise – 0.2\newline Fall – 0.27 & $10^{-11}$ \newline 2 node & 1200\\
    \midrule
-DICE & Rise - 1.4$\mu$ W \newline Fall - 1.1$\mu$  W & Rise - 0.96 ns \newline Fall - 0.97ns & $1.6\times10E-10$ \newline 2 node & 520 \\
+\ac{DICE} & Rise - 1.4 \newline Fall - 1.1 & Rise - 0.96\newline Fall - 0.97& $1.6\times10^{-10}$ \newline 2 node & 520 \\
 \bottomrule
 \end{tabularx}
     \caption{Comparison of hardening techniques\cite{HardeningTechniques}}
@@ -385,7 +384,8 @@ Table \ref{ArchTab} details the number of primitives per \ac{CLB}. Primarily of 
 
 \section{Methodology}\label{BenchmarkMethod}
 To start with, we wanted to collect rough estimates on the impact of partitioning a circuit to provide a baseline with which to compare our partitioning algorithm, and to develop the rough estimates needed for our partitioning algorithm. To that end we first created a simple Python script to take an arbitrary input circuit, triplicate it, and insert arbitrary voter logic. These triplicated circuits were then placed and routed by \ac{VPR}, as were the original benchmarks, and the results compared.
-\newpage\fxnote{newpage just her to fix formatting}
+\newpage
+\fxnote{Just to fix formatting. Temporary}
 \ac{VPR} is used with our architecture file (described in Section \ref{ArchFile}) and the command line options
 \begin{lstlisting}
 VPR architecture.xml circuit.blif --full_stats[ --route_chan_width x]
