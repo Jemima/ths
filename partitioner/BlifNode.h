@@ -9,6 +9,7 @@ public:
     list<string> outputs;
     string type;
     string contents;
+    unsigned long id;
     BlifNode(void);
     ~BlifNode(void);
     static BlifNode* MakeNode(string type, list<string> params);

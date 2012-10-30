@@ -2,6 +2,7 @@
 #include "Blif.h"
 #include <list>
 #include <unordered_map>
+#include <sstream>
 
 const double MAX_AREA = 4; //Max area allowed to be used per partition
 const double MAX_TIME = 10; //Max time allowed for pipeline to finish ( = steps/clock+constant)
@@ -16,8 +17,14 @@ enum NodeState{
     Used
 };
 
-void TMR(){
-    cout << "TMR'd" << endl;
+void TMR(Model* model){
+    static int counter = 0;
+    counter++;
+    stringstream path;
+    path << "out" << counter << ".blif";
+    model->MakeSignalList();
+    model->MakeIOList();
+    Blif::Write(path.str(), model);
 }
 
 int main(int argc, char * argv[])
@@ -30,8 +37,8 @@ int main(int argc, char * argv[])
     Model* model = blif->main;
 
     list<BlifNode*> queue;
-
-    unordered_map<BlifNode*, NodeState> nodes;
+    unsigned partitionCounter = 1;
+    unordered_map<unsigned long, NodeState> nodes;
     for each(Signal* sig in model->inputs){ //Start off with all nodes reading from an input in the queue
         for each(BlifNode* node in sig->sinks){
             queue.push_back(node);
@@ -42,21 +49,26 @@ int main(int argc, char * argv[])
     double latency = LATENCY_ESTIMATE; // Estimate of latency, starts at voter latency.
     double criticalLength = 0; //Number of clock cycles needed for the pipeline i.e. number of latches (for .names and .latch only blif files)
     Model* current = new Model();
+    stringstream currName;
+    currName << "partition" << model->name << partitionCounter;
+    current->name = currName.str();
 
 
     while(queue.size() > 0){
-        BlifNode* curr = queue.front();
+        BlifNode* curr = new BlifNode; //Make a new node and copy the front of the queue. Keep the original model intact.
+        *curr = *queue.front();
         queue.pop_front();
-        if(nodes[curr] != Unused){ //Already used, so we've detected a cycle
-            if(nodes[curr] == Current) //Cycle within current subcircuit, so skip it, may do something special if needed
+        if(nodes[curr->id] != Unused){ //Already used, so we've detected a cycle
+            if(nodes[curr->id] == Current) //Cycle within current subcircuit, so skip it, may do something special if needed
                 continue;
-            else if(nodes[curr] == Used){ //Cycle, but back to a previous voter subcircuit
+            else if(nodes[curr->id] == Used){ //Cycle, but back to a previous voter subcircuit
                 continue;
             } else {
                 throw "Shouldn't ever reach here, invalid NodeState";
             }
         }
-        nodes[curr] = Current;
+        nodes[curr->id] = Current;
+        current->AddNode(curr);
         double nodearea = 1;
         double nodesteps = 0;
         if(curr->type == ".latch")
@@ -69,7 +81,16 @@ int main(int argc, char * argv[])
         }
         if(area+nodearea > MAX_AREA || 
             time > MAX_TIME){
-            TMR(); // Do all the TMR'ing stuff. Sets up for the current node to be added to a new voter subcircuit
+            TMR(current); // Do all the TMR'ing stuff. Sets up for the current node to be added to a new voter subcircuit
+            partitionCounter++;
+            BlifNode* oldCurr = new BlifNode; //Deleting the model frees the memory for the associated nodes which includes curr.
+            delete current;
+            current = new Model;
+            curr = oldCurr;
+            currName.str("");
+            currName.clear();
+            currName << "partition" << model->name << partitionCounter;
+            current->name = currName.str();
             area = VOTER_AREA;
             latency = LATENCY_ESTIMATE;
             criticalLength = 0;
@@ -85,6 +106,9 @@ int main(int argc, char * argv[])
             }
         }
     }
+    //TMR the remaining node
+    TMR(current);
+    delete current;
     return 0;
 }
 

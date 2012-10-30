@@ -14,6 +14,7 @@ public:
     ~Blif(void);
     unordered_map<string, Model*> models;
     Model *main;
+    static void Write(string path, Model* model);
 private:
     list<string> Blif::getParams(string line, string& nodeName);
     string getBlifLine(ifstream& stream);

@@ -12,7 +12,10 @@ BlifNode::~BlifNode(void)
 }
 
 BlifNode* BlifNode::MakeNode(string type, list<string> params){
+    static unsigned long _id = 0;
+    _id++;
     BlifNode* node = new BlifNode();
+    node->id = _id;
     node->type = type;
     if(type == ".names"){
         node->outputs.push_back(params.back()); //Last element is the single output

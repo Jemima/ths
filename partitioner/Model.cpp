@@ -5,6 +5,11 @@ Model::Model(void)
 {
 }
 
+Model::Model(Model* model)
+{
+    name = model->name;
+}
+
 
 Model::~Model(void)
 {
@@ -18,6 +23,10 @@ Model::~Model(void)
 
 
 void Model::MakeSignalList(){
+    list<Signal*> oldSignals;
+    for each(pair<string, Signal*> s in signals){
+        oldSignals.push_back(s.second);
+    }
     for each(BlifNode* node in nodes){
         for each(string s in node->inputs){
             if(signals.count(s) == 0){
@@ -31,5 +40,51 @@ void Model::MakeSignalList(){
             }
             signals[s]->sources.push_back(node);
         }
+    }
+    
+    //If a signal appears in the input list but is never used remove it.
+    for each(Signal* s in inputs){
+        if(signals.count(s->name) == 0)
+            inputs.remove(s);
+    }
+    
+    //If a signal appears in the output list but is never used remove it
+    for each(Signal* s in outputs){
+        if(signals.count(s->name) == 0)
+            outputs.remove(s);
+    }
+
+    //Delete any newly unused signals. Because of our previous two loops, they won't be in inputs or outputs either.
+    for each(Signal* s in oldSignals){
+        if(signals.count(s->name) == 0)
+            delete s;
+    }
+}
+
+
+void Model::AddNode(BlifNode* node){
+    nodes.push_back(node);
+    for each(string s in node->inputs){
+        if(signals.count(s) == 0){
+            signals[s] = new Signal(s);
+        }
+        signals[s]->sinks.push_back(node);
+    }
+    for each(string s in node->outputs){
+        if(signals.count(s) == 0){
+            signals[s] = new Signal(s);
+        }
+        signals[s]->sources.push_back(node);
+    }
+}
+
+void Model::MakeIOList(){
+    inputs.clear();
+    outputs.clear();
+    for each(pair<string, Signal*> s in signals){
+        if(s.second->sinks.size() == 0)
+            outputs.push_back(s.second);
+        if(s.second->sources.size() == 0)
+            inputs.push_back(s.second);
     }
 }

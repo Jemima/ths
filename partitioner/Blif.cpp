@@ -107,3 +107,22 @@ std::string Blif::getBlifLine(ifstream& stream)
     }while(cont && stream.good());
     return line;
 }
+
+
+void Blif::Write(string path, Model* model){
+    ofstream ofile(path);
+    ofile << ".model " << model->name << endl << ".inputs ";
+    for each(Signal* s in model->inputs){
+        ofile << s->name << " ";
+    }
+    ofile << endl << ".outputs ";
+    for each(Signal* s in model->outputs){
+        ofile << s->name << " ";
+    }
+    ofile << endl;
+
+    for each(BlifNode* node in model->nodes){
+        ofile << node->contents << endl;
+    }
+    ofile << ".end";
+}

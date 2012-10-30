@@ -10,6 +10,7 @@ class Model
 {
 public:
     Model(void);
+    Model(Model* model);
     ~Model(void);
     list<Signal*> inputs;
     list<Signal*> outputs;
@@ -18,5 +19,9 @@ public:
     string name;
 
     void MakeSignalList();
+
+    void MakeIOList();
+
+    void AddNode(BlifNode* node);
 };
 
