@@ -9,7 +9,8 @@ using namespace std;
 class Model
 {
 public:
-    Model(void);
+    Model();
+    Model(double latency);
     Model(Model* model);
     ~Model(void);
     list<Signal*> inputs;
@@ -17,11 +18,18 @@ public:
     list<BlifNode*> nodes;
     unordered_map<string, Signal*> signals;
     string name;
+    double _latency;
 
     void MakeSignalList();
 
     void MakeIOList();
 
     void AddNode(BlifNode* node);
+
+    unsigned CalculateCriticalPath();
+
+    double CalculateLatency();
+
+    double CalculateArea();
 };
 

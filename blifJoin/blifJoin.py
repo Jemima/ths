@@ -1,10 +1,13 @@
 import re
 import sys
-
+import os
+import glob
 def readContinuedLine(f):
     buffer = ""
     while(True):
         buffer = buffer + f.readline()
+        if len(buffer) == 0 or buffer.isspace():
+         continue
        # print("%s, %s"%(buffer, buffer[-2]))
         if buffer[-2] == '\\':
             buffer = buffer[:-2]
@@ -12,16 +15,20 @@ def readContinuedLine(f):
             break
     return buffer.strip()
 
-if(len(sys.argv) < 4):
-   print("Usage: blifJoin outfile \"out1 out2 out3 out3\" infile1 infile2 infile3...")
+if(len(sys.argv) < 5):
+   print("Usage: blifJoin outfile \"in1 in2...\"\"out1 out2...\" infile1 infile2...\n       OR\n       blifJoin outfile \"in1 in2...\"\"out1 out2...\"  -f searchpath")
    exit(1)
+
+files = sys.argv[4:]
+if(sys.argv[4] == "-f"):
+   files = glob.glob(sys.argv[5])
 signalsIn = set()
 signalsOut = set()
 subckts = ""
 body = ""
 counterName = 1
-for n in range(3, len(sys.argv)):
-   file = open(sys.argv[n])
+for path in files:
+   file = open(path)
    buffer = ""
    line = 0
    name = ""
@@ -61,13 +68,12 @@ for n in range(3, len(sys.argv)):
    file.close()
    counterName+=1;
 
-   
+print "Writing to "+sys.argv[1]
 file = open(sys.argv[1], "w")
 file.write(".model main\n.inputs ")
-signalsIn = signalsIn-signalsOut #Keep only inputs not driven by an output within the partition
-file.write(' '.join(map(str, signalsIn)) )
-file.write("\n.outputs ")
 file.write(sys.argv[2]) #Assume we have the list of outputs passed on the command line
+file.write("\n.outputs ")
+file.write(sys.argv[3]) #Assume we have the list of outputs passed on the command line
 file.write("\n")
 file.write(subckts)
 file.write("\n.end\n\n")

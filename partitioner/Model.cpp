@@ -1,13 +1,18 @@
 #include "Model.h"
 
-
-Model::Model(void)
+Model::Model()
 {
+    _latency = 0;
+}
+Model::Model(double latency)
+{
+    _latency = latency;
 }
 
 Model::Model(Model* model)
 {
     name = model->name;
+    _latency = model->_latency;
 }
 
 
@@ -87,4 +92,16 @@ void Model::MakeIOList(){
         if(s.second->sources.size() == 0)
             inputs.push_back(s.second);
     }
+}
+
+
+unsigned Model::CalculateCriticalPath(){
+    return 1;
+}
+double Model::CalculateLatency(){
+    return 0;
+}
+
+double Model::CalculateArea(){
+    return nodes.size();
 }

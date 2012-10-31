@@ -3,11 +3,13 @@
 #include <list>
 #include <unordered_map>
 #include <sstream>
+#include <boost/program_options.hpp>
+namespace po = boost::program_options;
 
 const double MAX_AREA = 4; //Max area allowed to be used per partition
 const double MAX_TIME = 10; //Max time allowed for pipeline to finish ( = steps/clock+constant)
 const double VOTER_AREA = 2;
-const double LATENCY_ESTIMATE = 1;
+const double CIRCUIT_LATENCY = 1;
 
 using namespace std;
 
@@ -29,12 +31,67 @@ void TMR(Model* model, string outPath){
 
 int main(int argc, char * argv[])
 {
-    if(argc != 3){
-        cout << "Usage: partitioner infile.blif outpath \nCreates multiple files called outpathN.blif, where N is an integer." << endl;
+    po::options_description desc("Usage");
+    desc.add_options()
+        ("help,h", "produce help message")
+        ("infile,f", po::value<string>(), "input file")
+        ("outfile,o", po::value<string>(), "output path prefix")
+        ("voter-area,v", po::value<double>(), "area of voter circuit")
+        ("voter-latency,l", po::value<double>(), "constant delay in voter circuit elements")
+        ("max-area,a", po::value<double>(), "maximum area per partition")
+        ("max-time,t", po::value<double>(), "maximum time per partition")
+        ("quiet,q", "suppress all output besides output list")
+    ;
+
+    po::variables_map vm;
+    po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::notify(vm);    
+
+    if (vm.count("help")) {
+        cout << desc << endl;
         return 1;
     }
-    string outPath = string(argv[2]);
-    Blif* blif = new Blif(argv[1]);
+    bool error = false;
+    if(vm.count("infile") == 0){
+        cout << "Must specify an input file" << endl;
+        error = true;
+    }
+    if(vm.count("outfile") == 0){
+        cout << "Must specify an output path prefix" << endl;
+        error = true;
+    }
+    bool quiet = false;
+    if(vm.count("quiet") != 0)
+        quiet = true;
+    
+    double voterArea = VOTER_AREA;
+    if(vm.count("voter-area")){
+        voterArea = vm["voter-area"].as<double>();
+        if(!quiet) cout << "Setting voter area"<< endl;
+    }
+    double area = voterArea;
+    double voterLatency = CIRCUIT_LATENCY;
+    if(vm.count("voter-latency")){
+        voterLatency = vm["voter-latency"].as<double>();
+        if(!quiet) cout << "Setting voter latency"<< endl;
+    }
+    double maxArea = MAX_AREA;
+    if(vm.count("max-area")){
+        maxArea = vm["max-area"].as<double>();
+        if(!quiet) cout << "Setting max area"<< endl;
+    }
+    double maxTime = MAX_TIME;
+    if(vm.count("max-time")){
+        maxTime = vm["max-time"].as<double>();
+        if(!quiet) cout << "Setting max time"<< endl;
+    }
+
+    if(error){
+        cout << desc << endl;
+        return 1;
+    }
+    string outPath = vm["outfile"].as<string>();
+    Blif* blif = new Blif((char*)vm["infile"].as<string>().c_str());
     Model* model = blif->main;
 
     list<BlifNode*> queue;
@@ -46,19 +103,19 @@ int main(int argc, char * argv[])
         }
     }
     
-    double area = VOTER_AREA; //Estimate of area. Starts at voter area
-    double latency = LATENCY_ESTIMATE; // Estimate of latency, starts at voter latency.
-    double criticalLength = 0; //Number of clock cycles needed for the pipeline i.e. number of latches (for .names and .latch only blif files)
     Model* current = new Model();
     stringstream currName;
     currName << "partition" << model->name << partitionCounter;
     current->name = currName.str();
 
-
     while(queue.size() > 0){
+        bool toDelete = false;
         BlifNode* curr = new BlifNode; //Make a new node and copy the front of the queue. Keep the original model intact.
         *curr = *queue.front();
         queue.pop_front();
+        if(curr->outputs.front()[0] == 'o'){
+            cout << "Reached an output for debugging" << endl;
+        }
         if(nodes[curr->id] != Unused){ //Already used, so we've detected a cycle
             if(nodes[curr->id] == Current) //Cycle within current subcircuit, so skip it, may do something special if needed
                 continue;
@@ -70,18 +127,9 @@ int main(int argc, char * argv[])
         }
         nodes[curr->id] = Current;
         current->AddNode(curr);
-        double nodearea = 1;
-        double nodesteps = 0;
-        if(curr->type == ".latch")
-            nodesteps++;
-        double time = 0;
-        double nodelatency = 0;
-        if(latency || nodelatency != 0){
-            double frequency = 1.0/(latency+nodelatency);
-            time = (criticalLength+nodesteps)/frequency;
-        }
-        if(area+nodearea > MAX_AREA || 
-            time > MAX_TIME){
+        double time = model->CalculateLatency();
+        if(model->CalculateArea()+voterArea > maxArea || 
+            model->CalculateLatency()+voterLatency > maxTime){
             TMR(current, outPath); // Do all the TMR'ing stuff. Sets up for the current node to be added to a new voter subcircuit
             partitionCounter++;
             BlifNode* oldCurr = new BlifNode; //Deleting the model frees the memory for the associated nodes which includes curr.
@@ -92,24 +140,26 @@ int main(int argc, char * argv[])
             currName.clear();
             currName << "partition" << model->name << partitionCounter;
             current->name = currName.str();
-            area = VOTER_AREA;
-            latency = LATENCY_ESTIMATE;
-            criticalLength = 0;
+            toDelete = true; //We need to delete our node copy once we add the neighbours to the queue.
         }
-        area += nodearea;
-        criticalLength += nodesteps;
 
         for each(string sig in curr->outputs){
             for each(BlifNode* node in model->signals[sig]->sinks){
                 queue.push_back(node);
             }
         }
+        if(toDelete)
+            delete curr;
     }
     //TMR the remaining node if it exists
     if(current->nodes.size() > 0){
         TMR(current, outPath);
     }
     delete current;
+    for each (Signal * s in model->inputs){
+        cout << s->name << " ";
+    }
+    cout << "\n";
     for each (Signal * s in model->outputs){
         cout << s->name << " ";
     }
