@@ -17,11 +17,11 @@ enum NodeState{
     Used
 };
 
-void TMR(Model* model){
+void TMR(Model* model, string outPath){
     static int counter = 0;
     counter++;
     stringstream path;
-    path << "out" << counter << ".blif";
+    path << outPath << counter << ".blif";
     model->MakeSignalList();
     model->MakeIOList();
     Blif::Write(path.str(), model);
@@ -29,10 +29,11 @@ void TMR(Model* model){
 
 int main(int argc, char * argv[])
 {
-    if(argc != 2){
-        cout << "Usage: partitioner infile.blif" << endl;
+    if(argc != 3){
+        cout << "Usage: partitioner infile.blif outpath \nCreates multiple files called outpathN.blif, where N is an integer." << endl;
         return 1;
     }
+    string outPath = string(argv[2]);
     Blif* blif = new Blif(argv[1]);
     Model* model = blif->main;
 
@@ -81,7 +82,7 @@ int main(int argc, char * argv[])
         }
         if(area+nodearea > MAX_AREA || 
             time > MAX_TIME){
-            TMR(current); // Do all the TMR'ing stuff. Sets up for the current node to be added to a new voter subcircuit
+            TMR(current, outPath); // Do all the TMR'ing stuff. Sets up for the current node to be added to a new voter subcircuit
             partitionCounter++;
             BlifNode* oldCurr = new BlifNode; //Deleting the model frees the memory for the associated nodes which includes curr.
             delete current;
@@ -95,8 +96,6 @@ int main(int argc, char * argv[])
             latency = LATENCY_ESTIMATE;
             criticalLength = 0;
         }
-        
-        cout << curr->type << endl;
         area += nodearea;
         criticalLength += nodesteps;
 
@@ -106,9 +105,15 @@ int main(int argc, char * argv[])
             }
         }
     }
-    //TMR the remaining node
-    TMR(current);
+    //TMR the remaining node if it exists
+    if(current->nodes.size() > 0){
+        TMR(current, outPath);
+    }
     delete current;
+    for each (Signal * s in model->outputs){
+        cout << s->name << " ";
+    }
+    cout << endl;
     return 0;
 }
 

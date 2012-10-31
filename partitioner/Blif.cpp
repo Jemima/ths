@@ -8,7 +8,7 @@ Blif::Blif(char * path)
     main = new Model();
     ifstream stream = ifstream(path, ios::in);
     if(stream.good() == false){
-        cout << "Error reading from " << path << endl;
+        cerr << "Error reading from " << path << endl;
         return;
     }
     string temp = getBlifLine(stream);
@@ -79,6 +79,8 @@ Blif::~Blif(void)
 // "blah\
 // something else"
 // turns into "blah something else"
+// Ignores leading blank lines.
+// Ignores comments
 std::string Blif::getBlifLine(ifstream& stream)
 {
     string line = "";
@@ -87,6 +89,12 @@ std::string Blif::getBlifLine(ifstream& stream)
         cont = false;
         string temp;
         getline(stream, temp);
+
+        //If there's a comment on this line ignore everything afterwards
+        unsigned pos = temp.find('#');
+        if(pos != -1){
+            temp = temp.substr(0, pos);
+        }
         bool hasContent = false;
         for (unsigned n=0;n<temp.length();n++)
         {

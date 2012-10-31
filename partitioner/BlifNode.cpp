@@ -33,9 +33,9 @@ BlifNode* BlifNode::MakeNode(string type, list<string> params){
             node->inputs.push_back(params.front());
         }
     } else if (type == ".subckt"){ //.subckt model-name formal1=actual1 formal2=actual2...
-        cout << ".subckt not implemented yet" << endl; // TODO: not implemented
+        cerr << ".subckt not implemented yet" << endl; // TODO: not implemented
     } else {
-        cout << "Error, unssupported node" << endl;
+        cerr << "Error, unsupported node" << endl;
     }
     return node;
 }
