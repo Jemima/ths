@@ -18,10 +18,10 @@ Model::Model(Model* model)
 
 Model::~Model(void)
 {
-    for each(BlifNode* node in nodes){
+    for(BlifNode* node : nodes){
         delete node;
     }
-    for each(pair<string, Signal*> s in signals){
+    for(pair<string, Signal*> s : signals){
         delete s.second;
     }
 }
@@ -29,17 +29,17 @@ Model::~Model(void)
 
 void Model::MakeSignalList(){
     list<Signal*> oldSignals;
-    for each(pair<string, Signal*> s in signals){
+    for(pair<string, Signal*> s : signals){
         oldSignals.push_back(s.second);
     }
-    for each(BlifNode* node in nodes){
-        for each(string s in node->inputs){
+    for(BlifNode* node : nodes){
+        for(string s : node->inputs){
             if(signals.count(s) == 0){
                 signals[s] = new Signal(s);
             }
             signals[s]->sinks.push_back(node);
         }
-        for each(string s in node->outputs){
+        for(string s : node->outputs){
             if(signals.count(s) == 0){
                 signals[s] = new Signal(s);
             }
@@ -48,19 +48,19 @@ void Model::MakeSignalList(){
     }
     
     //If a signal appears in the input list but is never used remove it.
-    for each(Signal* s in inputs){
+    for(Signal* s : inputs){
         if(signals.count(s->name) == 0)
             inputs.remove(s);
     }
     
     //If a signal appears in the output list but is never used remove it
-    for each(Signal* s in outputs){
+    for(Signal* s : outputs){
         if(signals.count(s->name) == 0)
             outputs.remove(s);
     }
 
     //Delete any newly unused signals. Because of our previous two loops, they won't be in inputs or outputs either.
-    for each(Signal* s in oldSignals){
+    for(Signal* s : oldSignals){
         if(signals.count(s->name) == 0)
             delete s;
     }
@@ -69,13 +69,13 @@ void Model::MakeSignalList(){
 
 void Model::AddNode(BlifNode* node){
     nodes.push_back(node);
-    for each(string s in node->inputs){
+    for(string s : node->inputs){
         if(signals.count(s) == 0){
             signals[s] = new Signal(s);
         }
         signals[s]->sinks.push_back(node);
     }
-    for each(string s in node->outputs){
+    for(string s : node->outputs){
         if(signals.count(s) == 0){
             signals[s] = new Signal(s);
         }
@@ -86,7 +86,7 @@ void Model::AddNode(BlifNode* node){
 void Model::MakeIOList(){
     inputs.clear();
     outputs.clear();
-    for each(pair<string, Signal*> s in signals){
+    for(pair<string, Signal*> s : signals){
         if(s.second->sinks.size() == 0)
             outputs.push_back(s.second);
         if(s.second->sources.size() == 0)

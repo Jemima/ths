@@ -69,7 +69,7 @@ int main(int argc, char * argv[])
         voterArea = vm["voter-area"].as<double>();
         if(!quiet) cout << "Setting voter area"<< endl;
     }
-    double area = voterArea;
+    //double area = voterArea;
     double voterLatency = CIRCUIT_LATENCY;
     if(vm.count("voter-latency")){
         voterLatency = vm["voter-latency"].as<double>();
@@ -97,8 +97,8 @@ int main(int argc, char * argv[])
     list<BlifNode*> queue;
     unsigned partitionCounter = 1;
     unordered_map<unsigned long, NodeState> nodes;
-    for each(Signal* sig in model->inputs){ //Start off with all nodes reading from an input in the queue
-        for each(BlifNode* node in sig->sinks){
+    for(Signal* sig : model->inputs){ //Start off with all nodes reading from an input in the queue
+        for(BlifNode* node : sig->sinks){
             queue.push_back(node);
         }
     }
@@ -127,7 +127,7 @@ int main(int argc, char * argv[])
         }
         nodes[curr->id] = Current;
         current->AddNode(curr);
-        double time = model->CalculateLatency();
+        //double time = model->CalculateLatency();
         if(model->CalculateArea()+voterArea > maxArea || 
             model->CalculateLatency()+voterLatency > maxTime){
             TMR(current, outPath); // Do all the TMR'ing stuff. Sets up for the current node to be added to a new voter subcircuit
@@ -143,8 +143,8 @@ int main(int argc, char * argv[])
             toDelete = true; //We need to delete our node copy once we add the neighbours to the queue.
         }
 
-        for each(string sig in curr->outputs){
-            for each(BlifNode* node in model->signals[sig]->sinks){
+        for(string sig : curr->outputs){
+            for(BlifNode* node : model->signals[sig]->sinks){
                 queue.push_back(node);
             }
         }
@@ -156,11 +156,11 @@ int main(int argc, char * argv[])
         TMR(current, outPath);
     }
     delete current;
-    for each (Signal * s in model->inputs){
+    for(Signal * s : model->inputs){
         cout << s->name << " ";
     }
     cout << "\n";
-    for each (Signal * s in model->outputs){
+    for(Signal * s : model->outputs){
         cout << s->name << " ";
     }
     cout << endl;

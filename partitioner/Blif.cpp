@@ -3,23 +3,25 @@
 #include "BlifNode.h"
 
 
-Blif::Blif(char * path)
+Blif::Blif(const char * path)
 {
     main = new Model();
-    ifstream stream = ifstream(path, ios::in);
+    ifstream stream("path", ios::in);
     if(stream.good() == false){
         cerr << "Error reading from " << path << endl;
         return;
     }
     string temp = getBlifLine(stream);
-    char * temp_name = (char*)malloc(sizeof(char)*temp.length()-5);
-    sscanf_s(temp.c_str(), ".model %s", temp_name, temp.length()-6);
-    string name = temp_name;
+    stringstream ss;
+    string name;
+    ss << temp; //Assume that the format is correct i.e. ".model [name]".
+    ss << temp;
+    ss >> name;
     main->name = name;
     //Get the inputs
     temp = getBlifLine(stream);
     list<string> inputNames = getParams(temp, temp);
-    for each(string s in inputNames){
+    for(string s : inputNames){
         Signal* sig = new Signal(s);
         main->inputs.push_back(sig);
         main->signals[s] = sig;
@@ -27,7 +29,7 @@ Blif::Blif(char * path)
     //Get the outputs
     temp = getBlifLine(stream);
     list<string> outputNames = getParams(temp, temp);
-    for each(string s in outputNames){
+    for(string s : outputNames){
         Signal* sig = new Signal(s);
         main->outputs.push_back(sig);
         main->signals[s] = sig;
@@ -68,7 +70,7 @@ Blif::~Blif(void)
 {
     string mainName = main->name;
     delete main;
-    for each(pair<string, Model*> m in models){
+    for(pair<string, Model*> m : models){
         if(m.first == mainName) // We already deleted main, so don't delete it again
             continue;
         delete m.second;
@@ -76,8 +78,7 @@ Blif::~Blif(void)
 }
 
 //Reads in a line, continuing the line on any \ e.g.
-// "blah\
-// something else"
+// "blah\[newline]something else"
 // turns into "blah something else"
 // Ignores leading blank lines.
 // Ignores comments
@@ -91,7 +92,7 @@ std::string Blif::getBlifLine(ifstream& stream)
         getline(stream, temp);
 
         //If there's a comment on this line ignore everything afterwards
-        unsigned pos = temp.find('#');
+        int pos = temp.find('#');
         if(pos != -1){
             temp = temp.substr(0, pos);
         }
@@ -120,16 +121,16 @@ std::string Blif::getBlifLine(ifstream& stream)
 void Blif::Write(string path, Model* model){
     ofstream ofile(path);
     ofile << ".model " << model->name << endl << ".inputs ";
-    for each(Signal* s in model->inputs){
+    for(Signal* s : model->inputs){
         ofile << s->name << " ";
     }
     ofile << endl << ".outputs ";
-    for each(Signal* s in model->outputs){
+    for(Signal* s : model->outputs){
         ofile << s->name << " ";
     }
     ofile << endl;
 
-    for each(BlifNode* node in model->nodes){
+    for(BlifNode* node : model->nodes){
         ofile << node->contents << endl;
     }
     ofile << ".end";
