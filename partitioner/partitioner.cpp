@@ -107,15 +107,13 @@ int main(int argc, char * argv[])
     stringstream currName;
     currName << "partition" << model->name << partitionCounter;
     current->name = currName.str();
-
+    unsigned counter = 0;
     while(queue.size() > 0){
+        counter++;
         bool toDelete = false;
         BlifNode* curr = new BlifNode; //Make a new node and copy the front of the queue. Keep the original model intact.
         *curr = *queue.front();
         queue.pop_front();
-        if(curr->outputs.front()[0] == 'o'){
-            cout << "Reached an output for debugging" << endl;
-        }
         if(nodes[curr->id] != Unused){ //Already used, so we've detected a cycle
             if(nodes[curr->id] == Current) //Cycle within current subcircuit, so skip it, may do something special if needed
                 continue;
@@ -132,24 +130,28 @@ int main(int argc, char * argv[])
             model->CalculateLatency()+voterLatency > maxTime){
             TMR(current, outPath); // Do all the TMR'ing stuff. Sets up for the current node to be added to a new voter subcircuit
             partitionCounter++;
-            BlifNode* oldCurr = new BlifNode; //Deleting the model frees the memory for the associated nodes which includes curr.
+
+            for each(string sig in curr->outputs){
+                for each(BlifNode* node in model->signals[sig]->sinks){
+                    queue.push_back(node);
+                }
+            }
+           // delete curr;
             delete current;
             current = new Model;
-            curr = oldCurr;
             currName.str("");
             currName.clear();
             currName << "partition" << model->name << partitionCounter;
             current->name = currName.str();
             toDelete = true; //We need to delete our node copy once we add the neighbours to the queue.
-        }
+        } else {
 
-        for each(string sig in curr->outputs){
-            for each(BlifNode* node in model->signals[sig]->sinks){
-                queue.push_back(node);
+            for each(string sig in curr->outputs){
+                for each(BlifNode* node in model->signals[sig]->sinks){
+                    queue.push_back(node);
+                }
             }
         }
-        if(toDelete)
-            delete curr;
     }
     //TMR the remaining node if it exists
     if(current->nodes.size() > 0){
@@ -164,6 +166,7 @@ int main(int argc, char * argv[])
         cout << s->name << " ";
     }
     cout << endl;
+    delete blif;
     return 0;
 }
 
