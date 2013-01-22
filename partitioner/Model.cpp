@@ -87,10 +87,10 @@ void Model::MakeIOList(){
     inputs.clear();
     outputs.clear();
     for each(pair<string, Signal*> s in signals){
-        if(s.second->sinks.size() == 0)
-            outputs.push_back(s.second);
         if(s.second->sources.size() == 0)
             inputs.push_back(s.second);
+        else
+            outputs.push_back(s.second); //If it's not an input always export it as an output. We can trim unused signals later, and currently we can't detect if a signal is used in another partition or not.
     }
 }
 

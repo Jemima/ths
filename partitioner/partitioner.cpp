@@ -6,10 +6,10 @@
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
 
-const double MAX_AREA = 4; //Max area allowed to be used per partition
-const double MAX_TIME = 10; //Max time allowed for pipeline to finish ( = steps/clock+constant)
+const double MAX_AREA = 12000; //Max area allowed to be used per partition
+const double MAX_TIME = 100; //Max time allowed for pipeline to finish ( = steps/clock+constant)
 const double VOTER_AREA = 2;
-const double CIRCUIT_LATENCY = 1;
+const double CIRCUIT_LATENCY = 4;
 
 using namespace std;
 
@@ -97,8 +97,8 @@ int main(int argc, char * argv[])
     list<BlifNode*> queue;
     unsigned partitionCounter = 1;
     unordered_map<unsigned long, NodeState> nodes;
-    for each(Signal* sig in model->inputs){ //Start off with all nodes reading from an input in the queue
-        for each(BlifNode* node in sig->sinks){
+    for each(Signal* sig in model->outputs){ //Start with outputs and work back. Not all nodes may be reachable by an input, but to have an effect on the final circuit all nodes must be reachable from an output.
+        for each(BlifNode* node in sig->sources){
             queue.push_back(node);
         }
     }
@@ -125,14 +125,14 @@ int main(int argc, char * argv[])
         }
         nodes[curr->id] = Current;
         current->AddNode(curr);
-        double time = model->CalculateLatency();
-        if(model->CalculateArea()+voterArea > maxArea || 
-            model->CalculateLatency()+voterLatency > maxTime){
+        double time = current->CalculateLatency();
+        if(current->CalculateArea()+voterArea > maxArea || 
+            current->CalculateLatency()+voterLatency > maxTime){
             TMR(current, outPath); // Do all the TMR'ing stuff. Sets up for the current node to be added to a new voter subcircuit
             partitionCounter++;
 
-            for each(string sig in curr->outputs){
-                for each(BlifNode* node in model->signals[sig]->sinks){
+            for each(string sig in curr->inputs){
+                for each(BlifNode* node in model->signals[sig]->sources){
                     queue.push_back(node);
                 }
             }
@@ -146,8 +146,8 @@ int main(int argc, char * argv[])
             toDelete = true; //We need to delete our node copy once we add the neighbours to the queue.
         } else {
 
-            for each(string sig in curr->outputs){
-                for each(BlifNode* node in model->signals[sig]->sinks){
+            for each(string sig in curr->inputs){
+                for each(BlifNode* node in model->signals[sig]->sources){
                     queue.push_back(node);
                 }
             }

@@ -34,7 +34,7 @@ Blif::Blif(char * path)
     }
 
     temp = getBlifLine(stream);
-    while(stream.good()){
+    do{
         string nodeName;
         list<string> params = getParams(temp, nodeName);
         BlifNode* node = BlifNode::MakeNode(nodeName, params);
@@ -42,9 +42,7 @@ Blif::Blif(char * path)
             temp = getBlifLine(stream);
         }
         main->nodes.push_back(node);
-        if(temp == ".end")
-            break;
-    }
+    } while(temp!= ".end");
     main->MakeSignalList();
     models[name] = main;
 }
@@ -85,6 +83,9 @@ std::string Blif::getBlifLine(ifstream& stream)
 {
     string line = "";
     bool cont = false;
+    if(stream.eof()){ //Once we hit eof .end is implied
+        return ".end";
+    }
     do{
         cont = false;
         string temp;

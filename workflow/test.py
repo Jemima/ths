@@ -35,13 +35,6 @@ def doCall(values, referenceFile, testFile):
       return values
    return True
    
-def handleResults(res):
-   if res != True:
-      print "Failed test for inputs: "+str(res)
-   global counter
-   counter += 1
-      
-   
 if __name__ == '__main__':
    parser = argparse.ArgumentParser(description="Exhaustively simulate a purely combinational circuit using SIS")
    parser.add_argument("reference", type=str, help="Reference blif format circuit")
