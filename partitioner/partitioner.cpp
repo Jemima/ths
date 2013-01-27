@@ -6,10 +6,10 @@
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
 
-const double MAX_AREA = 4; //Max area allowed to be used per partition
-const double MAX_TIME = 10; //Max time allowed for pipeline to finish ( = steps/clock+constant)
+const double MAX_AREA = 12000; //Max area allowed to be used per partition
+const double MAX_TIME = 100; //Max time allowed for pipeline to finish ( = steps/clock+constant)
 const double VOTER_AREA = 2;
-const double CIRCUIT_LATENCY = 1;
+const double CIRCUIT_LATENCY = 4;
 
 using namespace std;
 
@@ -97,7 +97,7 @@ int main(int argc, char * argv[])
     list<BlifNode*> queue;
     unsigned partitionCounter = 1;
     unordered_map<unsigned long, NodeState> nodes;
-    for(Signal* sig : model->inputs){ //Start off with all nodes reading from an input in the queue
+    for(Signal* sig : model->inputs){ //Start with outputs and work back. Not all nodes may be reachable by an input, but to have an effect on the final circuit all nodes must be reachable from an output.
         for(BlifNode* node : sig->sinks){
             queue.push_back(node);
         }
@@ -107,15 +107,13 @@ int main(int argc, char * argv[])
     stringstream currName;
     currName << "partition" << model->name << partitionCounter;
     current->name = currName.str();
-
+    unsigned counter = 0;
     while(queue.size() > 0){
+        counter++;
         bool toDelete = false;
         BlifNode* curr = new BlifNode; //Make a new node and copy the front of the queue. Keep the original model intact.
         *curr = *queue.front();
         queue.pop_front();
-        if(curr->outputs.front()[0] == 'o'){
-            cout << "Reached an output for debugging" << endl;
-        }
         if(nodes[curr->id] != Unused){ //Already used, so we've detected a cycle
             if(nodes[curr->id] == Current) //Cycle within current subcircuit, so skip it, may do something special if needed
                 continue;
@@ -128,28 +126,31 @@ int main(int argc, char * argv[])
         nodes[curr->id] = Current;
         current->AddNode(curr);
         //double time = model->CalculateLatency();
-        if(model->CalculateArea()+voterArea > maxArea || 
-            model->CalculateLatency()+voterLatency > maxTime){
+        if(current->CalculateArea()+voterArea > maxArea || 
+            current->CalculateLatency()+voterLatency > maxTime){
             TMR(current, outPath); // Do all the TMR'ing stuff. Sets up for the current node to be added to a new voter subcircuit
             partitionCounter++;
-            BlifNode* oldCurr = new BlifNode; //Deleting the model frees the memory for the associated nodes which includes curr.
+
+            for each(string sig in curr->inputs){
+                for each(BlifNode* node in model->signals[sig]->sources){
+                    queue.push_back(node);
+                }
+            }
+           // delete curr;
             delete current;
             current = new Model;
-            curr = oldCurr;
             currName.str("");
             currName.clear();
             currName << "partition" << model->name << partitionCounter;
             current->name = currName.str();
             toDelete = true; //We need to delete our node copy once we add the neighbours to the queue.
-        }
+        } else {
 
         for(string sig : curr->outputs){
             for(BlifNode* node : model->signals[sig]->sinks){
                 queue.push_back(node);
             }
         }
-        if(toDelete)
-            delete curr;
     }
     //TMR the remaining node if it exists
     if(current->nodes.size() > 0){
@@ -164,6 +165,7 @@ int main(int argc, char * argv[])
         cout << s->name << " ";
     }
     cout << endl;
+    delete blif;
     return 0;
 }
 
