@@ -10,7 +10,7 @@ using namespace std;
 class Blif
 {
 public:
-    Blif(const char * path);
+    Blif(string path);
     ~Blif(void);
     unordered_map<string, Model*> models;
     Model *main;

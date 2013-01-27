@@ -3,10 +3,10 @@
 #include "BlifNode.h"
 
 
-Blif::Blif(const char * path)
+Blif::Blif(string path)
 {
     main = new Model();
-    ifstream stream("path", ios::in);
+    ifstream stream(path.c_str(), ios::in);
     if(stream.good() == false){
         cerr << "Error reading from " << path << endl;
         return;

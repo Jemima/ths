@@ -31,7 +31,7 @@ void TMR(Model* model, string outPath){
 
 int main(int argc, char * argv[])
 {
-    po::options_description desc("Usage");
+    po::options_description desc("Usage: [options] -f infile -o outprefix");
     desc.add_options()
         ("help,h", "produce help message")
         ("infile,f", po::value<string>(), "input file")
@@ -91,7 +91,7 @@ int main(int argc, char * argv[])
         return 1;
     }
     string outPath = vm["outfile"].as<string>();
-    Blif* blif = new Blif((char*)vm["infile"].as<string>().c_str());
+    Blif* blif = new Blif(vm["infile"].as<string>().c_str());
     Model* model = blif->main;
 
     list<BlifNode*> queue;
