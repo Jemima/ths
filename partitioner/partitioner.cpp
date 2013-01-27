@@ -110,7 +110,6 @@ int main(int argc, char * argv[])
     unsigned counter = 0;
     while(queue.size() > 0){
         counter++;
-        bool toDelete = false;
         BlifNode* curr = new BlifNode; //Make a new node and copy the front of the queue. Keep the original model intact.
         *curr = *queue.front();
         queue.pop_front();
@@ -131,8 +130,8 @@ int main(int argc, char * argv[])
             TMR(current, outPath); // Do all the TMR'ing stuff. Sets up for the current node to be added to a new voter subcircuit
             partitionCounter++;
 
-            for each(string sig in curr->inputs){
-                for each(BlifNode* node in model->signals[sig]->sources){
+            for(string sig : curr->inputs){
+                for(BlifNode* node : model->signals[sig]->sources){
                     queue.push_back(node);
                 }
             }
@@ -143,14 +142,14 @@ int main(int argc, char * argv[])
             currName.clear();
             currName << "partition" << model->name << partitionCounter;
             current->name = currName.str();
-            toDelete = true; //We need to delete our node copy once we add the neighbours to the queue.
         } else {
 
-        for(string sig : curr->outputs){
-            for(BlifNode* node : model->signals[sig]->sinks){
-                queue.push_back(node);
-            }
-        }
+           for(string sig : curr->outputs){
+               for(BlifNode* node : model->signals[sig]->sinks){
+                   queue.push_back(node);
+               }
+           }
+       }
     }
     //TMR the remaining node if it exists
     if(current->nodes.size() > 0){

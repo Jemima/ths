@@ -9,7 +9,7 @@ all: partitioner
 
 partitioner: $(OBJECTS)
 	$(CC) $(LDFLAGS) -o $@ $(OBJECTS)
-
+	ctags -R
 
 .cpp.o:
 	$(CC) $(CFLAGS) $< -o $@
