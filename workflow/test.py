@@ -25,10 +25,10 @@ def readContinuedLine(f):
     return buffer.strip()
 
 def doCall(values, referenceFile, testFile):
-   output = subprocess.check_output(["sis.exe", "-o", "NUL", "-c", "simulate "+' '.join(values), referenceFile]).strip()
+   output = subprocess.check_output(["sis", "-o", "NUL", "-c", "simulate "+' '.join(values), referenceFile]).strip()
    m = re.search("Outputs: ([01 ]+)", output)
    reference = m.group(1).split(' ')
-   output = subprocess.check_output(["sis.exe", "-o", "NUL", "-c", "simulate "+' '.join(values), testFile]).strip()
+   output = subprocess.check_output(["sis", "-o", "NUL", "-c", "simulate "+' '.join(values), testFile]).strip()
    m = re.search("Outputs: ([01 ]+)", output)
    test = m.group(1).split(' ')
    if reference != test:
@@ -46,10 +46,17 @@ if __name__ == '__main__':
    readContinuedLine(file)
    numInputs = len(readContinuedLine(file).split(' '))-1 #-1 since it includes the .inputs
    total = 2**numInputs
-   pool = Pool(8);
-   partialCall = partial(doCall, referenceFile=args.reference, testFile=args.test)
-
-   for i, res in enumerate(pool.imap_unordered(partialCall, iter.product("01", repeat=numInputs), 4)):
-       sys.stderr.write('\r{0:%} done'.format(i/total))
-       if res != True:
-         print "Failed on values: "+str(res)
+   try:
+      dir = tempfile.mkdtemp(dir=os.getcwd())+"/"
+      print(dir)
+      shutil.copy(args.reference, dir+"in.blif") #sis has a bug where it can't handle paths with spaces. So copy the original file to a temp dir and just use that
+      pool = Pool(8);
+      partialCall = partial(doCall, referenceFile=dir+"in.blif", testFile=args.test)
+      print(args.reference, args.test)
+      for i, res in enumerate(pool.imap_unordered(partialCall, iter.product("01", repeat=numInputs), 4)):
+          sys.stderr.write('\r{0:%} done'.format(i/total))
+          if res != True:
+            print "Failed on values: "+str(res)
+   finally:
+      shutil.rmtree(dir)
+      
