@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <sstream>
 #include <boost/program_options.hpp>
+#include <boost/foreach.hpp>
 namespace po = boost::program_options;
 
 const double MAX_AREA = 12000; //Max area allowed to be used per partition
@@ -97,8 +98,9 @@ int main(int argc, char * argv[])
     list<BlifNode*> queue;
     unsigned partitionCounter = 1;
     unordered_map<unsigned long, NodeState> nodes;
-    for(Signal* sig : model->inputs){ //Start with outputs and work back. Not all nodes may be reachable by an input, but to have an effect on the final circuit all nodes must be reachable from an output.
-        for(BlifNode* node : sig->sinks){
+    BOOST_FOREACH(Signal* sig, model->inputs){ //Start with outputs and work back. Not all nodes may be reachable by an input, but to have an effect on the final circuit all nodes must be reachable from an output.
+    #pragma warning(suppress : 6246) // Keep Visual Studio from complaining about duplicate declaration as part of the nested FOREACH macro
+        BOOST_FOREACH(BlifNode* node, sig->sinks){
             queue.push_back(node);
         }
     }
@@ -130,8 +132,9 @@ int main(int argc, char * argv[])
             TMR(current, outPath); // Do all the TMR'ing stuff.
             partitionCounter++;
 
-            for(string sig : curr->inputs){
-                for(BlifNode* node : model->signals[sig]->sources){
+            BOOST_FOREACH(string sig, curr->inputs){ 
+    #pragma warning(suppress : 6246) // Keep Visual Studio from complaining about duplicate declaration as part of the nested FOREACH macro
+                BOOST_FOREACH(BlifNode* node, model->signals[sig]->sources){
                     queue.push_back(node);
                 }
             }
@@ -144,8 +147,9 @@ int main(int argc, char * argv[])
             current->name = currName.str();
         } else {
 
-           for(string sig : curr->outputs){
-               for(BlifNode* node : model->signals[sig]->sinks){
+           BOOST_FOREACH(string sig, curr->outputs){             
+    #pragma warning(suppress : 6246) // Keep Visual Studio from complaining about duplicate declaration as part of the nested FOREACH macro
+               BOOST_FOREACH(BlifNode* node, model->signals[sig]->sinks){
                    queue.push_back(node);
                }
            }
@@ -156,11 +160,11 @@ int main(int argc, char * argv[])
         TMR(current, outPath);
     }
     delete current;
-    for(Signal * s : model->inputs){
+    BOOST_FOREACH(Signal * s, model->inputs){
         cout << s->name << " ";
     }
     cout << "\n";
-    for(Signal * s : model->outputs){
+    BOOST_FOREACH(Signal * s, model->outputs){
         cout << s->name << " ";
     }
     cout << endl;

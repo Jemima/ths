@@ -1,4 +1,5 @@
 #include "Model.h"
+#include <boost/foreach.hpp>
 
 Model::Model()
 {
@@ -18,10 +19,11 @@ Model::Model(Model* model)
 
 Model::~Model(void)
 {
-    for(BlifNode* node : nodes){
+    BOOST_FOREACH(BlifNode* node, nodes){
         delete node;
     }
-    for(pair<string, Signal*> s : signals){
+    pair<string, Signal*> s;
+    BOOST_FOREACH(s, signals){
         delete s.second;
     }
 }
@@ -29,17 +31,20 @@ Model::~Model(void)
 
 void Model::MakeSignalList(){
     list<Signal*> oldSignals;
-    for(pair<string, Signal*> s : signals){
-        oldSignals.push_back(s.second);
+    pair<string, Signal*> signalPair;
+    BOOST_FOREACH(signalPair, signals){
+        oldSignals.push_back(signalPair.second);
     }
-    for(BlifNode* node : nodes){
-        for(string s : node->inputs){
+    BOOST_FOREACH(BlifNode* node, nodes){
+    #pragma warning(suppress : 6246) // Keep Visual Studio from complaining about duplicate declaration as part of the nested FOREACH macro
+        BOOST_FOREACH(string s, node->inputs){
             if(signals.count(s) == 0){
                 signals[s] = new Signal(s);
             }
             signals[s]->sinks.push_back(node);
         }
-        for(string s : node->outputs){
+    #pragma warning(suppress : 6246) // Keep Visual Studio from complaining about duplicate declaration as part of the nested FOREACH macro
+        BOOST_FOREACH(string s, node->outputs){
             if(signals.count(s) == 0){
                 signals[s] = new Signal(s);
             }
@@ -48,19 +53,19 @@ void Model::MakeSignalList(){
     }
     
     //If a signal appears in the input list but is never used remove it.
-    for(Signal* s : inputs){
+    BOOST_FOREACH(Signal* s, inputs){
         if(signals.count(s->name) == 0)
             inputs.remove(s);
     }
     
     //If a signal appears in the output list but is never used remove it
-    for(Signal* s : outputs){
+    BOOST_FOREACH(Signal* s, outputs){
         if(signals.count(s->name) == 0)
             outputs.remove(s);
     }
 
     //Delete any newly unused signals. Because of our previous two loops, they won't be in inputs or outputs either.
-    for(Signal* s : oldSignals){
+    BOOST_FOREACH(Signal* s, oldSignals){
         if(signals.count(s->name) == 0)
             delete s;
     }
@@ -69,13 +74,13 @@ void Model::MakeSignalList(){
 
 void Model::AddNode(BlifNode* node){
     nodes.push_back(node);
-    for(string s : node->inputs){
+    BOOST_FOREACH(string s, node->inputs){
         if(signals.count(s) == 0){
             signals[s] = new Signal(s);
         }
         signals[s]->sinks.push_back(node);
     }
-    for(string s : node->outputs){
+    BOOST_FOREACH(string s, node->outputs){
         if(signals.count(s) == 0){
             signals[s] = new Signal(s);
         }
@@ -86,7 +91,8 @@ void Model::AddNode(BlifNode* node){
 void Model::MakeIOList(){
     inputs.clear();
     outputs.clear();
-    for(pair<string, Signal*> s : signals){
+    pair<string, Signal*> s;
+    BOOST_FOREACH(s, signals){
         if(s.second->sources.size() == 0)
             inputs.push_back(s.second);
         else
@@ -96,10 +102,20 @@ void Model::MakeIOList(){
 
 
 unsigned Model::CalculateCriticalPath(BlifNode* node){
-
+    return 1;
 }
 
 unsigned Model::CalculateCriticalPath(){
+    unsigned maxLen = 0;
+    BOOST_FOREACH(Signal* s, this->outputs){
+    #pragma warning(suppress : 6246) // Keep Visual Studio from complaining about duplicate declaration as part of the nested FOREACH macro
+        BOOST_FOREACH(BlifNode* node, s->sources){
+            unsigned tempLen = this->CalculateCriticalPath(node);
+            if(tempLen > maxLen)
+                maxLen = tempLen;
+        }
+    }
+    return maxLen;
 }
 double Model::CalculateLatency(){
     return 0;

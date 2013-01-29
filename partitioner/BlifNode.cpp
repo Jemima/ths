@@ -1,5 +1,6 @@
 #include "BlifNode.h"
 #include <iostream>
+#include <boost/foreach.hpp>
 
 
 BlifNode::BlifNode(void)
@@ -20,7 +21,7 @@ BlifNode* BlifNode::MakeNode(string type, list<string> params){
     if(type == ".names"){
         node->outputs.push_back(params.back()); //Last element is the single output
         params.pop_back();
-        for(string s : params){
+        BOOST_FOREACH(string s, params){
             node->inputs.push_back(s);
         }
     } else if (type == ".latch"){

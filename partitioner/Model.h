@@ -1,9 +1,9 @@
 #pragma once
 #include <string>
-#include <iostream>
 #include "BlifNode.h"
 #include "Signal.h"
 #include <unordered_map>
+
 
 using namespace std;
 class Model
@@ -17,6 +17,7 @@ public:
     list<Signal*> outputs;
     list<BlifNode*> nodes;
     unordered_map<string, Signal*> signals;
+    typedef unordered_map<string, Model*> ModelMap;
     string name;
     double _latency;
 
@@ -31,5 +32,7 @@ public:
     double CalculateLatency();
 
     double CalculateArea();
+private:
+    unsigned CalculateCriticalPath(BlifNode* node);
 };
 
