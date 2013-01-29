@@ -91,12 +91,15 @@ void Model::MakeIOList(){
             inputs.push_back(s.second);
         else
             outputs.push_back(s.second); //If it's not an input always export it as an output. We can trim unused signals later, and currently we can't detect if a signal is used in another partition or not.
-    }
+    }                            //Excess outputs will get stripped anyway when the circuit is flattened.
 }
 
 
+unsigned Model::CalculateCriticalPath(BlifNode* node){
+
+}
+
 unsigned Model::CalculateCriticalPath(){
-    return 1;
 }
 double Model::CalculateLatency(){
     return 0;

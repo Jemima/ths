@@ -128,7 +128,7 @@ int main(int argc, char * argv[])
         double time = current->CalculateLatency();
         if(current->CalculateArea()+voterArea > maxArea || 
             current->CalculateLatency()+voterLatency > maxTime){
-            TMR(current, outPath); // Do all the TMR'ing stuff. Sets up for the current node to be added to a new voter subcircuit
+            TMR(current, outPath); // Do all the TMR'ing stuff.
             partitionCounter++;
 
             for each(string sig in curr->inputs){
