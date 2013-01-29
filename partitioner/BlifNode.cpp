@@ -20,7 +20,7 @@ BlifNode* BlifNode::MakeNode(string type, list<string> params){
     if(type == ".names"){
         node->outputs.push_back(params.back()); //Last element is the single output
         params.pop_back();
-        for each(string s in params){
+        for(string s : params){
             node->inputs.push_back(s);
         }
     } else if (type == ".latch"){

@@ -31,7 +31,7 @@ void TMR(Model* model, string outPath){
 
 int main(int argc, char * argv[])
 {
-    po::options_description desc("Usage");
+    po::options_description desc("Usage: [options] -f infile -o outprefix");
     desc.add_options()
         ("help,h", "produce help message")
         ("infile,f", po::value<string>(), "input file")
@@ -69,7 +69,7 @@ int main(int argc, char * argv[])
         voterArea = vm["voter-area"].as<double>();
         if(!quiet) cout << "Setting voter area"<< endl;
     }
-    double area = voterArea;
+    //double area = voterArea;
     double voterLatency = CIRCUIT_LATENCY;
     if(vm.count("voter-latency")){
         voterLatency = vm["voter-latency"].as<double>();
@@ -91,14 +91,14 @@ int main(int argc, char * argv[])
         return 1;
     }
     string outPath = vm["outfile"].as<string>();
-    Blif* blif = new Blif((char*)vm["infile"].as<string>().c_str());
+    Blif* blif = new Blif(vm["infile"].as<string>().c_str());
     Model* model = blif->main;
 
     list<BlifNode*> queue;
     unsigned partitionCounter = 1;
     unordered_map<unsigned long, NodeState> nodes;
-    for each(Signal* sig in model->outputs){ //Start with outputs and work back. Not all nodes may be reachable by an input, but to have an effect on the final circuit all nodes must be reachable from an output.
-        for each(BlifNode* node in sig->sources){
+    for(Signal* sig : model->inputs){ //Start with outputs and work back. Not all nodes may be reachable by an input, but to have an effect on the final circuit all nodes must be reachable from an output.
+        for(BlifNode* node : sig->sinks){
             queue.push_back(node);
         }
     }
@@ -110,7 +110,6 @@ int main(int argc, char * argv[])
     unsigned counter = 0;
     while(queue.size() > 0){
         counter++;
-        bool toDelete = false;
         BlifNode* curr = new BlifNode; //Make a new node and copy the front of the queue. Keep the original model intact.
         *curr = *queue.front();
         queue.pop_front();
@@ -125,14 +124,14 @@ int main(int argc, char * argv[])
         }
         nodes[curr->id] = Current;
         current->AddNode(curr);
-        double time = current->CalculateLatency();
+        //double time = model->CalculateLatency();
         if(current->CalculateArea()+voterArea > maxArea || 
             current->CalculateLatency()+voterLatency > maxTime){
             TMR(current, outPath); // Do all the TMR'ing stuff.
             partitionCounter++;
 
-            for each(string sig in curr->inputs){
-                for each(BlifNode* node in model->signals[sig]->sources){
+            for(string sig : curr->inputs){
+                for(BlifNode* node : model->signals[sig]->sources){
                     queue.push_back(node);
                 }
             }
@@ -143,26 +142,25 @@ int main(int argc, char * argv[])
             currName.clear();
             currName << "partition" << model->name << partitionCounter;
             current->name = currName.str();
-            toDelete = true; //We need to delete our node copy once we add the neighbours to the queue.
         } else {
 
-            for each(string sig in curr->inputs){
-                for each(BlifNode* node in model->signals[sig]->sources){
-                    queue.push_back(node);
-                }
-            }
-        }
+           for(string sig : curr->outputs){
+               for(BlifNode* node : model->signals[sig]->sinks){
+                   queue.push_back(node);
+               }
+           }
+       }
     }
     //TMR the remaining node if it exists
     if(current->nodes.size() > 0){
         TMR(current, outPath);
     }
     delete current;
-    for each (Signal * s in model->inputs){
+    for(Signal * s : model->inputs){
         cout << s->name << " ";
     }
     cout << "\n";
-    for each (Signal * s in model->outputs){
+    for(Signal * s : model->outputs){
         cout << s->name << " ";
     }
     cout << endl;
