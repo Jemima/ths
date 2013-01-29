@@ -47,7 +47,7 @@ Blif::Blif(string path)
         while(node->AddContents(temp)){
             temp = getBlifLine(stream);
         }
-        main->nodes.push_back(node);
+        main->AddNode(node);
     } while(temp!= ".end");
     main->MakeSignalList();
     models[name] = main;
@@ -116,10 +116,12 @@ std::string Blif::getBlifLine(ifstream& stream)
                 line = line.substr(0, line.length()-1);
                 cont = true;
             }
-        } else {
+        } else { //Empty line, skip to the next
             cont = true;
         }
     }while(cont && stream.good());
+    if(line.length() == 0)
+        return ".end"; //If we reach the end of the file before reading anything more, return .end
     return line;
 }
 

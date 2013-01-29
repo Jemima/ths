@@ -33,6 +33,7 @@ public:
 
     double CalculateArea();
 private:
-    unsigned CalculateCriticalPath(BlifNode* node);
+    unsigned CalculateCriticalPath(BlifNode* node, unordered_map<int, unsigned> &visited);
+    void Model::updateCosts(BlifNode* node, unsigned costToReach);
 };
 

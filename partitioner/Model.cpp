@@ -71,20 +71,53 @@ void Model::MakeSignalList(){
     }
 }
 
+unordered_map<unsigned long, unsigned> maxLatencies;
 
 void Model::AddNode(BlifNode* node){
     nodes.push_back(node);
+    unsigned maxInCost = 0;
     BOOST_FOREACH(string s, node->inputs){
         if(signals.count(s) == 0){
             signals[s] = new Signal(s);
         }
         signals[s]->sinks.push_back(node);
+    #pragma warning(suppress : 6246) // Keep Visual Studio from complaining about duplicate declaration as part of the nested FOREACH macro
+        BOOST_FOREACH(BlifNode* node, signals[s]->sources){
+            if(maxLatencies[node->id] > maxInCost)
+                maxInCost = maxLatencies[node->id];
+        }
     }
+    maxLatencies[node->id] = maxInCost+node->cost;
     BOOST_FOREACH(string s, node->outputs){
         if(signals.count(s) == 0){
             signals[s] = new Signal(s);
         }
         signals[s]->sources.push_back(node);
+    }
+    if(node->cost == 0) //Adding a no-cost node can't increase the max path, so skip calculating the changes.
+        return;
+    
+    updateCosts(node, maxInCost);
+}
+unsigned maxCost = 0;
+void Model::updateCosts(BlifNode* node, unsigned costToReach){
+    costToReach += node->cost;
+    if(maxLatencies.count(node->id) == 0){
+        int dbg = 1;
+        dbg++;
+    }
+    maxLatencies[node->id] = costToReach;
+    if(costToReach > maxCost)
+        maxCost = costToReach;
+    BOOST_FOREACH(string s, node->outputs){
+    #pragma warning(suppress : 6246) // Keep Visual Studio from complaining about duplicate declaration as part of the nested FOREACH macro
+        BOOST_FOREACH(BlifNode* newNode, this->signals[s]->sinks){
+            if(newNode->id == node->id)
+                continue;
+            if(maxLatencies[newNode->id] >= costToReach+newNode->cost)
+                continue; //If it won't increase the cost skip it
+            updateCosts(newNode, costToReach);
+        }
     }
 }
 
@@ -101,24 +134,15 @@ void Model::MakeIOList(){
 }
 
 
-unsigned Model::CalculateCriticalPath(BlifNode* node){
-    return 1;
+unsigned Model::CalculateCriticalPath(BlifNode* node, unordered_map<int, unsigned> &visited){
+    return 0;
 }
 
 unsigned Model::CalculateCriticalPath(){
-    unsigned maxLen = 0;
-    BOOST_FOREACH(Signal* s, this->outputs){
-    #pragma warning(suppress : 6246) // Keep Visual Studio from complaining about duplicate declaration as part of the nested FOREACH macro
-        BOOST_FOREACH(BlifNode* node, s->sources){
-            unsigned tempLen = this->CalculateCriticalPath(node);
-            if(tempLen > maxLen)
-                maxLen = tempLen;
-        }
-    }
-    return maxLen;
+    return maxCost;
 }
 double Model::CalculateLatency(){
-    return 0;
+    return CalculateCriticalPath();
 }
 
 double Model::CalculateArea(){

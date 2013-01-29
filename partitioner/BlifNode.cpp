@@ -24,11 +24,13 @@ BlifNode* BlifNode::MakeNode(string type, list<string> params){
         BOOST_FOREACH(string s, params){
             node->inputs.push_back(s);
         }
+        node->cost = 0;
     } else if (type == ".latch"){
         node->inputs.push_front(params.front());
         params.pop_front();
         node->outputs.push_front(params.front());
         params.pop_front();
+        node->cost = 1;
         if(params.size() >= 2){ //We have a clock specified
             params.pop_front();
             node->inputs.push_back(params.front());
@@ -42,7 +44,9 @@ BlifNode* BlifNode::MakeNode(string type, list<string> params){
 }
 
 bool BlifNode::AddContents(string line){
-    if(contents.length() == 0){
+    if(line.length() == 0){
+        return false;
+    } if(contents.length() == 0){
         contents = line;
     } else {
         if(line[0] == '.')
