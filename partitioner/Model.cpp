@@ -1,5 +1,6 @@
 #include "Model.h"
 #include <boost/foreach.hpp>
+#include <bitset>
 
 Model::Model()
 {
@@ -30,11 +31,12 @@ Model::~Model(void)
 
 
 void Model::MakeSignalList(){
-    list<Signal*> oldSignals;
+    //list<Signal*> oldSignals;
+    signals.clear();
     pair<string, Signal*> signalPair;
-    BOOST_FOREACH(signalPair, signals){
+ /*   BOOST_FOREACH(signalPair, signals){
         oldSignals.push_back(signalPair.second);
-    }
+    }*/
     BOOST_FOREACH(BlifNode* node, nodes){
     #pragma warning(suppress : 6246) // Keep Visual Studio from complaining about duplicate declaration as part of the nested FOREACH macro
         BOOST_FOREACH(string s, node->inputs){
@@ -65,15 +67,21 @@ void Model::MakeSignalList(){
     }
 
     //Delete any newly unused signals. Because of our previous two loops, they won't be in inputs or outputs either.
-    BOOST_FOREACH(Signal* s, oldSignals){
+  /*  BOOST_FOREACH(Signal* s, oldSignals){
         if(signals.count(s->name) == 0)
             delete s;
-    }
+    }*/
 }
 
 unordered_map<unsigned long, unsigned> maxLatencies;
+unordered_map<unsigned long, bool> visited;
+
 
 void Model::AddNode(BlifNode* node){
+    AddNode(node, true);
+}
+
+void Model::AddNode(BlifNode* node, bool shouldUpdateCosts){
     nodes.push_back(node);
     unsigned maxInCost = 0;
     BOOST_FOREACH(string s, node->inputs){
@@ -94,18 +102,17 @@ void Model::AddNode(BlifNode* node){
         }
         signals[s]->sources.push_back(node);
     }
-    if(node->cost == 0) //Adding a no-cost node can't increase the max path, so skip calculating the changes.
+    if(node->cost == 0 || shouldUpdateCosts == false) //Adding a no-cost node can't increase the max path, so skip calculating the changes.
         return;
-    
+    visited.clear();
     updateCosts(node, maxInCost);
 }
 unsigned maxCost = 0;
 void Model::updateCosts(BlifNode* node, unsigned costToReach){
+    if(visited[node->id] == true)
+        return;
+    visited[node->id] = true;
     costToReach += node->cost;
-    if(maxLatencies.count(node->id) == 0){
-        int dbg = 1;
-        dbg++;
-    }
     maxLatencies[node->id] = costToReach;
     if(costToReach > maxCost)
         maxCost = costToReach;
@@ -131,11 +138,6 @@ void Model::MakeIOList(){
         else
             outputs.push_back(s.second); //If it's not an input always export it as an output. We can trim unused signals later, and currently we can't detect if a signal is used in another partition or not.
     }                            //Excess outputs will get stripped anyway when the circuit is flattened.
-}
-
-
-unsigned Model::CalculateCriticalPath(BlifNode* node, unordered_map<int, unsigned> &visited){
-    return 0;
 }
 
 unsigned Model::CalculateCriticalPath(){

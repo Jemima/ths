@@ -47,7 +47,7 @@ Blif::Blif(string path)
         while(node->AddContents(temp)){
             temp = getBlifLine(stream);
         }
-        main->AddNode(node);
+        main->AddNode(node, false);
     } while(temp!= ".end");
     main->MakeSignalList();
     models[name] = main;

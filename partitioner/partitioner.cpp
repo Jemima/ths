@@ -8,7 +8,7 @@
 #include <boost/range/adaptor/map.hpp>
 namespace po = boost::program_options;
 
-const double MAX_AREA = 12000; //Max area allowed to be used per partition
+const double MAX_AREA = 800; //Max area allowed to be used per partition
 const double MAX_TIME = 100; //Max time allowed for pipeline to finish ( = steps/clock+constant)
 const double VOTER_AREA = 2;
 const double CIRCUIT_LATENCY = 4;
@@ -32,10 +32,12 @@ void TMR(Model* model, string outPath){
     Blif::Write(path.str(), model);
 }
 
-void doCalculation(Blif* blif){
+void doCalculation(Blif* blif, bool quiet){
     BOOST_FOREACH(Model* model, blif->models | map_values){
-        cout << "Model: " << model->name << endl;
-        cout << "Critical path\t\tArea Estimate\t\tLatency Estimate\n";
+        if(!quiet){
+            cout << "Model: " << model->name << endl;
+            cout << "Critical path\t\tArea Estimate\t\tLatency Estimate\n";
+        }
         cout << model->CalculateCriticalPath() << "\t" << model->CalculateArea() << "\t" << model->CalculateLatency() << endl;
     }
 }
@@ -116,9 +118,9 @@ int main(int argc, char * argv[])
     list<BlifNode*> queue;
     unsigned partitionCounter = 1;
     unordered_map<unsigned long, NodeState> nodes;
-    BOOST_FOREACH(Signal* sig, model->inputs){ //Start with outputs and work back. Not all nodes may be reachable by an input, but to have an effect on the final circuit all nodes must be reachable from an output.
+    BOOST_FOREACH(Signal* sig, model->outputs){ //Start with outputs and work back. Not all nodes may be reachable by an input, but to have an effect on the final circuit all nodes must be reachable from an output.
     #pragma warning(suppress : 6246) // Keep Visual Studio from complaining about duplicate declaration as part of the nested FOREACH macro
-        BOOST_FOREACH(BlifNode* node, sig->sinks){
+        BOOST_FOREACH(BlifNode* node, sig->sources){
             queue.push_back(node);
         }
     }
@@ -128,9 +130,7 @@ int main(int argc, char * argv[])
     currName << "partition" << model->name << partitionCounter;
     current->name = currName.str();
     unsigned counter = 0;
-    if(justCalculate){
-        doCalculation(blif);
-    } else {
+    if(justCalculate == false) {
             while(queue.size() > 0){
                 counter++;
                 BlifNode* curr = new BlifNode; //Make a new node and copy the front of the queue. Keep the original model intact.
@@ -168,9 +168,9 @@ int main(int argc, char * argv[])
                     current->name = currName.str();
                 } else {
 
-                   BOOST_FOREACH(string sig, curr->outputs){             
+                   BOOST_FOREACH(string sig, curr->inputs){             
             #pragma warning(suppress : 6246) // Keep Visual Studio from complaining about duplicate declaration as part of the nested FOREACH macro
-                       BOOST_FOREACH(BlifNode* node, model->signals[sig]->sinks){
+                       BOOST_FOREACH(BlifNode* node, model->signals[sig]->sources){
                            queue.push_back(node);
                        }
                    }
@@ -190,7 +190,8 @@ int main(int argc, char * argv[])
             }
             cout << endl;
     }
-    delete blif;
+    doCalculation(blif, quiet);
+    //delete blif; We're exiting now, so memory gets cleared up anyway, and actually destroying everything properly takes a lot of time
     return 0;
 }
 

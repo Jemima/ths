@@ -24,8 +24,12 @@ public:
     void MakeSignalList();
 
     void MakeIOList();
-
+    
+    //As per the two parameter version, with updateCost defaulting to true
     void AddNode(BlifNode* node);
+    //node is the node the add, updateCost is whether to update the latencies associated with each node.
+    //If the graph contains any cycles after the node is added updateCost _MUST_ be false, as max latency is always infinite.
+    void AddNode(BlifNode* node, bool shouldUpdateCosts);
 
     unsigned CalculateCriticalPath();
 
