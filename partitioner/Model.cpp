@@ -1,6 +1,5 @@
 #include "Model.h"
 #include <boost/foreach.hpp>
-#include <bitset>
 
 Model::Model()
 {
@@ -31,12 +30,12 @@ Model::~Model(void)
 
 
 void Model::MakeSignalList(){
-    //list<Signal*> oldSignals;
-    signals.clear();
     pair<string, Signal*> signalPair;
- /*   BOOST_FOREACH(signalPair, signals){
-        oldSignals.push_back(signalPair.second);
-    }*/
+    BOOST_FOREACH(signalPair, signals){
+        delete signalPair.second;
+    }
+    signals.clear();
+
     BOOST_FOREACH(BlifNode* node, nodes){
     #pragma warning(suppress : 6246) // Keep Visual Studio from complaining about duplicate declaration as part of the nested FOREACH macro
         BOOST_FOREACH(string s, node->inputs){
@@ -54,23 +53,7 @@ void Model::MakeSignalList(){
         }
     }
     
-    //If a signal appears in the input list but is never used remove it.
-    BOOST_FOREACH(Signal* s, inputs){
-        if(signals.count(s->name) == 0)
-            inputs.remove(s);
-    }
-    
-    //If a signal appears in the output list but is never used remove it
-    BOOST_FOREACH(Signal* s, outputs){
-        if(signals.count(s->name) == 0)
-            outputs.remove(s);
-    }
-
-    //Delete any newly unused signals. Because of our previous two loops, they won't be in inputs or outputs either.
-  /*  BOOST_FOREACH(Signal* s, oldSignals){
-        if(signals.count(s->name) == 0)
-            delete s;
-    }*/
+    MakeIOList();
 }
 
 unordered_map<unsigned long, unsigned> maxLatencies;
@@ -84,7 +67,7 @@ void Model::AddNode(BlifNode* node){
 void Model::AddNode(BlifNode* node, bool shouldUpdateCosts){
     nodes.push_back(node);
     unsigned maxInCost = 0;
-    BOOST_FOREACH(string s, node->inputs){
+    BOOST_FOREACH(string s, node->inputs){ //Need to not add a signal if it causes a cycle
         if(signals.count(s) == 0){
             signals[s] = new Signal(s);
         }

@@ -68,7 +68,7 @@ for path in files:
    file.close()
    counterName+=1;
 
-print "Writing to "+sys.argv[1]
+sys.stderr.write("Writing to "+sys.argv[1]+"\n")
 file = open(sys.argv[1], "w")
 file.write(".model main\n.inputs ")
 file.write(sys.argv[2]) #Assume we have the list of outputs passed on the command line

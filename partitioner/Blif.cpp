@@ -25,19 +25,9 @@ Blif::Blif(string path)
     //Get the inputs
     temp = getBlifLine(stream);
     list<string> inputNames = getParams(temp, temp);
-    BOOST_FOREACH(string s, inputNames){
-        Signal* sig = new Signal(s);
-        main->inputs.push_back(sig);
-        main->signals[s] = sig;
-    }
     //Get the outputs
     temp = getBlifLine(stream);
     list<string> outputNames = getParams(temp, temp);
-    BOOST_FOREACH(string s, outputNames){
-        Signal* sig = new Signal(s);
-        main->outputs.push_back(sig);
-        main->signals[s] = sig;
-    }
 
     temp = getBlifLine(stream);
     do{
@@ -51,6 +41,21 @@ Blif::Blif(string path)
     } while(temp!= ".end");
     main->MakeSignalList();
     models[name] = main;
+
+    //We want to preserve the order of inputs and outputs, so we clear the current ones, then readd in the correct order
+    main->inputs.clear();
+    main->outputs.clear();
+    BOOST_FOREACH(string s, inputNames){
+        if(main->signals.count(s) == 0)
+            main->signals[s] = new Signal(s);
+        main->inputs.push_back(main->signals[s]);
+    }
+
+    BOOST_FOREACH(string s, outputNames){
+        if(main->signals.count(s) == 0)
+            main->signals[s] = new Signal(s);
+        main->outputs.push_back(main->signals[s]);
+    }
 }
 
 ///Given a string in format nodeName a b c d e... returns a list containing a b c d... and sets nodeName to nodeName

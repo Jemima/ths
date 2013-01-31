@@ -27,22 +27,29 @@ if __name__ == "__main__":
       output = subprocess.check_output(["partitioner", "-f", params.infile, "-o", dirSplit, "-q"]).strip().split("\n")
       inputs = output[0]
       outputs = output[1]
-      print(params.infile+"\t"+output[2],)
+      print(params.infile+"\t"+output[2],end='\t')
+      step1 = time.clock()
       
       sys.stderr.write("Triplicating...\n")
       
       pool = Pool(8);
       TMRArgs = [["python", "blifTMR.py", "voter.blif", dirSplit+file, dirTMR+file] for file in os.listdir(dirSplit)]
       pool.map(subprocess.check_call, TMRArgs, 4)
+      step2 = time.clock()
       sys.stderr.write("Merging...\n")
       subprocess.check_call(["python", "blifJoin.py", params.outfile, inputs, outputs, "-f", dirTMR+"*.blif"])
+      step3 = time.clock()
       if params.test:
          if params.count and params.count < inputs.count(' '):
             sys.stderr.write("Skipping test due to too many inputs\n")
          else:
             sys.stderr.write("Testing...\n")
             subprocess.check_call(["python", "test.py", params.infile, params.outfile])
+      step4 = time.clock()
    finally:
       shutil.rmtree(dir)
-   start = time.clock()
-   print(time.clock()-start)
+   print(step1-start, end='\t')
+   print(step2-step1, end='\t')
+   print(step3-step2, end='\t')
+   print(step4-step3, end='\t')
+   print(time.clock()-start, end='\n')

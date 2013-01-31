@@ -48,11 +48,9 @@ if __name__ == '__main__':
    total = 2**numInputs
    try:
       dir = tempfile.mkdtemp(dir=os.getcwd())+"/"
-      print(dir)
       shutil.copy(args.reference, dir+"in.blif") #sis has a bug where it can't handle paths with spaces. So copy the original file to a temp dir and just use that
       pool = Pool(8);
       partialCall = partial(doCall, referenceFile=dir+"in.blif", testFile=args.test)
-      print(args.reference, args.test)
       for i, res in enumerate(pool.imap_unordered(partialCall, iter.product("01", repeat=numInputs), 4)):
           sys.stderr.write('\r{0:%} done'.format(i/total))
           if res != True:
