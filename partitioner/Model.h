@@ -3,6 +3,7 @@
 #include "BlifNode.h"
 #include "Signal.h"
 #include <unordered_map>
+#include <set>
 
 
 using namespace std;
@@ -15,27 +16,31 @@ public:
     ~Model(void);
     list<Signal*> inputs;
     list<Signal*> outputs;
-    list<BlifNode*> nodes;
+    set<BlifNode*> nodes;
     unordered_map<string, Signal*> signals;
     typedef unordered_map<string, Model*> ModelMap;
     string name;
     double _latency;
 
-    void MakeSignalList();
+    void MakeSignalList(bool cutLoops = true);
 
     void MakeIOList();
+
+    //Cuts the input from this node, indicating the input should be external to this submodel.
+    void Cut(BlifNode* node);
     
     //As per the two parameter version, with updateCost defaulting to true
     void AddNode(BlifNode* node);
     //node is the node the add, updateCost is whether to update the latencies associated with each node.
-    //If the graph contains any cycles after the node is added updateCost _MUST_ be false, as max latency is always infinite.
-    void AddNode(BlifNode* node, bool shouldUpdateCosts);
+    void AddNode(BlifNode* node, bool shouldDetectLoops);
 
     unsigned CalculateCriticalPath();
 
     double CalculateLatency();
 
     double CalculateArea();
+
+    Signal* GetBaseSignal(string name);
 private:
     unsigned CalculateCriticalPath(BlifNode* node, unordered_map<int, unsigned> &visited);
     void Model::updateCosts(BlifNode* node, unsigned costToReach);

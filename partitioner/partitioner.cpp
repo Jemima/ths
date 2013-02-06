@@ -27,7 +27,7 @@ void TMR(Model* model, string outPath){
     counter++;
     stringstream path;
     path << outPath << counter << ".blif";
-    model->MakeSignalList();
+    model->MakeSignalList(true);
     model->MakeIOList();
     Blif::Write(path.str(), model);
 }
@@ -137,9 +137,10 @@ int main(int argc, char * argv[])
                 *curr = *queue.front();
                 queue.pop_front();
                 if(nodes[curr->id] != Unused){ //Already used, so we've detected a cycle
-                    if(nodes[curr->id] == Current) //Cycle within current subcircuit, so skip it, may do something special if needed
+                    if(nodes[curr->id] == Current){ //Cycle within current subcircuit, so skip it. We need to cut cycles
+                        //model->Cut(curr);
                         continue;
-                    else if(nodes[curr->id] == Used){ //Cycle, but back to a previous voter subcircuit
+                    } else if(nodes[curr->id] == Used){ //Cycle, but back to a previous voter subcircuit
                         continue;
                     } else {
                         throw "Shouldn't ever reach here, invalid NodeState";
@@ -155,7 +156,7 @@ int main(int argc, char * argv[])
 
                     BOOST_FOREACH(string sig, curr->inputs){ 
             #pragma warning(suppress : 6246) // Keep Visual Studio from complaining about duplicate declaration as part of the nested FOREACH macro
-                        BOOST_FOREACH(BlifNode* node, model->signals[sig]->sources){
+                        BOOST_FOREACH(BlifNode* node, model->GetBaseSignal(sig)->sources){
                             queue.push_back(node);
                         }
                     }
@@ -181,12 +182,12 @@ int main(int argc, char * argv[])
                 TMR(current, outPath);
             }
             delete current;
-            BOOST_FOREACH(Signal * s, model->inputs){
-                cout << s->name << " ";
+            BOOST_FOREACH(string s, blif->masterInputs){
+                cout << s << " ";
             }
             cout << "\n";
-            BOOST_FOREACH(Signal * s, model->outputs){
-                cout << s->name << " ";
+            BOOST_FOREACH(string s, blif->masterOutputs){
+                cout << s << " ";
             }
             cout << endl;
     }

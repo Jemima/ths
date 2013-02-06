@@ -16,18 +16,16 @@ Blif::Blif(string path)
         return;
     }
     string temp = getBlifLine(stream);
-    stringstream ss;
-    string name;
-    ss << temp; //Assume that the format is correct i.e. ".model [name]".
-    ss << temp;
-    ss >> name;
-    main->name = name;
+    unsigned start = temp.find('.')+7;
+    main->name = temp.substr(start, string::npos);
     //Get the inputs
     temp = getBlifLine(stream);
     list<string> inputNames = getParams(temp, temp);
+    masterInputs = inputNames;
     //Get the outputs
     temp = getBlifLine(stream);
     list<string> outputNames = getParams(temp, temp);
+    masterOutputs = outputNames;
 
     temp = getBlifLine(stream);
     do{
@@ -39,10 +37,11 @@ Blif::Blif(string path)
         }
         main->AddNode(node, false);
     } while(temp!= ".end");
-    main->MakeSignalList();
-    models[name] = main;
+    main->MakeSignalList(false);
+    models[main->name] = main;
 
     //We want to preserve the order of inputs and outputs, so we clear the current ones, then readd in the correct order
+    
     main->inputs.clear();
     main->outputs.clear();
     BOOST_FOREACH(string s, inputNames){
@@ -144,7 +143,7 @@ void Blif::Write(string path, Model* model){
     ofile << endl;
 
     BOOST_FOREACH(BlifNode* node, model->nodes){
-        ofile << node->contents << endl;
+        ofile << node->GetText() << endl;
     }
     ofile << ".end";
 }

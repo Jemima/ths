@@ -25,8 +25,8 @@ if __name__ == "__main__":
       os.mkdir(dirSplit)
       sys.stderr.write("Partitioning...\n")
       output = subprocess.check_output(["partitioner", "-f", params.infile, "-o", dirSplit, "-q"]).strip().split("\n")
-      inputs = output[0]
-      outputs = output[1]
+      inputs = output[0] #The original inputs and outputs. We save these, since in the process of splitting loops, creating partitions, etc, we create a lot of extra inputs and outputs,
+      outputs = output[1] #and we aren't able to tell which are supposed to be present in the end result otherwise
       print(params.infile+"\t"+output[2],end='\t')
       step1 = time.clock()
       
@@ -37,14 +37,28 @@ if __name__ == "__main__":
       pool.map(subprocess.check_call, TMRArgs, 4)
       step2 = time.clock()
       sys.stderr.write("Merging...\n")
-      subprocess.check_call(["python", "blifJoin.py", params.outfile, inputs, outputs, "-f", dirTMR+"*.blif"])
+      header = open(dir+"header.blif", 'w')
+      header.write(".model main\n.inputs ")
+      header.write(inputs)
+      header.write("\n.outputs ")
+      header.write(outputs)
+      header.close()
+      subprocess.check_call(["python", "blifJoin.py", params.outfile, dir+"header.blif", "-f", dirTMR+"*.blif"])
       step3 = time.clock()
       if params.test:
          if params.count and params.count < inputs.count(' '):
             sys.stderr.write("Skipping test due to too many inputs\n")
          else:
-            sys.stderr.write("Testing...\n")
-            subprocess.check_call(["python", "test.py", params.infile, params.outfile])
+            import mmap
+            f = open(params.outfile)
+            s = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
+            if s.find('.latch') != -1:
+               sys.stderr.write("Latches present, skipping testing...\n")
+               s.close()
+            else:
+               s.close()
+               sys.stderr.write("Testing...\n")
+               subprocess.check_call(["python", "test.py", params.infile, params.outfile])
       step4 = time.clock()
    finally:
       shutil.rmtree(dir)
