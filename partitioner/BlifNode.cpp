@@ -1,5 +1,7 @@
 #include "BlifNode.h"
 #include <iostream>
+#include <boost/foreach.hpp>
+#include <sstream>
 
 
 BlifNode::BlifNode(void)
@@ -18,16 +20,18 @@ BlifNode* BlifNode::MakeNode(string type, list<string> params){
     node->id = _id;
     node->type = type;
     if(type == ".names"){
-        node->outputs.push_back(params.back()); //Last element is the single output
+        node->outputs.push_front(params.back()); //Last element is the single output
         params.pop_back();
-        for(string s : params){
+        BOOST_FOREACH(string s, params){
             node->inputs.push_back(s);
         }
+        node->cost = 0;
     } else if (type == ".latch"){
         node->inputs.push_front(params.front());
         params.pop_front();
         node->outputs.push_front(params.front());
         params.pop_front();
+        node->cost = 1;
         if(params.size() >= 2){ //We have a clock specified
             params.pop_front();
             node->inputs.push_back(params.front());
@@ -41,7 +45,9 @@ BlifNode* BlifNode::MakeNode(string type, list<string> params){
 }
 
 bool BlifNode::AddContents(string line){
-    if(contents.length() == 0){
+    if(line.length() == 0){
+        return false;
+    } if(contents.length() == 0){
         contents = line;
     } else {
         if(line[0] == '.')
@@ -50,4 +56,36 @@ bool BlifNode::AddContents(string line){
         contents.append(line);
     }
     return true;
+}
+
+string BlifNode::GetText(){
+    if(type == ".names"){
+        stringstream ss;
+        ss << ".names ";
+        BOOST_FOREACH(string s, this->inputs){
+            ss << " " << s;
+        }
+        BOOST_FOREACH(string s, this->outputs){
+            ss << " " << s;
+        }
+        unsigned pos = contents.find_first_of('\n');
+        if(pos != string::npos)
+            ss << contents.substr(pos, string::npos);
+        return ss.str();
+    } else if (type == ".latch"){
+        stringstream temp(contents);
+        string output;
+        output = ".latch " + *inputs.begin() + " " + *outputs.begin();
+        string nul;
+        temp >> nul; //Discard .latch
+        temp >> nul; //input
+        temp >> nul; //output
+        while(temp.good()){
+            temp >> nul;
+            output += " " + nul;
+        }
+        return output;
+    } else {
+        return contents;
+    }
 }

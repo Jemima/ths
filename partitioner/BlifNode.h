@@ -1,4 +1,5 @@
 #pragma once
+#include <set>
 #include <list>
 #include <string>
 using namespace std;
@@ -14,6 +15,8 @@ public:
     ~BlifNode(void);
     static BlifNode* MakeNode(string type, list<string> params);
     bool AddContents(string line);
+    unsigned cost;
+    string GetText();
 
 };
 

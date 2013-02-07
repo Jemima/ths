@@ -35,6 +35,7 @@ try:
 
    line = readContinuedLine(insert)
    m = re.search('\s*.model\s+(.+)', line)
+   print(line)
    name = m.group(1)
 
    line = readContinuedLine(insert)
@@ -51,10 +52,12 @@ try:
 
    output.write(".model output\n.inputs")
    for n in range(0,len(inputs)):
-       output.write(" %s"%inputs[n])
+       if inputs[n].startswith("qq") == False:
+         output.write(" %s"%inputs[n])
    output.write("\n.outputs")
    for n in range(0,len(outputs)):
-       output.write(" %s"%outputs[n])
+       if outputs[n].startswith("qq") == False:
+         output.write(" %s"%outputs[n])
 
 
 
@@ -63,6 +66,7 @@ try:
        subckt += " %s=%s" % (inputs[n], inputs[n])
    for n in range(0,len(outputs)):
       subckt += " %s=[qq%d//replace]"%(outputs[n], n)
+   subckt = re.sub('qqrinput([^=]+)=qqrinput', 'qqrinput\\1=qqroutput', subckt)
 
    output.write(subckt.replace("//replace", '0'))
    output.write(subckt.replace("//replace", '1'))

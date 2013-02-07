@@ -4,14 +4,17 @@
 #include <unordered_map>
 #include <sstream>
 #include <boost/program_options.hpp>
+#include <boost/foreach.hpp>
+#include <boost/range/adaptor/map.hpp>
 namespace po = boost::program_options;
 
-const double MAX_AREA = 12000; //Max area allowed to be used per partition
+const double MAX_AREA = 800; //Max area allowed to be used per partition
 const double MAX_TIME = 100; //Max time allowed for pipeline to finish ( = steps/clock+constant)
 const double VOTER_AREA = 2;
 const double CIRCUIT_LATENCY = 4;
 
 using namespace std;
+using namespace boost::adaptors;
 
 enum NodeState{
     Unused = 0,
@@ -24,23 +27,34 @@ void TMR(Model* model, string outPath){
     counter++;
     stringstream path;
     path << outPath << counter << ".blif";
-    model->MakeSignalList();
+    model->MakeSignalList(true);
     model->MakeIOList();
     Blif::Write(path.str(), model);
 }
 
+void doCalculation(Blif* blif, bool quiet){
+    BOOST_FOREACH(Model* model, blif->models | map_values){
+        if(!quiet){
+            cout << "Model: " << model->name << endl;
+            cout << "Critical path\t\tArea Estimate\t\tLatency Estimate\n";
+        }
+        cout << model->CalculateCriticalPath() << "\t" << model->CalculateArea() << "\t" << model->CalculateLatency() << endl;
+    }
+}
+
 int main(int argc, char * argv[])
 {
-    po::options_description desc("Usage: [options] -f infile -o outprefix");
+    po::options_description desc("Usage: [options] [-o outprefix] -f infile ");
     desc.add_options()
         ("help,h", "produce help message")
         ("infile,f", po::value<string>(), "input file")
-        ("outfile,o", po::value<string>(), "output path prefix")
+        ("outfile,o", po::value<string>(), "output path prefix. Required unless -c is also passed")
         ("voter-area,v", po::value<double>(), "area of voter circuit")
         ("voter-latency,l", po::value<double>(), "constant delay in voter circuit elements")
         ("max-area,a", po::value<double>(), "maximum area per partition")
         ("max-time,t", po::value<double>(), "maximum time per partition")
         ("quiet,q", "suppress all output besides output list")
+        ("calculate,c","doesn't partition, just calculates circuit stats e.g. circuit critical path and outputs to STDOUT")
     ;
 
     po::variables_map vm;
@@ -56,7 +70,7 @@ int main(int argc, char * argv[])
         cout << "Must specify an input file" << endl;
         error = true;
     }
-    if(vm.count("outfile") == 0){
+    if(vm.count("outfile") == 0 && vm.count("calculate") == 0){
         cout << "Must specify an output path prefix" << endl;
         error = true;
     }
@@ -85,20 +99,28 @@ int main(int argc, char * argv[])
         maxTime = vm["max-time"].as<double>();
         if(!quiet) cout << "Setting max time"<< endl;
     }
+    bool justCalculate = false;
+    if(vm.count("calculate")){
+        justCalculate = true;
+        if(!quiet) cout << "Calculating stats only"<< endl;
+    }
 
     if(error){
         cout << desc << endl;
         return 1;
     }
-    string outPath = vm["outfile"].as<string>();
+    string outPath;
+    if(justCalculate == false)
+        outPath = vm["outfile"].as<string>();
     Blif* blif = new Blif(vm["infile"].as<string>().c_str());
     Model* model = blif->main;
 
     list<BlifNode*> queue;
     unsigned partitionCounter = 1;
     unordered_map<unsigned long, NodeState> nodes;
-    for(Signal* sig : model->inputs){ //Start with outputs and work back. Not all nodes may be reachable by an input, but to have an effect on the final circuit all nodes must be reachable from an output.
-        for(BlifNode* node : sig->sinks){
+    BOOST_FOREACH(Signal* sig, model->outputs){ //Start with outputs and work back. Not all nodes may be reachable by an input, but to have an effect on the final circuit all nodes must be reachable from an output.
+    #pragma warning(suppress : 6246) // Keep Visual Studio from complaining about duplicate declaration as part of the nested FOREACH macro
+        BOOST_FOREACH(BlifNode* node, sig->sources){
             queue.push_back(node);
         }
     }
@@ -108,63 +130,69 @@ int main(int argc, char * argv[])
     currName << "partition" << model->name << partitionCounter;
     current->name = currName.str();
     unsigned counter = 0;
-    while(queue.size() > 0){
-        counter++;
-        BlifNode* curr = new BlifNode; //Make a new node and copy the front of the queue. Keep the original model intact.
-        *curr = *queue.front();
-        queue.pop_front();
-        if(nodes[curr->id] != Unused){ //Already used, so we've detected a cycle
-            if(nodes[curr->id] == Current) //Cycle within current subcircuit, so skip it, may do something special if needed
-                continue;
-            else if(nodes[curr->id] == Used){ //Cycle, but back to a previous voter subcircuit
-                continue;
-            } else {
-                throw "Shouldn't ever reach here, invalid NodeState";
-            }
-        }
-        nodes[curr->id] = Current;
-        current->AddNode(curr);
-        //double time = model->CalculateLatency();
-        if(current->CalculateArea()+voterArea > maxArea || 
-            current->CalculateLatency()+voterLatency > maxTime){
-            TMR(current, outPath); // Do all the TMR'ing stuff. Sets up for the current node to be added to a new voter subcircuit
-            partitionCounter++;
-
-            for(string sig : curr->inputs){
-                for(BlifNode* node : model->signals[sig]->sources){
-                    queue.push_back(node);
+    if(justCalculate == false) {
+            while(queue.size() > 0){
+                counter++;
+                BlifNode* curr = new BlifNode; //Make a new node and copy the front of the queue. Keep the original model intact.
+                *curr = *queue.front();
+                queue.pop_front();
+                if(nodes[curr->id] != Unused){ //Already used, so we've detected a cycle
+                    if(nodes[curr->id] == Current){ //Cycle within current subcircuit, so skip it. We need to cut cycles
+                        //model->Cut(curr);
+                        continue;
+                    } else if(nodes[curr->id] == Used){ //Cycle, but back to a previous voter subcircuit
+                        continue;
+                    } else {
+                        throw "Shouldn't ever reach here, invalid NodeState";
+                    }
                 }
-            }
-           // delete curr;
-            delete current;
-            current = new Model;
-            currName.str("");
-            currName.clear();
-            currName << "partition" << model->name << partitionCounter;
-            current->name = currName.str();
-        } else {
+                nodes[curr->id] = Current;
+                current->AddNode(curr);
+                //double time = model->CalculateLatency();
+                if(current->CalculateArea()+voterArea > maxArea || 
+                    current->CalculateLatency()+voterLatency > maxTime){
+                    TMR(current, outPath); // Do all the TMR'ing stuff.
+                    partitionCounter++;
 
-           for(string sig : curr->outputs){
-               for(BlifNode* node : model->signals[sig]->sinks){
-                   queue.push_back(node);
+                    BOOST_FOREACH(string sig, curr->inputs){ 
+            #pragma warning(suppress : 6246) // Keep Visual Studio from complaining about duplicate declaration as part of the nested FOREACH macro
+                        BOOST_FOREACH(BlifNode* node, model->GetBaseSignal(sig)->sources){
+                            queue.push_back(node);
+                        }
+                    }
+                   // delete curr;
+                    delete current;
+                    current = new Model;
+                    currName.str("");
+                    currName.clear();
+                    currName << "partition" << model->name << partitionCounter;
+                    current->name = currName.str();
+                } else {
+
+                   BOOST_FOREACH(string sig, curr->inputs){             
+            #pragma warning(suppress : 6246) // Keep Visual Studio from complaining about duplicate declaration as part of the nested FOREACH macro
+                       BOOST_FOREACH(BlifNode* node, model->signals[sig]->sources){
+                           queue.push_back(node);
+                       }
+                   }
                }
-           }
-       }
+            }
+            //TMR the remaining node if it exists
+            if(current->nodes.size() > 0){
+                TMR(current, outPath);
+            }
+            delete current;
+            BOOST_FOREACH(string s, blif->masterInputs){
+                cout << s << " ";
+            }
+            cout << "\n";
+            BOOST_FOREACH(string s, blif->masterOutputs){
+                cout << s << " ";
+            }
+            cout << endl;
     }
-    //TMR the remaining node if it exists
-    if(current->nodes.size() > 0){
-        TMR(current, outPath);
-    }
-    delete current;
-    for(Signal * s : model->inputs){
-        cout << s->name << " ";
-    }
-    cout << "\n";
-    for(Signal * s : model->outputs){
-        cout << s->name << " ";
-    }
-    cout << endl;
-    delete blif;
+    doCalculation(blif, quiet);
+    //delete blif; We're exiting now, so memory gets cleared up anyway, and actually destroying everything properly takes a lot of time
     return 0;
 }
 

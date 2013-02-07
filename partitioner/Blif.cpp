@@ -1,6 +1,10 @@
 #include "Blif.h"
 #include <sstream>
+#include <ctype.h>
+#include <iostream>
+#include <fstream>
 #include "BlifNode.h"
+#include <boost/foreach.hpp>
 
 
 Blif::Blif(string path)
@@ -12,28 +16,16 @@ Blif::Blif(string path)
         return;
     }
     string temp = getBlifLine(stream);
-    stringstream ss;
-    string name;
-    ss << temp; //Assume that the format is correct i.e. ".model [name]".
-    ss << temp;
-    ss >> name;
-    main->name = name;
+    unsigned start = temp.find('.')+7;
+    main->name = temp.substr(start, string::npos);
     //Get the inputs
     temp = getBlifLine(stream);
     list<string> inputNames = getParams(temp, temp);
-    for(string s : inputNames){
-        Signal* sig = new Signal(s);
-        main->inputs.push_back(sig);
-        main->signals[s] = sig;
-    }
+    masterInputs = inputNames;
     //Get the outputs
     temp = getBlifLine(stream);
     list<string> outputNames = getParams(temp, temp);
-    for(string s : outputNames){
-        Signal* sig = new Signal(s);
-        main->outputs.push_back(sig);
-        main->signals[s] = sig;
-    }
+    masterOutputs = outputNames;
 
     temp = getBlifLine(stream);
     do{
@@ -43,10 +35,26 @@ Blif::Blif(string path)
         while(node->AddContents(temp)){
             temp = getBlifLine(stream);
         }
-        main->nodes.push_back(node);
+        main->AddNode(node, false);
     } while(temp!= ".end");
-    main->MakeSignalList();
-    models[name] = main;
+    main->MakeSignalList(false);
+    models[main->name] = main;
+
+    //We want to preserve the order of inputs and outputs, so we clear the current ones, then readd in the correct order
+    
+    main->inputs.clear();
+    main->outputs.clear();
+    BOOST_FOREACH(string s, inputNames){
+        if(main->signals.count(s) == 0)
+            main->signals[s] = new Signal(s);
+        main->inputs.push_back(main->signals[s]);
+    }
+
+    BOOST_FOREACH(string s, outputNames){
+        if(main->signals.count(s) == 0)
+            main->signals[s] = new Signal(s);
+        main->outputs.push_back(main->signals[s]);
+    }
 }
 
 ///Given a string in format nodeName a b c d e... returns a list containing a b c d... and sets nodeName to nodeName
@@ -68,7 +76,8 @@ Blif::~Blif(void)
 {
     string mainName = main->name;
     delete main;
-    for(pair<string, Model*> m : models){
+    pair<string, Model*> m;
+    BOOST_FOREACH(m, models){
         if(m.first == mainName) // We already deleted main, so don't delete it again
             continue;
         delete m.second;
@@ -111,10 +120,12 @@ std::string Blif::getBlifLine(ifstream& stream)
                 line = line.substr(0, line.length()-1);
                 cont = true;
             }
-        } else {
+        } else { //Empty line, skip to the next
             cont = true;
         }
     }while(cont && stream.good());
+    if(line.length() == 0)
+        return ".end"; //If we reach the end of the file before reading anything more, return .end
     return line;
 }
 
@@ -122,17 +133,17 @@ std::string Blif::getBlifLine(ifstream& stream)
 void Blif::Write(string path, Model* model){
     ofstream ofile(path);
     ofile << ".model " << model->name << endl << ".inputs ";
-    for(Signal* s : model->inputs){
+    BOOST_FOREACH(Signal* s, model->inputs){
         ofile << s->name << " ";
     }
     ofile << endl << ".outputs ";
-    for(Signal* s : model->outputs){
+    BOOST_FOREACH(Signal* s, model->outputs){
         ofile << s->name << " ";
     }
     ofile << endl;
 
-    for(BlifNode* node : model->nodes){
-        ofile << node->contents << endl;
+    BOOST_FOREACH(BlifNode* node, model->nodes){
+        ofile << node->GetText() << endl;
     }
     ofile << ".end";
 }
