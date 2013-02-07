@@ -25,10 +25,10 @@ def readContinuedLine(f):
     return buffer.strip()
 
 def doCall(values, referenceFile, testFile):
-   output = subprocess.check_output(["sis", "-o", "NUL", "-c", "simulate "+' '.join(values), referenceFile]).strip()
+   output = subprocess.check_output(["sis", "-o", "NUL", "-c", "simulate "+' '.join(values), referenceFile]).decode("utf-8").strip()
    m = re.search("Outputs: ([01 ]+)", output)
    reference = m.group(1).split(' ')
-   output = subprocess.check_output(["sis", "-o", "NUL", "-c", "simulate "+' '.join(values), testFile]).strip()
+   output = subprocess.check_output(["sis", "-o", "NUL", "-c", "simulate "+' '.join(values), testFile]).decode("utf-8").strip()
    m = re.search("Outputs: ([01 ]+)", output)
    test = m.group(1).split(' ')
    if reference != test:
