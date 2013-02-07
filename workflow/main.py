@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import argparse
 import tempfile
 import os
@@ -19,7 +20,7 @@ if __name__ == "__main__":
       os.mkdir(dirTMR)
       os.mkdir(dirSplit)
       print("Partitioning...\n")
-      output = subprocess.check_output(["partitioner", "-f", params.infile, "-o", dirSplit]).strip().split("\n")
+      output = str(subprocess.check_output(["./partitioner", "-f", params.infile, "-o", dirSplit])).strip().split("\n")
       inputs = output[0]
       outputs = output[1]
       
