@@ -181,5 +181,5 @@ Signal* Model::GetBaseSignal(string name){
     } else {
         return this->signals[name];
     }
-
+    return this->signals[name]; //We never reach here, but gcc complains about the function not returning anything from all possible paths
 }

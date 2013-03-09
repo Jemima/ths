@@ -1,6 +1,6 @@
 CC=g++
 
-CFLAGS=-Wall -O -Werror -std=c++11 -c -g
+CFLAGS=-Wall -Wextra -Wno-unknown-pragmas -O -std=c++11 -c -g
 LDFLAGS=-O -lboost_program_options
 SOURCES=Blif.cpp BlifNode.cpp Model.cpp partitioner.cpp Signal.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
