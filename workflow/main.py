@@ -44,6 +44,8 @@ if __name__ == "__main__":
       header.write(outputs)
       header.close()
       subprocess.check_call(["python", "blifJoin.py", params.outfile, dir+"header.blif", "-f", dirTMR+"*.blif"])
+      sys.stderr.write("Flattening...\n")
+      
       step3 = time.clock()
       if params.test:
          if params.count and params.count < inputs.count(' '):
