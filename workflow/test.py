@@ -25,10 +25,10 @@ def readContinuedLine(f):
     return buffer.strip()
 
 def doCall(values, referenceFile, testFile):
-   output = subprocess.check_output(["sis", "-o", "NUL", "-c", "simulate "+' '.join(values), referenceFile]).decode("utf-8").strip()
+   output = subprocess.check_output(["./abc", "-o", "NUL", "-c", "simulate "+' '.join(values), referenceFile]).decode("utf-8").strip()
    m = re.search("Outputs: ([01 ]+)", output)
    reference = m.group(1).split(' ')
-   output = subprocess.check_output(["sis", "-o", "NUL", "-c", "simulate "+' '.join(values), testFile]).decode("utf-8").strip()
+   output = subprocess.check_output(["./abc", "-o", "NUL", "-c", "simulate "+' '.join(values), testFile]).decode("utf-8").strip()
    m = re.search("Outputs: ([01 ]+)", output)
    test = m.group(1).split(' ')
    if reference != test:
@@ -36,7 +36,7 @@ def doCall(values, referenceFile, testFile):
    return True
    
 if __name__ == '__main__':
-   parser = argparse.ArgumentParser(description="Exhaustively simulate a purely combinational circuit using SIS")
+   parser = argparse.ArgumentParser(description="Exhaustively simulate a purely combinational circuit using ABC")
    parser.add_argument("reference", type=str, help="Reference blif format circuit")
    parser.add_argument("test", type=str, help="Blif format circuit to test")
    
@@ -54,7 +54,7 @@ if __name__ == '__main__':
       for i, res in enumerate(pool.imap_unordered(partialCall, iter.product("01", repeat=numInputs), 4)):
           sys.stderr.write('\r{0:%} done'.format(i/total))
           if res != True:
-            print "Failed on values: "+str(res)
+            print("Failed on values: "+str(res))
    finally:
       shutil.rmtree(dir)
       
