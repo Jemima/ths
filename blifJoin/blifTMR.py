@@ -35,7 +35,6 @@ try:
 
    line = readContinuedLine(insert)
    m = re.search('\s*.model\s+(.+)', line)
-   print(line)
    name = m.group(1)
 
    line = readContinuedLine(insert)
@@ -86,6 +85,6 @@ try:
    insert.close()
    output.close()
 except:
-   print "Unexpected error:", sys.exc_info()[0]
-   print sys.argv[2]
+   print("Unexpected error:", sys.exc_info()[0])
+   print(sys.argv[2])
    raise

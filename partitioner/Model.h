@@ -43,6 +43,6 @@ public:
     Signal* GetBaseSignal(string name);
 private:
     unsigned CalculateCriticalPath(BlifNode* node, unordered_map<int, unsigned> &visited);
-    void Model::updateCosts(BlifNode* node, unsigned costToReach);
+    void updateCosts(BlifNode* node, unsigned costToReach);
 };
 
