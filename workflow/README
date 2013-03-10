@@ -1,0 +1,3 @@
+To setup, need blifJoin.py, blifTMR.py, partitioner(.exe), vpr(.exe) and abc(.exe) links from workflow to where they are located.
+Use latest Mercurial version of abc, not the vtr version.
+

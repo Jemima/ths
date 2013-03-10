@@ -45,8 +45,10 @@ if __name__ == "__main__":
       header.write("\n.outputs ")
       header.write(outputs)
       header.close()
-      subprocess.check_call(["python", "blifJoin.py", params.outfile, dir+"header.blif", "-f", dirTMR+"*.blif"])
+      subprocess.check_call(["python", "blifJoin.py", dir+"file.blif", dir+"header.blif", "-f", dirTMR+"*.blif"])
       step3 = time.clock()
+      sys.stderr.write("Flattening...\n");
+      subprocess.check_output(["./abc", "-o", params.outfile, "-c", "echo", dir+"file.blif"])
       if params.test:
          if params.count and params.count < inputs.count(' '):
             sys.stderr.write("Skipping test due to too many inputs\n")
@@ -54,16 +56,20 @@ if __name__ == "__main__":
             import mmap
             f = open(params.outfile)
             s = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
-            if s.find('.latch') != -1:
-               sys.stderr.write("Latches present, skipping testing...\n")
+            if s.find(bytes('.latch', 'UTF-8')) != -1:
+               sys.stderr.write("Latches present.\n")
+               output = subprocess.check_output(["./abc", "-c", "dsec "+params.infile+" "+params.outfile])
+               sys.stderr.write(str(output))
                s.close()
             else:
                s.close()
                sys.stderr.write("Testing...\n")
-               subprocess.check_call(["python", "test.py", params.infile, params.outfile])
+               output = subprocess.check_output(["./abc", "-c", "cec "+params.infile+" "+params.outfile])
+               sys.stderr.write(str(output))
+               #subprocess.check_call(["python", "test.py", params.infile, params.outfile])
       step4 = time.clock()
    finally:
-      #shutil.rmtree(dir)
+      shutil.rmtree(dir)
       print(step1-start, end='\t')
       print(step2-step1, end='\t')
       print(step3-step2, end='\t')
