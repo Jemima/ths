@@ -30,7 +30,7 @@ if __name__ == "__main__":
          if fnmatch(f, "*.blif"):
             ipath = os.path.abspath(params.indir)+"/"+f
             opath = os.path.abspath(params.outdir)+"/"+f
-            output = subprocess.check_output(["./main.py", test, ipath, opath])
+            output = subprocess.check_output(["python", "main.py", test, ipath, opath])
             print(output)
             output2 = subprocess.check_output(["./vpr",  "--full_stats", "--route_file", "temp", "--net_file", "temp2", "--place_file", "temp3", "arch.xml", opath]) 
             print(output2)
