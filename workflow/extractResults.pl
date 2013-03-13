@@ -1,4 +1,4 @@
-
+#!/usr/bin/perl -w
 use strict;
 
 if (!-e$ARGV[0]){
@@ -7,9 +7,9 @@ if (!-e$ARGV[0]){
 }
 {
   local $/=undef;
-  open FILE, $ARGV[0];
-  $_ = <FILE>;
-  close FILE;
+  #open FILE, $ARGV[0];
+  $_ = <>;
+  #close FILE;
 }
 print "$ARGV[0],";
 

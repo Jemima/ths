@@ -68,7 +68,6 @@ for path in files:
    file.close()
    counterName+=1;
 
-sys.stderr.write("Writing to "+sys.argv[1]+"\n")
 file = open(sys.argv[1], "w")
 header = open(sys.argv[2], "r")
 file.write(header.read())
