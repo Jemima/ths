@@ -7,7 +7,8 @@ class BlifNode
 {
 public:
     list<string> inputs;
-    list<string> outputs;
+    string output;
+    string clock;
     string type;
     string contents;
     unsigned long id;
@@ -17,6 +18,10 @@ public:
     bool AddContents(string line);
     unsigned cost;
     string GetText();
-
+    BlifNode* Clone();
+    bool operator==(const BlifNode &other) const;
+    bool operator!=(const BlifNode &other) const;
+private:
+   static int counter;
 };
 

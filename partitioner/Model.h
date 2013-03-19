@@ -18,7 +18,6 @@ public:
     list<Signal*> outputs;
     set<BlifNode*> nodes;
     unordered_map<string, Signal*> signals;
-    typedef unordered_map<string, Model*> ModelMap;
     string name;
     double _latency;
 
@@ -46,5 +45,6 @@ public:
 private:
     unsigned CalculateCriticalPath(BlifNode* node, unordered_map<int, unsigned> &visited);
     void updateCosts(BlifNode* node, unsigned costToReach);
+    void CutLoopsRecurse(BlifNode* parent, Signal* signal);
 };
 

@@ -4,6 +4,7 @@
 Signal::Signal(string signalName)
 {
     name = signalName;
+    source = NULL;
 }
 
 

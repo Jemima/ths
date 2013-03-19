@@ -26,7 +26,7 @@ if __name__ == "__main__":
       os.mkdir(dirSplit)
       print("Partitioning...\n")
       sys.stderr.write("Partitioning...\n")
-      output = subprocess.check_output(["./partitioner", "-f", params.infile, "-o", dirSplit]).decode(sys.stdout.encoding).strip().split('\n')
+      output = subprocess.check_output(["./partitioner", "-q", "-a", "4", "-f", params.infile, "-o", dirSplit]).decode(sys.stdout.encoding).strip().split('\n')
       inputs = output[0] #The original inputs and outputs. We save these, since in the process of splitting loops, creating partitions, etc, we create a lot of extra inputs and outputs,
       outputs = output[1] #and we aren't able to tell which are supposed to be present in the end result otherwise
       print(params.infile+"\t"+output[2],end='\t')
@@ -70,7 +70,7 @@ if __name__ == "__main__":
                #subprocess.check_call(["python", "test.py", params.infile, params.outfile])
       step4 = time.clock()
    finally:
-      shutil.rmtree(dir)
+      #shutil.rmtree(dir)
       print(step1-start, end='\t')
       print(step2-step1, end='\t')
       print(step3-step2, end='\t')
