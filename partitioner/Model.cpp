@@ -114,15 +114,14 @@ void Model::AddNode(BlifNode* node, bool shouldDetectLoops){
         }
         signals[s]->sources.push_back(node);
     }
-    if(shouldDetectLoops == false) //Adding a no-cost node can't increase the max path, so skip calculating the changes.
-        return; //We do our loop detection in here, since we're already traversing and explicitly testing for cycles. Therefore need to always traverse.
+    if(maxInCost == 0) //Adding a no-cost node can't increase the max path, so skip calculating the changes.
+        return;
     visited.clear();
     updateCosts(node, maxInCost);
 }
 unsigned maxCost = 0;
 void Model::updateCosts(BlifNode* node, unsigned costToReach){
-    if(visited[node->id] == true){ //Already been here, we need to cut the loop.
-        cycles.insert(*node->inputs.begin()); //Can't modify nodes or signals while looping, so save them to cut afterwards.
+    if(visited[node->id] == true){ //Already been here, don't get caught in a loop
         return;
     }
     visited[node->id] = true;
@@ -182,4 +181,10 @@ Signal* Model::GetBaseSignal(string name){
         return this->signals[name];
     }
     return this->signals[name]; //We never reach here, but gcc complains about the function not returning anything from all possible paths
+}
+
+
+void Model::CutLoops(){
+    //Traverse the model and cut any loops
+    return;
 }

@@ -27,6 +27,7 @@ void TMR(Model* model, string outPath){
     counter++;
     stringstream path;
     path << outPath << counter << ".blif";
+    model->CutLoops();
     model->MakeSignalList(true);
     model->MakeIOList();
     Blif::Write(path.str(), model);

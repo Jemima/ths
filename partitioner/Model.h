@@ -41,6 +41,8 @@ public:
     double CalculateArea();
 
     Signal* GetBaseSignal(string name);
+
+    void CutLoops();
 private:
     unsigned CalculateCriticalPath(BlifNode* node, unordered_map<int, unsigned> &visited);
     void updateCosts(BlifNode* node, unsigned costToReach);
