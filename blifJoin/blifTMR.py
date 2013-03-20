@@ -65,7 +65,7 @@ try:
        subckt += " %s=%s" % (inputs[n], inputs[n])
    for n in range(0,len(outputs)):
       subckt += " %s=[qq%d//replace]"%(outputs[n], n)
-   subckt = re.sub('qqrinput([^=]+)=qqrinput', 'qqrinput\\1=qqroutput', subckt)
+   subckt = re.sub('=qqrin', '=', subckt)
 
    output.write(subckt.replace("//replace", '0'))
    output.write(subckt.replace("//replace", '1'))

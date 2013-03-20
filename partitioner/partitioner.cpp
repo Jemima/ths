@@ -27,10 +27,12 @@ void TMR(Model* model, string outPath){
     counter++;
     stringstream path;
     path << outPath << counter << ".blif";
+    model->MakeSignalList(true);
+    model->MakeIOList();
     model->CutLoops();
     model->MakeSignalList(true);
     model->MakeIOList();
-    Blif::Write(path.str(), model);
+     Blif::Write(path.str(), model);
 }
 
 void doCalculation(Blif* blif, bool quiet){
@@ -120,10 +122,9 @@ int main(int argc, char * argv[])
     unsigned partitionCounter = 1;
     unordered_map<unsigned long, NodeState> nodes;
     BOOST_FOREACH(Signal* sig, model->outputs){ //Start with outputs and work back. Not all nodes may be reachable by an input, but to have an effect on the final circuit all nodes must be reachable from an output.
-    #pragma warning(suppress : 6246) // Keep Visual Studio from complaining about duplicate declaration as part of the nested FOREACH macro
-        BOOST_FOREACH(BlifNode* node, sig->sources){
-            queue.push_back(node);
-        }
+       if(sig->source != NULL){
+         queue.push_back(sig->source);
+       }
     }
     
     Model* current = new Model();
@@ -134,20 +135,20 @@ int main(int argc, char * argv[])
     if(justCalculate == false) {
             while(queue.size() > 0){
                 counter++;
-                BlifNode* curr = new BlifNode; //Make a new node and copy the front of the queue. Keep the original model intact.
-                *curr = *queue.front();
+                BlifNode* temp = queue.front();
+                int nodeId = temp->id;
+                BlifNode* curr = temp->Clone(); //Make a new node and copy the front of the queue. Keep the original model intact.
                 queue.pop_front();
-                if(nodes[curr->id] != Unused){ //Already used, so we've detected a cycle
-                    if(nodes[curr->id] == Current){ //Cycle within current subcircuit, so skip it. We need to cut cycles
-                        //model->Cut(curr);
+                if(nodes[nodeId] != Unused){ //Already used. Not necessarily a cycle though.
+                    if(nodes[nodeId] == Current){ // Repeat in current partition
                         continue;
-                    } else if(nodes[curr->id] == Used){ //Cycle, but back to a previous voter subcircuit
+                    } else if(nodes[nodeId] == Used){ //Repeat, but in another partition
                         continue;
                     } else {
                         throw "Shouldn't ever reach here, invalid NodeState";
                     }
                 }
-                nodes[curr->id] = Current;
+                nodes[nodeId] = Current;
                 current->AddNode(curr);
                 //double time = model->CalculateLatency();
                 if(current->CalculateArea()+voterArea > maxArea || 
@@ -156,12 +157,11 @@ int main(int argc, char * argv[])
                     partitionCounter++;
 
                     BOOST_FOREACH(string sig, curr->inputs){ 
-            #pragma warning(suppress : 6246) // Keep Visual Studio from complaining about duplicate declaration as part of the nested FOREACH macro
-                        BOOST_FOREACH(BlifNode* node, model->GetBaseSignal(sig)->sources){
-                            queue.push_back(node);
-                        }
+                      if(model->GetBaseSignal(sig)->source != NULL){
+                         queue.push_back(model->GetBaseSignal(sig)->source);
+                      }
                     }
-                   // delete curr;
+                    // delete curr;
                     delete current;
                     current = new Model;
                     currName.str("");
@@ -169,12 +169,10 @@ int main(int argc, char * argv[])
                     currName << "partition" << model->name << partitionCounter;
                     current->name = currName.str();
                 } else {
-
-                   BOOST_FOREACH(string sig, curr->inputs){             
-            #pragma warning(suppress : 6246) // Keep Visual Studio from complaining about duplicate declaration as part of the nested FOREACH macro
-                       BOOST_FOREACH(BlifNode* node, model->signals[sig]->sources){
-                           queue.push_back(node);
-                       }
+                   BOOST_FOREACH(string sig, curr->inputs){          
+                      if(model->signals[sig]->source != NULL){
+                        queue.push_back(model->signals[sig]->source);
+                      }
                    }
                }
             }
@@ -193,7 +191,7 @@ int main(int argc, char * argv[])
             cout << endl;
     }
     doCalculation(blif, quiet);
-    //delete blif; We're exiting now, so memory gets cleared up anyway, and actually destroying everything properly takes a lot of time
+    delete blif;
     return 0;
 }
 

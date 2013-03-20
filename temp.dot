@@ -1,8 +1,10 @@
 digraph G{
-   bgcolor="transparent"
-    Module;
-    Module;
-    Module -> Module;
-    Module -> 6;
-    Module -> 7;
+   bgcolor=""
+    a -> CL1 -> x;
+    a -> CL2 -> Latch1 -> y;
+    b -> CL1;
+    b -> CL2;
+    c -> CL3 -> z;
+    Latch2 -> Latch2;
+    Latch2 -> CL3
 }

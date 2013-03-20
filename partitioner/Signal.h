@@ -12,8 +12,7 @@ public:
     Signal(string signalName);
     ~Signal(void);
     string name;
-    list<BlifNode*> sources;
+    BlifNode* source;
     list<BlifNode*> sinks;
-    typedef unordered_map<string, Signal*> SignalMap;
 };
 
