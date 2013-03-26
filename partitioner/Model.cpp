@@ -153,11 +153,8 @@ double Model::CalculateArea(){
 
 Signal* Model::GetBaseSignal(string name){
    if(name[0] == 'q' && name[1] == 'q'){ //Special meaning signal. Translate into what it is in the untouched original
-      if(name[3] == 'i'){ //qqrinput
-         string realName = name.substr(8, string::npos);
-         return this->signals[realName];
-      } else if (name[3] == 'o'){ //qqroutput
-         string realName = name.substr(9, string::npos);
+      if(name[3] == 'i'){ //qqrin
+         string realName = name.substr(5, string::npos);
          return this->signals[realName];
       }
    } else {

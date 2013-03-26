@@ -53,17 +53,14 @@ if __name__ == "__main__":
                   output = str(subprocess.check_output(["./main.py", '-t', ipath, opath]), 'UTF-8')
                else:
                   output = str(subprocess.check_output(["./main.py", ipath, opath]), 'UTF-8')
-               sys.stderr.write("1")
                output2 = str(subprocess.check_output(["./vpr",  "--full_stats", "--route_file", "temp", "--net_file", "temp2", "--place_file", "temp3", "arch.xml", ipath]), 'UTF-8')
-               sys.stderr.write("1")
                output3 = str(subprocess.check_output(["./vpr",  "--full_stats", "--route_file", "temp", "--net_file", "temp2", "--place_file", "temp3", "arch.xml", opath]), 'UTF-8')
                print(output)
-               print('\n')
+               #print('\n')
                print(parseOutput(output2))
-               print('\n')
+               #print('\n')
                print(parseOutput(output3))
                print("\n\n******************************\n\n")
-               sys.stderr.write("1")
             except Exception as e:
                pass
    finally:
