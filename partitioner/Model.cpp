@@ -2,6 +2,7 @@
 #include <boost/foreach.hpp>
 #include <algorithm>
 #include <iostream>
+#include <cmath>
 Model::Model()
 {
    _latency = 0;
@@ -66,16 +67,11 @@ replace(node->outputs.begin(), node->outputs.end(), sig, "qqroutput"+sig);
 MakeIOList();
 }
 
-unordered_map<unsigned long, unsigned> maxLatencies;
-unordered_map<unsigned long, bool> visited;
 
+unordered_map<unsigned long, unsigned> maxLatencies;
+unordered_map<unsigned long, bool> exploring;
 
 void Model::AddNode(BlifNode* node){
-   AddNode(node, true);
-}
-
-
-void Model::AddNode(BlifNode* node, bool shouldDetectLoops){
    nodes.insert(node);
    unsigned maxInCost = 0;
    BOOST_FOREACH(string s, node->inputs){ //Need to not add a signal if it causes a cycle
@@ -99,15 +95,15 @@ void Model::AddNode(BlifNode* node, bool shouldDetectLoops){
    }
    if(maxInCost == 0) //Adding a no-cost node can't increase the max path, so skip calculating the changes.
       return;
-   visited.clear();
+   exploring.clear();
    updateCosts(node, maxInCost);
 }
 unsigned maxCost = 0;
 void Model::updateCosts(BlifNode* node, unsigned costToReach){
-   if(visited[node->id] == true){ //Already been here, don't get caught in a loop
+   if(exploring[node->id] == true){ //Already been here, don't get caught in a loop
       return;
    }
-   visited[node->id] = true;
+   exploring[node->id] = true;
    costToReach += node->cost;
    maxLatencies[node->id] = costToReach;
    if(costToReach > maxCost)
@@ -120,10 +116,9 @@ void Model::updateCosts(BlifNode* node, unsigned costToReach){
          continue;
       if(maxLatencies[newNode->id] >= costToReach+newNode->cost)
          continue; //If it won't increase the cost skip it
-      //All feedback cycles must include a latch, therefore a node which can be reached through a loop must have a greater cost to reach than the first time we reached it.
-      //Therefore we can skip nodes of the same cost.
       updateCosts(newNode, costToReach);
    }
+   exploring[node->id] = false;
 }
 
 void Model::MakeIOList(){
@@ -146,7 +141,7 @@ double Model::CalculateLatency(){
 }
 
 double Model::CalculateArea(){
-   return nodes.size();
+   return nodes.size()/10+1;
 }
 
 
@@ -169,12 +164,11 @@ void Model::CutLoops(){
    //Traverse signalwise, but store visited state of each node. Mark as exploring, then recurse into it.
    //Once finished recursing, mark finalised. If we're about to expand a node marked exploring, then we have a cycle, cut the current signal and return up the stack.
    //If it's marked finalised we have multiple paths, but not an actual cycle.
-
+    exploring.clear();
    BOOST_FOREACH(Signal* signal, outputs){
       this->CutLoopsRecurse(NULL, signal);
    }
 }
-unordered_map<int, bool> exploring; //Map from NodeId->visited state. Unset is not seen, true is exploring, false is finalised. Only care about the true case
 
 void Model::CutLoopsRecurse(BlifNode* parent, Signal* signal){
    if(signal == NULL)
@@ -195,4 +189,20 @@ void Model::CutLoopsRecurse(BlifNode* parent, Signal* signal){
       }
    }
    exploring[node->id] = false;
+}
+
+double Model::RecoveryTime(double voterArea){
+    //resync+detect+reconfigure
+    //=2*period*steps+f(area)
+    double period = this->CalculateLatency();
+    double steps = this->CalculateCriticalPath();
+    double reconfigure = this->CalculateReconfigurationTime(voterArea);
+
+    return 2.0*period*steps+reconfigure;
+}
+
+
+double Model::CalculateReconfigurationTime(double voterArea){
+    double area = this->CalculateArea()+voterArea;
+    return floor(area/20)*1E-8;
 }

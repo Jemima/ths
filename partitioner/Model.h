@@ -28,10 +28,7 @@ public:
     //Cuts the input from this node, indicating the input should be external to this submodel.
     void Cut(BlifNode* node);
     
-    //As per the two parameter version, with updateCost defaulting to true
     void AddNode(BlifNode* node);
-    //node is the node the add, updateCost is whether to update the latencies associated with each node.
-    void AddNode(BlifNode* node, bool shouldDetectLoops);
 
     unsigned CalculateCriticalPath();
 
@@ -42,6 +39,10 @@ public:
     Signal* GetBaseSignal(string name);
 
     void CutLoops();
+
+    double RecoveryTime(double voterArea);
+
+    double CalculateReconfigurationTime(double voterArea);
 private:
     unsigned CalculateCriticalPath(BlifNode* node, unordered_map<int, unsigned> &visited);
     void updateCosts(BlifNode* node, unsigned costToReach);

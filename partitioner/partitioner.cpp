@@ -10,8 +10,9 @@ namespace po = boost::program_options;
 
 const double MAX_AREA = 800; //Max area allowed to be used per partition
 const double MAX_TIME = 100; //Max time allowed for pipeline to finish ( = steps/clock+constant)
-const double VOTER_AREA = 2;
-const double CIRCUIT_LATENCY = 4;
+const double RECOVERY_TIME = 100; //Max recovery time allowed (=2*steps*period+reconfigure)
+const double VOTER_AREA = 1;
+const double CLOCK_PERIOD = 1E-8;
 
 using namespace std;
 using namespace boost::adaptors;
@@ -32,7 +33,7 @@ void TMR(Model* model, string outPath){
     model->CutLoops();
     model->MakeSignalList(true);
     model->MakeIOList();
-     Blif::Write(path.str(), model);
+    Blif::Write(path.str(), model);
 }
 
 void doCalculation(Blif* blif, bool quiet){
@@ -53,9 +54,10 @@ int main(int argc, char * argv[])
         ("infile,f", po::value<string>(), "input file")
         ("outfile,o", po::value<string>(), "output path prefix. Required unless -c is also passed")
         ("voter-area,v", po::value<double>(), "area of voter circuit")
-        ("voter-latency,l", po::value<double>(), "constant delay in voter circuit elements")
+        ("clock-period,p", po::value<double>(), "estimate for final clock period")
         ("max-area,a", po::value<double>(), "maximum area per partition")
-        ("max-time,t", po::value<double>(), "maximum time per partition")
+        //("max-time,t", po::value<double>(), "maximum time per partition")
+        ("recovery-time,r", po::value<double>(), "maximum recovery time per partition")
         ("quiet,q", "suppress all output besides output list")
         ("calculate,c","doesn't partition, just calculates circuit stats e.g. circuit critical path and outputs to STDOUT")
     ;
@@ -87,10 +89,10 @@ int main(int argc, char * argv[])
         if(!quiet) cout << "Setting voter area"<< endl;
     }
     //double area = voterArea;
-    double voterLatency = CIRCUIT_LATENCY;
-    if(vm.count("voter-latency")){
-        voterLatency = vm["voter-latency"].as<double>();
-        if(!quiet) cout << "Setting voter latency"<< endl;
+    double clockPeriod = CLOCK_PERIOD;
+    if(vm.count("clock-period")){
+        clockPeriod = vm["clock-period"].as<double>();
+        if(!quiet) cout << "Setting clock period"<< endl;
     }
     double maxArea = MAX_AREA;
     if(vm.count("max-area")){
@@ -101,6 +103,11 @@ int main(int argc, char * argv[])
     if(vm.count("max-time")){
         maxTime = vm["max-time"].as<double>();
         if(!quiet) cout << "Setting max time"<< endl;
+    }
+    double recoveryTime = RECOVERY_TIME;
+    if(vm.count("recovery-time")){
+        recoveryTime = vm["recovery-time"].as<double>();
+        if(!quiet) cout << "Setting recovery time"<< endl;
     }
     bool justCalculate = false;
     if(vm.count("calculate")){
@@ -117,6 +124,7 @@ int main(int argc, char * argv[])
         outPath = vm["outfile"].as<string>();
     Blif* blif = new Blif(vm["infile"].as<string>().c_str());
     Model* model = blif->main;
+    model->_latency = clockPeriod;
 
     list<BlifNode*> queue;
     unsigned partitionCounter = 1;
@@ -151,8 +159,9 @@ int main(int argc, char * argv[])
                 nodes[nodeId] = Current;
                 current->AddNode(curr);
                 //double time = model->CalculateLatency();
-                if(current->CalculateArea()+voterArea > maxArea || 
-                    current->CalculateLatency()+voterLatency > maxTime){
+                if(current->RecoveryTime(voterArea) > recoveryTime){
+                    /*CalculateArea()+voterArea > maxArea || 
+                    current->CalculateLatency()+voterLatency > maxTime){*/
                     TMR(current, outPath); // Do all the TMR'ing stuff.
                     partitionCounter++;
 
