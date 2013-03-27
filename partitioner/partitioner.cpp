@@ -59,7 +59,8 @@ int main(int argc, char * argv[])
         //("max-time,t", po::value<double>(), "maximum time per partition")
         ("recovery-time,r", po::value<double>(), "maximum recovery time per partition")
         ("quiet,q", "suppress all output besides output list")
-        ("calculate,c","doesn't partition, just calculates circuit stats e.g. circuit critical path and outputs to STDOUT")
+        ("calculate,c", "doesn't partition, just calculates circuit stats e.g. circuit critical path and outputs to STDOUT")
+        ("dot-file,d", po::value<string>(), "Output the circuit as a dot file")
     ;
 
     po::variables_map vm;
@@ -109,6 +110,11 @@ int main(int argc, char * argv[])
         recoveryTime = vm["recovery-time"].as<double>();
         if(!quiet) cout << "Setting recovery time"<< endl;
     }
+    string dotPath = "";
+    if(vm.count("dot-file")){
+        dotPath = vm["dot-file"].as<string>();
+        if(!quiet) cout << "Outputting dot file to "<< dotPath << endl;
+    }
     bool justCalculate = false;
     if(vm.count("calculate")){
         justCalculate = true;
@@ -125,6 +131,7 @@ int main(int argc, char * argv[])
     Blif* blif = new Blif(vm["infile"].as<string>().c_str());
     Model* model = blif->main;
     model->_latency = clockPeriod;
+    model->SetDotFile(dotPath);
 
     list<BlifNode*> queue;
     unsigned partitionCounter = 1;
@@ -135,7 +142,7 @@ int main(int argc, char * argv[])
        }
     }
     
-    Model* current = new Model();
+    Model* current = new Model(clockPeriod);
     stringstream currName;
     currName << "partition" << model->name << partitionCounter;
     current->name = currName.str();
@@ -172,7 +179,7 @@ int main(int argc, char * argv[])
                     }
                     // delete curr;
                     delete current;
-                    current = new Model;
+                    current = new Model(clockPeriod);
                     currName.str("");
                     currName.clear();
                     currName << "partition" << model->name << partitionCounter;
@@ -195,6 +202,11 @@ int main(int argc, char * argv[])
             }
             cout << "\n";
             BOOST_FOREACH(string s, blif->masterOutputs){
+                cout << s << " ";
+            }
+            cout << endl;
+            cout << "\n";
+            BOOST_FOREACH(string s, blif->masterClocks){
                 cout << s << " ";
             }
             cout << endl;

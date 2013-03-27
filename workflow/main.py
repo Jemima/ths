@@ -14,11 +14,16 @@ if __name__ == "__main__":
    parser = argparse.ArgumentParser(description="Partition and TMR a circuit")
    parser.add_argument("infile", type=str, help="Input blif format circuit")
    parser.add_argument("outfile", type=str, help="Output blif format circuit")
+   parser.add_argument("-p", "--criticalpath", type=float, help="Critical path length")
    parser.add_argument("-t", "--test", action="store_true", help="Test generated file")
    parser.add_argument("-c", "--count", type=int, help="Maximum number of inputs to test")
 
    params = parser.parse_args()
    dir = tempfile.mkdtemp(dir=os.getcwd())+"/"
+   step1=0
+   step2=0
+   step3=0
+   step4=0
    try:
       dirTMR = dir+"TMR/"
       dirSplit = dir+"Split/"
@@ -26,7 +31,10 @@ if __name__ == "__main__":
       os.mkdir(dirSplit)
       print("Partitioning...\n")
       sys.stderr.write("Partitioning...\n")
-      output = subprocess.check_output(["./partitioner", "-q", "-a", "4", "-f", params.infile, "-o", dirSplit]).decode(sys.stdout.encoding).strip().split('\n')
+      critical = params.criticalpath
+      if critical == None:
+         critical = 0.00000001
+      output = subprocess.check_output(["./partitioner", "-q", "-p", "0.00000001", "-r", "1", "-f", params.infile, "-o", dirSplit]).decode(sys.stdout.encoding).strip().split('\n')
       inputs = output[0] #The original inputs and outputs. We save these, since in the process of splitting loops, creating partitions, etc, we create a lot of extra inputs and outputs,
       outputs = output[1] #and we aren't able to tell which are supposed to be present in the end result otherwise
       print(params.infile+"\t"+output[2],end='\t')

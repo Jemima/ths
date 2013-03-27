@@ -43,9 +43,12 @@ public:
     double RecoveryTime(double voterArea);
 
     double CalculateReconfigurationTime(double voterArea);
+
+    void SetDotFile(string path);
 private:
     unsigned CalculateCriticalPath(BlifNode* node, unordered_map<int, unsigned> &visited);
     void updateCosts(BlifNode* node, unsigned costToReach);
     void CutLoopsRecurse(BlifNode* parent, Signal* signal);
+    unsigned maxCost;
 };
 

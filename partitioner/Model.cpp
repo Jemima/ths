@@ -3,19 +3,23 @@
 #include <algorithm>
 #include <iostream>
 #include <cmath>
+#include <fstream>
 Model::Model()
 {
    _latency = 0;
+   maxCost = 0;
 }
 Model::Model(double latency)
 {
    _latency = latency;
+   maxCost = 0;
 }
 
 Model::Model(Model* model)
 {
    name = model->name;
    _latency = model->_latency;
+   maxCost = 0;
 }
 
 
@@ -69,7 +73,7 @@ MakeIOList();
 
 
 unordered_map<unsigned long, unsigned> maxLatencies;
-unordered_map<unsigned long, bool> exploring;
+unordered_map<unsigned long, short> exploring;
 
 void Model::AddNode(BlifNode* node){
    nodes.insert(node);
@@ -98,7 +102,6 @@ void Model::AddNode(BlifNode* node){
    exploring.clear();
    updateCosts(node, maxInCost);
 }
-unsigned maxCost = 0;
 void Model::updateCosts(BlifNode* node, unsigned costToReach){
    if(exploring[node->id] == true){ //Already been here, don't get caught in a loop
       return;
@@ -159,15 +162,37 @@ Signal* Model::GetBaseSignal(string name){
 }
 
 
+string dotPath;
+void Model::SetDotFile(string path){
+   dotPath = path;
+}
+ofstream dotFile;
+
 void Model::CutLoops(){
    //Traverse the model and cut any loops
    //Traverse signalwise, but store visited state of each node. Mark as exploring, then recurse into it.
    //Once finished recursing, mark finalised. If we're about to expand a node marked exploring, then we have a cycle, cut the current signal and return up the stack.
    //If it's marked finalised we have multiple paths, but not an actual cycle.
     exploring.clear();
+    if(dotPath != ""){
+      dotFile.open(dotPath);
+      dotFile << "digraph main{" << endl;
+   }
    BOOST_FOREACH(Signal* signal, outputs){
       this->CutLoopsRecurse(NULL, signal);
    }
+   if(dotPath != ""){
+      dotFile << "}" << endl;
+      dotFile.close();
+   }
+}
+
+BlifNode* DBG(set<BlifNode*> nodes, unsigned id){
+   BOOST_FOREACH(BlifNode* node, nodes){
+      if(node->id == id)
+         return node;
+   }
+   return NULL;
 }
 
 void Model::CutLoopsRecurse(BlifNode* parent, Signal* signal){
@@ -176,19 +201,24 @@ void Model::CutLoopsRecurse(BlifNode* parent, Signal* signal){
    BlifNode* node = signal->source;
    if(node == NULL)
       return;
-   if(exploring[node->id] == true){ //cycle
+   //cerr << "Exploring " << node->id << " - " << node->output << endl;
+   if(parent != NULL && dotPath != "")
+      dotFile << parent->output << " -> " << node->output <<";" << endl;
+   if(exploring[node->id] == 1){ //cycle
       replace(parent->inputs.begin(), parent->inputs.end(), signal->name, "qqrin"+signal->name);
       //signal->source->output = "qqout"+signal->name;// Don't rename the output. Other signals may use it. 
       signals.erase(signal->name);
+   } else if(exploring[node->id] == 2){ //Already explored, and dealt with any loops
+      return;
    } else {
-      exploring[node->id] = true;
+      exploring[node->id] = 1;
       BOOST_FOREACH(string s, node->inputs){
          if(signals.count(s) != 0){ //If we've already renamed one of the signals, we won't find it in our signal list
             CutLoopsRecurse(node, signals[s]);
          }
       }
    }
-   exploring[node->id] = false;
+   exploring[node->id] = 2;
 }
 
 double Model::RecoveryTime(double voterArea){
