@@ -17,6 +17,7 @@ if __name__ == "__main__":
    parser.add_argument("-p", "--criticalpath", type=float, help="Critical path length")
    parser.add_argument("-t", "--test", action="store_true", help="Test generated file")
    parser.add_argument("-c", "--count", type=int, help="Maximum number of inputs to test")
+   parser.add_argument("-a", "--area", type=int, help="Maximum area to pass to partitioner")
 
    params = parser.parse_args()
    dir = tempfile.mkdtemp(dir=os.getcwd())+"/"
@@ -34,7 +35,11 @@ if __name__ == "__main__":
       critical = params.criticalpath
       if critical == None:
          critical = 0.00000001
-      output = subprocess.check_output(["./partitioner", "-q", "-p", "0.00000001", "-r", "1", "-f", params.infile, "-o", dirSplit]).decode(sys.stdout.encoding).strip().split('\n')
+      area = params.area
+      if area == None:
+         area = 1000
+      print(area)
+      output = subprocess.check_output(["./partitioner", "-q", "-a", str(area), "-r", "1", "-f", params.infile, "-o", dirSplit]).decode(sys.stdout.encoding).strip().split('\n')
       inputs = output[0] #The original inputs and outputs. We save these, since in the process of splitting loops, creating partitions, etc, we create a lot of extra inputs and outputs,
       outputs = output[1] #and we aren't able to tell which are supposed to be present in the end result otherwise
       print(params.infile+"\t"+output[2],end='\t')
@@ -58,6 +63,13 @@ if __name__ == "__main__":
       step3 = time.clock()
       sys.stderr.write("Flattening...\n");
       subprocess.check_output(["./abc", "-o", params.outfile, "-c", "echo", dir+"file.blif"])
+      #ABC has a few assorted bugs. 1. It strips clock information from latches, resulting in invalid blif files. Assume there is only one clock for all latches (true for MCNC) and sed to fi it up
+      try:
+         latch = str(subprocess.check_output(["grep", "-m", "1", "\.latch", params.infile]), 'UTF-8').split()
+         print(latch)
+         subprocess.check_call(["sed", "-ri", "s/(\\.latch.+)(2)/\\1 "+latch[3]+" "+latch[4]+" 2/", params.outfile])
+      except subprocess.CalledProcessError: #Ignore these errors. Grep returns 1 when no match found, which causes an exception
+         pass
       if params.test:
          if params.count and params.count < inputs.count(' '):
             sys.stderr.write("Skipping test due to too many inputs\n")
@@ -78,9 +90,10 @@ if __name__ == "__main__":
                #subprocess.check_call(["python", "test.py", params.infile, params.outfile])
       step4 = time.clock()
    finally:
-      #shutil.rmtree(dir)
+      shutil.rmtree(dir)
       print(step1-start, end='\t')
       print(step2-step1, end='\t')
       print(step3-step2, end='\t')
       print(step4-step3, end='\t')
-      print(time.clock()-start, end='\n')
+      print(time.clock()-start, end='\t')
+      print(len(TMRArgs), end='\n')

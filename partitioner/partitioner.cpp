@@ -166,9 +166,9 @@ int main(int argc, char * argv[])
                 nodes[nodeId] = Current;
                 current->AddNode(curr);
                 //double time = model->CalculateLatency();
-                if(current->RecoveryTime(voterArea) > recoveryTime){
-                    /*CalculateArea()+voterArea > maxArea || 
-                    current->CalculateLatency()+voterLatency > maxTime){*/
+                if(/*current->RecoveryTime(voterArea) > recoveryTime ||*/
+                    current->CalculateArea()+voterArea > maxArea// || 
+                    /*current->CalculateLatency()+voterLatency > maxTime*/){
                     TMR(current, outPath); // Do all the TMR'ing stuff.
                     partitionCounter++;
 
@@ -205,11 +205,11 @@ int main(int argc, char * argv[])
                 cout << s << " ";
             }
             cout << endl;
-            cout << "\n";
-            BOOST_FOREACH(string s, blif->masterClocks){
-                cout << s << " ";
-            }
-            cout << endl;
+            //cout << "\n";
+            //BOOST_FOREACH(string s, blif->masterClocks){
+                //cout << s << " ";
+            //}
+            //cout << endl;
     }
     doCalculation(blif, quiet);
     delete blif;

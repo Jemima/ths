@@ -144,7 +144,7 @@ double Model::CalculateLatency(){
 }
 
 double Model::CalculateArea(){
-   return nodes.size()/10+1;
+   return nodes.size();
 }
 
 
