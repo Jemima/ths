@@ -66,12 +66,12 @@ def doRun(args):
       ret = {"times": ret.split("\t")}
       if novpr == False:
          try:
-            output3 = str(subprocess.check_output(["./vpr", "--route_file", dir+"file.route", "--place_file", dir+"file.place", "--net_file", dir+"file.net", "--full_stats", "arch.xml", opath], stderr=subprocess.STDOUT), 'UTF-8')
+            output3 = str(subprocess.check_output(["./vpr", "--route_file", dir+"file2.route", "--place_file", dir+"file2.place", "--net_file", dir+"file2.net", "--full_stats", "arch.xml", opath], stderr=subprocess.STDOUT), 'UTF-8')
          except subprocess.CalledProcessError as e:
             log.write(str(e.output, 'UTF-8'))
             sys.stderr.write(str(e))
             pass
-            return {"error": ["./vpr", "--route_file", dir+"file.route", "--place_file", dir+"file.place", "--net_file", dir+"file.net", "--full_stats", "arch.xml", ipath]}
+            return {"error": ["./vpr", "--route_file", dir+"file2.route", "--place_file", dir+"file2.place", "--net_file", dir+"file2.net", "--full_stats", "arch.xml", ipath]}
          ret["out2"] = parseOutput(output2)
          ret["out3"] = parseOutput(output3)
       sys.stdout.flush()
@@ -154,16 +154,14 @@ if __name__ == "__main__":
          results.write(formatResults(res))
          results.flush()
          sys.stderr.write("Completed "+str(i+1)+"/"+str(total)+". Finished "+res["times"][0]+"\n")
-   if errored.len() > 0:
-      sys.stderr.write("Some errors occured. Retrying those files single threaded\n")
-      for n in errored:
-         res = doRun(runArgs[n])
-         if 'error' in res:
-            sys.stderr.write(str(res)+"\n")
-            errored.append(i)
-         else:
-            results.write(formatResults(res))
-            results.flush()
-            sys.stderr.write("Completed "+str(i+1)+"/"+str(total)+". Finished "+res["times"][0]+"\n")
-   log.close()
+   #if len(errored) > 0:
+      #sys.stderr.write("Some errors occured. Retrying those files single threaded\n")
+      #for n in errored:
+         #res = doRun(runArgs[n])
+         #if 'error' in res:
+            #sys.stderr.write(str(res)+"\n")
+         #else:
+            #results.write(formatResults(res))
+            #results.flush()
+            #sys.stderr.write("Completed "+str(i+1)+"/"+str(total)+". Finished "+res["times"][0]+"\n")
    results.close()
