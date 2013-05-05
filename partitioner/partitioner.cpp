@@ -34,6 +34,7 @@ void TMR(Model* model, string outPath){
     model->MakeSignalList(true);
     model->MakeIOList();
     Blif::Write(path.str(), model);
+    cout << model->numCutLoops << " " << model->numLatches << " " << model->numLUTs << " " << model->CalculateLatency() << endl;
 }
 
 void doCalculation(Blif* blif, bool quiet){
@@ -138,7 +139,7 @@ int main(int argc, char * argv[])
     unordered_map<unsigned long, NodeState> nodes;
     BOOST_FOREACH(Signal* sig, model->outputs){ //Start with outputs and work back. Not all nodes may be reachable by an input, but to have an effect on the final circuit all nodes must be reachable from an output.
        if(sig->source != NULL){
-         queue.push_front(sig->source);
+         queue.push_back(sig->source);
        }
     }
     
@@ -174,7 +175,7 @@ int main(int argc, char * argv[])
 
                     BOOST_FOREACH(string sig, curr->inputs){ 
                       if(model->GetBaseSignal(sig)->source != NULL){
-                         queue.push_front(model->GetBaseSignal(sig)->source);
+                         queue.push_back(model->GetBaseSignal(sig)->source);
                       }
                     }
                     // delete curr;

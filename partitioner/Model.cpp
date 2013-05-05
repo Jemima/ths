@@ -8,11 +8,15 @@ Model::Model()
 {
    _latency = 0;
    maxCost = 0;
+   numLatches = 3;
+   numLUTs = 2;
 }
 Model::Model(double latency)
 {
    _latency = latency;
    maxCost = 0;
+   numLatches = 3;
+   numLUTs = 2;
 }
 
 Model::Model(Model* model)
@@ -20,6 +24,8 @@ Model::Model(Model* model)
    name = model->name;
    _latency = model->_latency;
    maxCost = 0;
+   numLatches = 3;
+   numLUTs = 2;
 }
 
 
@@ -137,10 +143,12 @@ void Model::MakeIOList(){
 }
 
 unsigned Model::CalculateCriticalPath(){
-   return maxCost;
+   //Code to calculate it here
+   return 4;
 }
 double Model::CalculateLatency(){
-   return _latency;
+   //Code to calculate it here
+   return 5;
 }
 
 double Model::CalculateArea(){
@@ -178,6 +186,7 @@ void Model::CutLoops(){
       dotFile.open(dotPath);
       dotFile << "digraph main{" << endl;
    }
+   numCutLoops = 0;
    BOOST_FOREACH(Signal* signal, outputs){
       this->CutLoopsRecurse(NULL, signal);
    }
@@ -205,6 +214,7 @@ void Model::CutLoopsRecurse(BlifNode* parent, Signal* signal){
    if(parent != NULL && dotPath != "")
       dotFile << parent->output << " -> " << node->output <<";" << endl;
    if(exploring[node->id] == 1){ //cycle
+      numCutLoops++;
       replace(parent->inputs.begin(), parent->inputs.end(), signal->name, "qqrin"+signal->name);
       //signal->source->output = "qqout"+signal->name;// Don't rename the output. Other signals may use it. 
       signals.erase(signal->name);

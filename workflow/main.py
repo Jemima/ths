@@ -66,7 +66,7 @@ if __name__ == "__main__":
       step3 = time.clock()
       sys.stderr.write("Flattening...\n");
       subprocess.check_output(["./abc", "-o", params.outfile, "-c", "echo", dir+"file.blif"])
-      #ABC has a few assorted bugs. 1. It strips clock information from latches, resulting in invalid blif files. Assume there is only one clock for all latches (true for MCNC) and sed to fi it up
+      #ABC has a few assorted bugs. 1. It strips clock information from latches, resulting in invalid blif files. Assume there is only one clock for all latches (true for MCNC) and sed to fix it up
       try:
          latch = str(subprocess.check_output(["grep", "-m", "1", "\.latch", params.infile]), 'UTF-8').split()
          subprocess.check_call(["sed", "-ri", "s/(\\.latch.+)(2)/\\1 "+latch[3]+" "+latch[4]+" 2/", params.outfile])

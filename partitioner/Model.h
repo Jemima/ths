@@ -20,6 +20,9 @@ public:
     unordered_map<string, Signal*> signals;
     string name;
     double _latency;
+    int numCutLoops;
+    int numLatches;
+    int numLUTs;
 
     void MakeSignalList(bool cutLoops = true);
 
