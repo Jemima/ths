@@ -19,3 +19,4 @@ BlogEngine.Web
 *.route
 *.blif.txt
 Thumbs.db
+*.sdf
