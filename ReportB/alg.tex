@@ -1,4 +1,5 @@
 \documentclass[12pt,draft,oneside]{article} % use larger type; default would be 10pt
+\usepackage{etex}
 \usepackage[utf8]{inputenc} % set input encoding (not needed with XeLaTeX)
 \usepackage[margin=2cm]{geometry}
 \usepackage{xy}
@@ -23,6 +24,7 @@
 \usepackage{tameflts}
 \usepackage{algpseudocode}
 \usepackage{algorithm}
+\usepackage{placeins}
 \fxsetup{
     status=draft,
     author=,
@@ -34,7 +36,7 @@
 \setcounter{tocdepth}{3}
 
 \usepackage{color}
-\usepackage{listings}
+\usepackage[final]{listings}
 \lstset{ %
 language=C++,                % choose the language of the code
 basicstyle=\ttfamily,       % the size of the fonts that are used for the code
@@ -54,97 +56,53 @@ breakatwhitespace=false,    % sets if automatic breaks should only happen at whi
 escapeinside={\%*}{*)}          % if you want to add a comment within your code
 }
 \begin{document}
-Data Structures:
-==
-General structure:
-Blif represents a BLIF file, contains 1+ Models
-Model represents a BLIF model, or circuit, as a DFG.
-Each node is a BlifNode.
-Each BlifNode has the names of its inputs and outputs stored as strings.
-The model contains a map from string->Signal.
-Each Signal has a pointer to source and sinks.
-
-signals[node->output]->sinks are the children of a node
-FOREACH(signal) in inputs
-   signals[signal]->source
-provides the ancestors of each node.
-A Model also contains the primary input and output signals.
-
-Storing signals as names, and providing a circuit specific map allows for nodes
-to be copied directly across with redirecting pointers at each step.
-Additionally, it means cutting loops is a simple case of string replacement,
-as the list of signals is dynamically generated from the set of nodes.
-
-Model: Represents a BLIF Model i.e. a circuit or subcircuit within a BLIF file
-as a DFG.
-Fields:
-   set(BlifNode) nodes - The set of all circuit elements
-   map(string->Signal) - a map from signal name to signal
-   string name - The name of this model
-   list(Signal) inputs - The list of primary inputs for this circuit
-   list(Signal) outputs - The list of primary outputs for this circuit
-
-Methods:
-   CutLoops() - described at ...
-   AddNode(BlifNode) - adds a BlifNode to the current circuit. Doesn't create
-   necessary signals.
-   MakeSignalList() - Creates all appropriate signals
-   MakeIOList() - Promotes appropriate signals to primary innputs or outputs
-
-BlifNode: Represents a circuit element, or node within the DFG representing
-our circuit
-   List(string) inputs - names of input signals
-   string output - name of output signal
-   string clock - name of clock signal (if applicable)
-   string type - ".latch" or ".names" for latch or LUT
-   string contents - body of node element. Type dependent text data.
-   unsigned long id - Unique id
-   unsigned cost - 0 for LUT, 1 for latch. Number of clock cycles added to
-   critical path by this node.
-Methods:
-   MakeNode(string type, list(string) params) - Creates a BlifNode from the
-   text data in a BLIF file
-   AddContents(string line) - Adds the provided line to the node body
-   GetText() - Returns a textual representation for the node, suitable to be
-   inserted into a BLIF file
-   Clone() - Creates a clone of this node
+\section{Data Structures}
+\subsection{Basic Types}
+The following are the basic types, out of which others are built, and which will be referred to. There is generally, but not always, a direct relationship to a C++ primitive.
+\\
+        \begin{tabularx}{\linewidth}{XXX}
+        \toprule
+        Name & Closest C++ Equivalent & Description\\
+        \midrule
+        Integer &  int & Whole number \\
+        Float & float & Floating point number \\
+        Queue & std::list & FIFO queue \\
+        List(type) & std::list$\langle$type$\rangle$ &\\
+        String & std::string & String object that provides operations to manipulate itself \\
+        File & std::iostream & Abstract type to represent simple I/O operations \\
+        Map(KeyType $\to$ ValueType, DEFAULT:  DefaultValue) & std::unordered\_map$\langle$KeyType, ValueType$\rangle$ & A map to translate values of type KeyType to values of type ValueType. If the key isn't present, returns DefaultValue \\
+        \bottomrule
+        \end{tabularx}
+\\
+\\
+The following are complex types, which are further defined below. This is merely a quick description of each.
+\\
+        \begin{tabularx}{\linewidth}{lX}
+        \toprule
+        Name & Description\\
+        \midrule
+        Blif & Parent object, contains all information about a BLIF file and provides useful operations \\
+        BlifModel & Represents a circuit within a BLIF file, and provides methods to manipulate said circuit \\
+        BlifNode & A circuit element, or node in the DFG representing the circuit \\
+        Signal & A signal within a specific circuit, or BlifModel, representing a set of edges with common source \\
+        \bottomrule
+        \end{tabularx}
 
 
+\begin{lstlisting}
+Signal
+{
+    string name;
+    BlifNode* source;
+    list<BlifNode*> sinks;
+}
+\end{lstlisting}
 
 
-
-
-Signal: Represents a signal between nodes, or a set of edges with common
-source from a node in the DFG.
-Fields:
-   string name - name of the signal
-   BlifNode source - node which drives this signal
-   List(BlifNode) sinks - nodes which this signal drives
-
-Blif: Represents a BLIF file, providing helper methods to read a file into a
-model.
-Fields:
-   Map(string->Model) models - Map from model name to model
-   List(string) masterInputs - Primary inputs for the master circuit
-   List(string) masterOutputs - Primary inputs for the master circuit
-   Model main - Master circuit model
-Methods:
-   Blif(string path) - Constructor, create Blif object from path to a BLIF
-   file
-   Write(string path, Model model) - Writes the specified model to a BLIF file
-
-
-
-
-Algorithm:
-==
-Syntax
-===
-variable/object - begins with lower case
-Function/Method/Procedure - begins with upper case
-Class.Method - Static method
-class->Method - instance method
-\begin{table}
+\newpage
+\section{Algorithm}
+Types marked with an * are defined in the previous section (Data Structures).
+\begin{algorithm}
     \begin{center}
         \begin{tabular}{lll}
         \toprule
@@ -161,8 +119,6 @@ class->Method - instance method
         \caption{Variables for Main}
         \label{varMain}
     \end{center}
-\end{table}
-\begin{algorithm}
    \caption{Main Algorithm}\label{main}
    \begin{algorithmic}[1]
       \Procedure{Main}{$input$, $targetRecoveryTime$}
@@ -181,11 +137,11 @@ In line 11 we partition the input circuit into a number of sub circuits, each in
 Then in lines 12-13 we iterate over all the partitions, and transform them into a triplicated partition with three copies and a voter circuit.
 Then in line 14 we extract the original header, which provides the name, inputs and outputs of the original circuit.
 We then, in line 15, join all the partitions together with the original name, inputs and outputs (in the same order), as the original circuit.
-
+\newpage
 
 \begin{table}
     \begin{center}
-        \begin{tabular}{lll}
+        \begin{tabularx}{\linewidth}{llX}
         \toprule
         Variable & Type & Description\\
         \midrule
@@ -206,15 +162,15 @@ We then, in line 15, join all the partitions together with the original name, in
         $numPartitions$ & int & Counter of number of partitions\\
         $signalName$ & string & Name of a Signal*\\
         $node.inputs$ & List of string & List of names of signals which are inputs to this node\\
-        $model.signals$ & Map(string $\to$ Signal* & Map from signal name to Signal* representing it in that BlifModel*\\
+        $model.signals$ & Map(string $\to$ Signal*) & Map from signal name to Signal* representing it in that BlifModel*\\
         \bottomrule
-        \end{tabular}
+        \end{tabularx}
         \caption{Variables for Partition}
         \label{varPart}
     \end{center}
 \end{table}
 \begin{algorithm}
-   \caption{Main Algorithm}\label{main}
+   \caption{Partition}\label{main}
    \begin{algorithmic}[1]
          \Procedure{Partition}{$file$}
             \State $blif \gets$ new Blif(file) \Comment{Read in $file$}
@@ -256,6 +212,7 @@ We then, in line 15, join all the partitions together with the original name, in
          \EndProcedure
    \end{algorithmic}
 \end{algorithm}
+\FloatBarrier
 Lines 2-6 are setting up our variables with initial values.
 We read a blif file in to memory, where it is represented as a DFG with a number of properties as described in \fixme{Reference}.
 In line 3, circuit refers to the main circuit of a blif file. As we only support non-heirarchical blif files, this will always be the only circuit.
@@ -267,9 +224,13 @@ If not, then in lines 18-20 we remove the current node from the partition, cut c
 Then in 21-22 we update our collection of output files and increment our counter for the number of partitions, and finally, in line 23-24 we create a new empty circuit for our next partition, and add the node to it.
 Then, we add the inputs to this node to our queue, and continue traversing and partitioning until we've reached every node.
 Lastly, in lines 31-35 we check if our current partition has anything in it. If so, cut loops and write it out.
-\begin{table}
+
+\newpage
+
+
+\begin{algorithm}
     \begin{center}
-        \begin{tabular}{lll}
+        \begin{tabularx}{\linewidth}{llX}
         \toprule
         Variable & Type & Description\\
         \midrule
@@ -283,19 +244,17 @@ Lastly, in lines 31-35 we check if our current partition has anything in it. If 
         $ReconfigureTime$ & Float & Time, in seconds, that it takes to reconfigure circuit\\
         $communicationTime$ & Float & Time, in seconds, that it takes to transmit reconfiguration request to controller\\
         \bottomrule
-        \end{tabular}
+        \end{tabularx}
         \caption{Variables for Partition}
         \label{varPart}
     \end{center}
-\end{table}
-\begin{algorithm}
-   \caption{Main Algorithm}\label{main}
+   \caption{RecoveryTime}\label{main}
    \begin{algorithmic}[1]
          \Procedure{RecoveryTime}{$partition$}
             \State $latency \gets frequency\times{}criticalpath$
             \State $detectionTime \gets latency$
             \State $resynchronisationTime \gets latency$
-            \State $reconfigurationTime \gets max(numFF, numLUT)/10/15...more stuff$
+            \State $reconfigurationTime \gets \mbox{max}(numFF, numLUT)/10/15...more stuff$
             \State $communicationTime \gets numPartitions\times{}latency\times{}more stuff$
             \State $recoveryTime \gets detectionTime+resynchronisationTime+reconfigurationTime+communicationTime$
             \State return $recoveryTime$
@@ -303,9 +262,11 @@ Lastly, in lines 31-35 we check if our current partition has anything in it. If 
    \end{algorithmic}
 \end{algorithm}
 
-\begin{table}
+\newpage
+
+\begin{algorithm}
     \begin{center}
-        \begin{tabular}{lll}
+        \begin{tabularx}{\linewidth}{llX}
         \toprule
         Variable & Type & Description\\
         \midrule
@@ -314,13 +275,11 @@ Lastly, in lines 31-35 we check if our current partition has anything in it. If 
         $signal$ & Signal* & \\
         $partition.outputs$ & List of Signal* & List of Signal* representing primary outputs of circuit\\
         \bottomrule
-        \end{tabular}
+        \end{tabularx}
         \caption{Variables for Partition}
         \label{varPart}
     \end{center}
-\end{table}
-\begin{algorithm}
-   \caption{Main Algorithm}\label{main}
+   \caption{CutLoops}\label{main}
    \begin{algorithmic}[1]
          \Procedure{CutLoops}{$partition$}
             \State $state \gets Map(BlifNode* \to int, DEFAULT: 0)$
@@ -333,24 +292,31 @@ Lastly, in lines 31-35 we check if our current partition has anything in it. If 
 Start recursing from outputs back to detect loops.
 Line 3 starts the recursive traversal for each output, with no parent.
 
-\begin{table}
+\newpage
+
+\begin{algorithm}
     \begin{center}
-        \begin{tabular}{lll}
+        \begin{tabularx}{\linewidth}{llX}
         \toprule
         Variable & Type & Description\\
         \midrule
         $partition$ & BlifModel* & BlifModel* containing DFG representing partition to cut cycles in\\
         $state$ & Map(BlifNode* $\to$ int) & Map of whether a node is UNKNOWN, EXPLORING, or FINISHED\\
+        $parent$ &BlifNode* & Parent node \\
         $signal$ & Signal* & \\
-        $partition.outputs$ & List of Signal* & List of Signal* representing primary outputs of circuit\\
+        $node$ &BlifNode* &\\
+        $signal.name$ & string & Name of a signal, as it appears in the blif file\\
+        $node$ &BlifNode* &\\
+        $node.inputs$ &List(string) & A list of names of input signals\\
+        $signalName$ & string & Name of a signal, as it appears in the blif file\\
+        $partition.signals$ & Map(string $\to$ Signal)* & Map from signal name to signal with that name in that partition \\
+        $signal$ & Signal* & \\
         \bottomrule
-        \end{tabular}
+        \end{tabularx}
         \caption{Variables for Partition}
         \label{varPart}
     \end{center}
-\end{table}
-\begin{algorithm}
-   \caption{Main Algorithm}\label{main}
+   \caption{CutLoopsRecursive}\label{main}
    \begin{algorithmic}[1]
          \Procedure{CutLoopsRecursive}{$partition, state, parent, signal$}
             \State $node \gets signal.source$
@@ -361,7 +327,8 @@ Line 3 starts the recursive traversal for each output, with no parent.
             \Else{}
                \State $state[node] = EXPLORING$
                \ForAll{$signalName \in node.inputs$}
-                  \State CutLoopsRecursive$(partition, state, node, partition.signals[signalName])$
+                  \State $signal \gets partition.signals[signalName]$
+                  \State CutLoopsRecursive$(partition, state, node, signal)$
                \EndFor
             \EndIf
          \EndProcedure
