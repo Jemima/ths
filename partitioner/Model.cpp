@@ -10,6 +10,7 @@ Model::Model()
    maxCost = 0;
    numLatches = 3;
    numLUTs = 2;
+   numCutLoops = 0;
 }
 Model::Model(double latency)
 {
@@ -17,6 +18,7 @@ Model::Model(double latency)
    maxCost = 0;
    numLatches = 3;
    numLUTs = 2;
+   numCutLoops = 0;
 }
 
 Model::Model(Model* model)
@@ -26,6 +28,7 @@ Model::Model(Model* model)
    maxCost = 0;
    numLatches = 3;
    numLUTs = 2;
+   numCutLoops = 0;
 }
 
 
@@ -41,21 +44,12 @@ Model::~Model(void)
 }
 
 
-void Model::MakeSignalList(bool cutLoops){
+void Model::MakeSignalList(){
    pair<string, Signal*> signalPair;
    BOOST_FOREACH(signalPair, signals){
       delete signalPair.second;
    }
    signals.clear();
-   /*if(cutLoops){
-     BOOST_FOREACH(BlifNode* node, nodes){
-#pragma warning(suppress : 6246) // Keep Visual Studio from complaining about duplicate declaration as part of the nested FOREACH macro
-BOOST_FOREACH(string sig, cycles){
-replace(node->inputs.begin(), node->inputs.end(), sig, "qqrinput"+sig);
-replace(node->outputs.begin(), node->outputs.end(), sig, "qqroutput"+sig);
-}
-}
-}*/
 
    BOOST_FOREACH(BlifNode* node, nodes){
 #pragma warning(suppress : 6246) // Keep Visual Studio from complaining about duplicate declaration as part of the nested FOREACH macro
@@ -79,12 +73,12 @@ MakeIOList();
 
 
 unordered_map<unsigned long, unsigned> maxLatencies;
-unordered_map<unsigned long, short> exploring;
+unordered_map<unsigned long, short> explored;
 
 void Model::AddNode(BlifNode* node){
    nodes.insert(node);
    unsigned maxInCost = 0;
-   BOOST_FOREACH(string s, node->inputs){ //Need to not add a signal if it causes a cycle
+   BOOST_FOREACH(string s, node->inputs){
       if(signals.count(s) == 0){
          signals[s] = new Signal(s);
       }
@@ -105,14 +99,15 @@ void Model::AddNode(BlifNode* node){
    }
    if(maxInCost == 0) //Adding a no-cost node can't increase the max path, so skip calculating the changes.
       return;
-   exploring.clear();
+   explored.clear();
    updateCosts(node, maxInCost);
 }
 void Model::updateCosts(BlifNode* node, unsigned costToReach){
-   if(exploring[node->id] == true){ //Already been here, don't get caught in a loop
+   if(explored[node->id] == 1){ //Already been here, don't get caught in a loop
       return;
    }
-   exploring[node->id] = true;
+
+   explored[node->id] = 1;
    costToReach += node->cost;
    maxLatencies[node->id] = costToReach;
    if(costToReach > maxCost)
@@ -121,13 +116,11 @@ void Model::updateCosts(BlifNode* node, unsigned costToReach){
    if(s == "")
       return;
    BOOST_FOREACH(BlifNode* newNode, this->signals[s]->sinks){
-      if(newNode->id == node->id)
-         continue;
       if(maxLatencies[newNode->id] >= costToReach+newNode->cost)
          continue; //If it won't increase the cost skip it
       updateCosts(newNode, costToReach);
    }
-   exploring[node->id] = false;
+   explored[node->id] = 2;
 }
 
 void Model::MakeIOList(){
@@ -143,8 +136,7 @@ void Model::MakeIOList(){
 }
 
 unsigned Model::CalculateCriticalPath(){
-   //Code to calculate it here
-   return 4;
+   return maxCost;
 }
 double Model::CalculateLatency(){
    //Code to calculate it here
@@ -181,7 +173,7 @@ void Model::CutLoops(){
    //Traverse signalwise, but store visited state of each node. Mark as exploring, then recurse into it.
    //Once finished recursing, mark finalised. If we're about to expand a node marked exploring, then we have a cycle, cut the current signal and return up the stack.
    //If it's marked finalised we have multiple paths, but not an actual cycle.
-    exploring.clear();
+    explored.clear();
     if(dotPath != ""){
       dotFile.open(dotPath);
       dotFile << "digraph main{" << endl;
@@ -213,22 +205,22 @@ void Model::CutLoopsRecurse(BlifNode* parent, Signal* signal){
    //cerr << "Exploring " << node->id << " - " << node->output << endl;
    if(parent != NULL && dotPath != "")
       dotFile << parent->output << " -> " << node->output <<";" << endl;
-   if(exploring[node->id] == 1){ //cycle
+   if(explored[node->id] == 1){ //cycle
       numCutLoops++;
       replace(parent->inputs.begin(), parent->inputs.end(), signal->name, "qqrin"+signal->name);
       //signal->source->output = "qqout"+signal->name;// Don't rename the output. Other signals may use it. 
       signals.erase(signal->name);
-   } else if(exploring[node->id] == 2){ //Already explored, and dealt with any loops
+   } else if(explored[node->id] == 2){ //Already explored, and dealt with any loops
       return;
    } else {
-      exploring[node->id] = 1;
+      explored[node->id] = 1;
       BOOST_FOREACH(string s, node->inputs){
          if(signals.count(s) != 0){ //If we've already renamed one of the signals, we won't find it in our signal list
             CutLoopsRecurse(node, signals[s]);
          }
       }
    }
-   exploring[node->id] = 2;
+   explored[node->id] = 2;
 }
 
 double Model::RecoveryTime(double voterArea){

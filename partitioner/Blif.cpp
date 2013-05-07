@@ -37,7 +37,7 @@ Blif::Blif(string path)
       }
       main->AddNode(node);
    } while(temp!= ".end");
-   main->MakeSignalList(false);
+   main->MakeSignalList();
    models[main->name] = main;
 
    //We want to preserve the order of inputs and outputs, so we clear the current ones, then readd in the correct order
@@ -45,14 +45,14 @@ Blif::Blif(string path)
    main->inputs.clear();
    main->outputs.clear();
    BOOST_FOREACH(string s, inputNames){
-      //if(main->signals.count(s) == 0)
-      //main->signals[s] = new Signal(s);
+      if(main->signals.count(s) == 0)
+         main->signals[s] = new Signal(s);
       main->inputs.push_back(main->signals[s]);
    }
 
    BOOST_FOREACH(string s, outputNames){
-      //if(main->signals.count(s) == 0)
-      //main->signals[s] = new Signal(s);
+      if(main->signals.count(s) == 0)
+         main->signals[s] = new Signal(s);
       main->outputs.push_back(main->signals[s]);
    }
 }

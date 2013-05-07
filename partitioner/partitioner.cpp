@@ -28,10 +28,10 @@ void TMR(Model* model, string outPath){
     counter++;
     stringstream path;
     path << outPath << counter << ".blif";
-    model->MakeSignalList(true);
+    model->MakeSignalList();
     model->MakeIOList();
     model->CutLoops();
-    model->MakeSignalList(true);
+    model->MakeSignalList();
     model->MakeIOList();
     Blif::Write(path.str(), model);
     cout << model->numCutLoops << " " << model->numLatches << " " << model->numLUTs << " " << model->CalculateLatency() << endl;

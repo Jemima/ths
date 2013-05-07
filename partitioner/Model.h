@@ -24,13 +24,16 @@ public:
     int numLatches;
     int numLUTs;
 
-    void MakeSignalList(bool cutLoops = true);
+    void MakeSignalList();
 
     void MakeIOList();
 
     //Cuts the input from this node, indicating the input should be external to this submodel.
     void Cut(BlifNode* node);
     
+    //Attempt to add node to this model. If it would make the maximum 
+    //recovery time exceed maxRecoveryTime return false and leave model unchanged,
+    //otherwise add node and make changes appropriately
     void AddNode(BlifNode* node);
 
     unsigned CalculateCriticalPath();
