@@ -58,12 +58,27 @@ def doRun(args):
             pass
             return {"error": ["./vpr", "--route_file", dir+"file.route", "--place_file", dir+"file.place", "--net_file", dir+"file.net", "--full_stats", "arch.xml", ipath]}
          path = re.findall('Final critical path: (.+) ns', output2)[0]
-         path = float(path)*1E-9
+         path = float(path)*1E-9*1.5
+         par.append('-l')
+         par.append(str(path))
+
       sys.stdout.flush()
 
       discard = open(os.devnull, 'w')
-      ret = str(subprocess.check_output(par, stderr=log), 'UTF-8')
-      ret = {"times": ret.split("\t")}
+      try:
+         ret = str(subprocess.check_output(par, stderr=log), 'UTF-8')
+      except subprocess.CalledProcessError as e:
+         if e.returncode == 203:
+            return {"error": {"message": "Unable to partition for given parameters", "par": par}}
+         elif e.returncode == 27:
+            return {"error": {"message": "Failed equivalence validation", "par": par}}
+         else:
+            raise
+      ret = ret.split("\n")
+      res = ret[1:]
+      for n in range(0, len(res)):
+         res[n] = res[n].split("\t")
+      ret = {"times": ret[0].split("\t"), "partitions": res, "out2": None, "out3": None}
       if novpr == False:
          try:
             output3 = str(subprocess.check_output(["./vpr", "--route_file", dir+"file2.route", "--place_file", dir+"file2.place", "--net_file", dir+"file2.net", "--full_stats", "arch.xml", opath], stderr=subprocess.STDOUT), 'UTF-8')
@@ -84,13 +99,20 @@ def doRun(args):
 
 def formatResults(res):
    times = res['times']
+   partitions = res['partitions']
    base = res['out2']
    tmr = res['out3']
    fields = ['channelWidth', 'type input', 'type output', 'type names', 'type latch', 'NetDelay', 'LogicDelay', 'Period']
-   sRet = "{0}\t{1}\t".format(times[0], times[9].strip())
-   for field in fields:
-      sRet += "{0}\t{1}\t".format(base[field], tmr[field])
+   sRet = "{0}\t{1}\t{2}\t{3}\t{4}\t".format(times[0], times[1], times[2], times[3], times[9].strip())
+   if base != None and tmr != None:
+      for field in fields:
+         sRet += "{0}\t{1}\t".format(base[field], tmr[field])
 
+   sRet +="\n"
+   for line in partitions:
+      for value in line:
+         sRet += "\t"+value
+      sRet += "\n"
    return sRet+"\n"
 
 
@@ -100,10 +122,10 @@ if __name__ == "__main__":
    parser.add_argument("indir", type=str, help="Input directory containing blif files")
    parser.add_argument("outdir", type=str, help="Output directory")
    parser.add_argument("-t", "--test", action="store_true", help="Test generated files")
-   parser.add_argument("-r", "--results", type=str, help="Location of results file", required=True)
+   parser.add_argument("-R", "--results", type=str, help="Location of results file", required=True)
    parser.add_argument("-l", "--log", type=str, help="Location of log file")
    parser.add_argument("-v", "--novpr", action="store_true", help="Skip running VPR")
-   parser.add_argument("-a", "--area", type=int, help="Max partition area")
+   parser.add_argument("-r", "--recoverytime", type=float, help="Max recovery time")
    parser.add_argument("-n", "--numthreads", type=int, help="Maximum number of threads to use. Defaults to 4")
 
    params = parser.parse_args()
@@ -113,15 +135,15 @@ if __name__ == "__main__":
    else:
       test = ""
    threads = params.numthreads
-   area = params.area
+   recoverytime = params.recoverytime
    test = params.test
    novpr = params.novpr
    if novpr == None:
       novpr = False
 
    pars = ["-n", "1"]
-   if area != None:
-      pars.extend(["-a", str(area)])
+   if recoverytime != None:
+      pars.extend(["-r", str(recoverytime)])
    if test != None:
       pars.append("-t")
 
@@ -144,7 +166,8 @@ if __name__ == "__main__":
    total = len(runArgs)
    sys.stderr.write("Running, 0/"+str(total)+"\n")
    results.write("File\tPartitions\tChannel Width Base\tChannel Width TMR\tNumber of Inputs Base\tNumber of Inputs TMR\tNumber of Outputs Base\tNumber of Outputs TMR\tNumber of LUTs Base\tNumber of LUTs TMR\tNumber of Latches Base\tNumber of Latches TMR\tNetDelay Base (s)\tNetDelay TMR (s)\tLogicDelay Base (s)\tLogicDelay TMR (s)\tPeriod Base (ns)\tPeriod TMR (ns)\n")
-   for i, res in enumerate(pool.imap_unordered(doRun, runArgs)):
+   results.write("Per partition values\tRecovery Time\tNumber of Outputs\tNumber of Inputs\tNumber of cut loops\tNumber of latches\tNumber of LUTs\tCritical Path Length\n")
+   for i, res in enumerate(pool.imap(doRun, runArgs)):
       #results.write(str(res)+"\n\n")
       #name, numPartitions, channelWidth, type output, type output, type latch, type names
       if 'error' in res:
@@ -164,4 +187,6 @@ if __name__ == "__main__":
             #results.write(formatResults(res))
             #results.flush()
             #sys.stderr.write("Completed "+str(i+1)+"/"+str(total)+". Finished "+res["times"][0]+"\n")
+   sys.stderr.write("\n")
+   print("\n")
    results.close()

@@ -1,4 +1,4 @@
-\documentclass[12pt,draft,oneside]{article} % use larger type; default would be 10pt
+\documentclass[12pt,final,oneside]{article} % use larger type; default would be 10pt
 \usepackage{etex}
 \usepackage[utf8]{inputenc} % set input encoding (not needed with XeLaTeX)
 \usepackage[margin=2cm]{geometry}
@@ -25,6 +25,7 @@
 \usepackage{algpseudocode}
 \usepackage{algorithm}
 \usepackage{placeins}
+\usepackage{hyperref}
 \fxsetup{
     status=draft,
     author=,
@@ -56,6 +57,16 @@ breakatwhitespace=false,    % sets if automatic breaks should only happen at whi
 escapeinside={\%*}{*)}          % if you want to add a comment within your code
 }
 \begin{document}
+   \section{TODO!!!!!!!!!!!!!!!!!!}
+      Higher level description.
+      Explain non-intuitive operations at the level of the algorithm below it.
+      queue.Dequeue -> intuitive, described that it's a FIFO queue.
+      CutLoops -> One line description of input -> output, not specifics of how. See Algorithm number for details.
+      Repeat high level description for algorithm before.
+      See section blah for a discussion of the recovery time calculation
+      Explain WriteToFile - Just outputting 
+
+
 \section{Data Structures}
 \subsection{Basic Types}
 The following are the basic types, out of which others are built, and which will be referred to. There is generally, but not always, a direct relationship to a C++ primitive.
@@ -88,16 +99,29 @@ The following are complex types, which are further defined below. This is merely
         \bottomrule
         \end{tabularx}
 
+   \begin{figure}
+      \includegraphics{doxygen/classBlif__coll__graph.pdf}
+   \end{figure}
+   \begin{figure}
+      \includegraphics{doxygen/classBlifNode__coll__graph.pdf}
+   \end{figure}
+   \begin{figure}
+      \includegraphics{doxygen/classModel__coll__graph.pdf}
+   \end{figure}
+   \begin{figure}
+      \includegraphics{doxygen/classSignal__coll__graph.pdf}
+   \end{figure}
 
-\begin{lstlisting}
-Signal
-{
-    string name;
-    BlifNode* source;
-    list<BlifNode*> sinks;
-}
-\end{lstlisting}
-
+   \subsection{Blif}
+      
+   \subsection{Model}
+      Represents the circuit as a DFG. Contains a list of nodes, map of signal name $\to$ Signal*, and lists of primary inputs and outputs for the circuit.
+      Each node contains the names of its input and output signals, allowing the Signal* to be looked up, then the Signal* contains pointers to its source and sink nodes.
+      This allows the DFG to be traversed by going from node, to signal, to node, etc.
+      The reason for having signals be referred to by name and looked up, rather than a node pointing directly to a signal is twofold.
+      One, a node is an independent construct which can be added to or removed from any Model*. For example, when adding a node into a partition. Signals, on the other hand, are circuit specific and are created and destroyed as circumstances demand.
+      Two, regardless of implementation, the node would need to store the signal name and the circuit would need to provide a mapping from name to Signal*. This method just dosn't abstract it away \fixme{Todo: actual reasons}
+      \fixme{TODO: Image showing DFG traversal, and example of blif file and class contents}
 
 \newpage
 \section{Algorithm}
@@ -331,6 +355,7 @@ Line 3 starts the recursive traversal for each output, with no parent.
                   \State CutLoopsRecursive$(partition, state, node, signal)$
                \EndFor
             \EndIf
+            \State $state[node] \gets FINISHED$
          \EndProcedure
    \end{algorithmic}
 \end{algorithm}
