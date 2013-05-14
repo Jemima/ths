@@ -190,7 +190,13 @@ void Model::updateCosts(BlifNode* root, BlifNode* parent, BlifNode* node, unsign
 }
 
 
+bool IsNotSpecialSignal(const Signal* value){
+   return !((value)->name.substr(0, 2) == "qq");
+}
+
 void Model::MakeIOList(Model* main){
+   inputs.clear();
+   outputs.clear();
    pair<string, Signal*> s;
    BOOST_FOREACH(s, this->signals){
       if(s.second->source == NULL)
@@ -373,7 +379,8 @@ double Model::RecoveryTime(unsigned voterLUTs, unsigned numPartitions){
    double latency = period*steps;
 
    //Reconfiguration time
-   int LUTs = numLUTs*2;
+   int LUTs = numLUTs*4; //This gets triplicated, so we actually have three times as many LUTs
+   LUTs += outputs.size();
    double columns = max(LUTs, numLatches);//max(numLUTs+voterLUTs*outputs.size(), numLatches);
    columns /= 160.0;
    columns = ceil(columns);
