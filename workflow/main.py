@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 from __future__ import print_function
 import argparse
 import tempfile
@@ -51,7 +51,7 @@ if __name__ == "__main__":
          pool = Pool(4)
       else:
          pool = Pool(threads);
-      TMRArgs = [["python", "blifTMR.py", "voter.blif", dirSplit+file, dirTMR+file] for file in os.listdir(dirSplit)]
+      TMRArgs = [["python3", "blifTMR.py", "voter.blif", dirSplit+file, dirTMR+file] for file in os.listdir(dirSplit)]
       pool.map(subprocess.check_call, TMRArgs, 4)
       step2 = time.clock()
       sys.stderr.write("Merging...\n")
@@ -61,7 +61,7 @@ if __name__ == "__main__":
       header.write("\n.outputs ")
       header.write(outputs)
       header.close()
-      subprocess.check_call(["python", "blifJoin.py", dir+"file.blif", dir+"header.blif", "-f", dirTMR+"*.blif"])
+      subprocess.check_call(["python3", "blifJoin.py", dir+"file.blif", dir+"header.blif", "-f", dirTMR+"*.blif"])
       
       step3 = time.clock()
       sys.stderr.write("Flattening...\n");
@@ -93,7 +93,7 @@ if __name__ == "__main__":
                sys.stderr.write(output)
                if not "are equivalent" in output:
                   exit(5)
-               #subprocess.check_call(["python", "test.py", params.infile, params.outfile])
+               #subprocess.check_call(["python3", "test.py", params.infile, params.outfile])
       step4 = time.clock()
    finally:
       shutil.rmtree(dir)
