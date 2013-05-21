@@ -1,0 +1,2 @@
+File	Partitions	Channel Width Base	Channel Width TMR	Number of Inputs Base	Number of Inputs TMR	Number of Outputs Base	Number of Outputs TMR	Number of LUTs Base	Number of LUTs TMR	Number of Latches Base	Number of Latches TMR	NetDelay Base (s)	NetDelay TMR (s)	LogicDelay Base (s)	LogicDelay TMR (s)	Period Base (ns)	Period TMR (ns)
+Per partition values	Recovery Time	Number of Outputs	Number of Inputs	Number of cut loops	Number of latches	Number of LUTs	Critical Path Length

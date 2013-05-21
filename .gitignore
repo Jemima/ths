@@ -20,3 +20,4 @@ BlogEngine.Web
 *.blif.txt
 Thumbs.db
 partitioner
+*.sdf

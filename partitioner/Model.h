@@ -3,52 +3,66 @@
 #include "BlifNode.h"
 #include "Signal.h"
 #include <unordered_map>
+#include <iostream>
+#include <fstream>
 #include <set>
 
 
 using namespace std;
 class Model
 {
-public:
-    Model();
-    Model(double latency);
-    Model(Model* model);
-    ~Model(void);
-    list<Signal*> inputs;
-    list<Signal*> outputs;
-    set<BlifNode*> nodes;
-    unordered_map<string, Signal*> signals;
-    string name;
-    double _latency;
+   public:
+      Model();
+      Model(double latency);
+      Model(Model* model);
+      ~Model(void);
+      list<Signal*> inputs;
+      list<Signal*> outputs;
+      set<BlifNode*> nodes;
+      unordered_map<string, Signal*> signals;
+      string name;
+      int numCutLoops;
+      int numLatches;
+      int numLUTs;
+      double latency;
 
-    void MakeSignalList(bool cutLoops = true);
+      //Given a signal map for the main node, creates signals for the partition by promoting necessary signals which are driven or consumed outside the partition, to primary inputs or outputs
+      void MakeIOList(Model* main);
 
-    void MakeIOList();
+      //Cuts the input from this node, indicating the input should be external to this submodel.
+      void Cut(BlifNode* node);
 
-    //Cuts the input from this node, indicating the input should be external to this submodel.
-    void Cut(BlifNode* node);
-    
-    void AddNode(BlifNode* node);
+      //Attempt to add node to this model. If it would make the maximum 
+      //recovery time exceed maxRecoveryTime return false and leave model unchanged,
+      //otherwise add node and make changes appropriately
+      void AddNode(BlifNode* node, bool traverse);
+      void RemoveNode(BlifNode* node);
 
-    unsigned CalculateCriticalPath();
+      unsigned CalculateCriticalPath();
 
-    double CalculateLatency();
+      double CalculateLatency();
 
-    double CalculateArea();
+      double CalculateArea();
 
-    Signal* GetBaseSignal(string name);
+      Signal* GetBaseSignal(string name);
 
-    void CutLoops();
+      void CutLoops();
+      void CutSignal(BlifNode* node, Signal* signal);
 
-    double RecoveryTime(double voterArea);
+      double RecoveryTime(unsigned voterLUTs, unsigned numPartitions);
 
-    double CalculateReconfigurationTime(double voterArea);
-
-    void SetDotFile(string path);
-private:
-    unsigned CalculateCriticalPath(BlifNode* node, unordered_map<int, unsigned> &visited);
-    void updateCosts(BlifNode* node, unsigned costToReach);
-    void CutLoopsRecurse(BlifNode* parent, Signal* signal);
-    unsigned maxCost;
+      void SetDotFile(string path);
+   private:
+      unsigned CalculateCriticalPath(BlifNode* node, unordered_map<int, unsigned> &visited);
+      void updateCosts(BlifNode* root, BlifNode* parent, BlifNode* node, unsigned costToReach);
+      void CutLoopsRecursive(BlifNode* parent, Signal* signal);
+      int CalculateCriticalPathRecursive(BlifNode* node, int cost);
+      unsigned maxCost;
+      void init();
+      unordered_map<string, string> cutLoops;
+      unordered_map<unsigned long, unsigned> costs;
+      unordered_map<unsigned long, short> explored;
+      string dotPath;
+      ofstream dotFile;
 };
 
