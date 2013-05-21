@@ -164,11 +164,12 @@ int main(int argc, char * argv[])
                }
             }
             nodes[nodeId] = Current;
+            double recTime = current->RecoveryTime(voterLUTs, targetPartitions);
             current->AddNode(curr, true);
             if(current->RecoveryTime(voterLUTs, targetPartitions) > recoveryTime){
                current->RemoveNode(curr);
                current->MakeIOList(model);
-               outPartition << current->RecoveryTime(voterLUTs, targetPartitions) << "\t";
+               outPartition << recTime << "\t";
                partitionCounter++;
                TMR(current, outPath); // Do all the TMR'ing stuff.
 

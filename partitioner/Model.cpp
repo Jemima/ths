@@ -102,7 +102,6 @@ void Model::RemoveNode(BlifNode* node){
    int max = 0;
    explored.clear();
    costs.clear();
-   numCutLoops = 0;
    pair<string, Signal*> sp;
    BOOST_FOREACH(sp, signals){
       int t = CalculateCriticalPathRecursive(sp.second->source, cost);
@@ -251,7 +250,7 @@ unsigned Model::CalculateCriticalPath(){
          //max = t;
    //}
    //maxCost = max;
-   return maxCost;
+   return maxCost+1;
 }
 
 int Model::CalculateCriticalPathRecursive(BlifNode* node, int cost){
@@ -379,9 +378,7 @@ double Model::RecoveryTime(unsigned voterLUTs, unsigned numPartitions){
    double latency = period*steps;
 
    //Reconfiguration time
-   int LUTs = numLUTs*4; //This gets triplicated, so we actually have three times as many LUTs
-   LUTs += outputs.size();
-   double columns = max(LUTs, numLatches);//max(numLUTs+voterLUTs*outputs.size(), numLatches);
+   double columns = max(numLUTs, numLatches);//max(numLUTs+voterLUTs*outputs.size(), numLatches);
    columns /= 160.0;
    columns = ceil(columns);
    double reconfigurationTime = 14.8e-6*columns;

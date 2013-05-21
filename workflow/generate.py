@@ -9,6 +9,7 @@ import sys
 import time
 import glob
 import re
+import random
 from multiprocessing import Pool
 from fnmatch import fnmatch
 
@@ -47,51 +48,62 @@ def doRun(args):
    par.append(opath)
    dir = tempfile.mkdtemp(dir=os.getcwd())+"/"
    ret = []
-   try:
-      path = "0.00000001"
-      if novpr == False:
-         try:
-            output2 = str(subprocess.check_output(["./vpr", "--route_file", dir+"file.route", "--place_file", dir+"file.place", "--net_file", dir+"file.net", "--full_stats", "arch.xml", ipath], stderr=subprocess.STDOUT), 'UTF-8')
-         except subprocess.CalledProcessError as e:
-            log.write(str(e.output, 'UTF-8'))
-            sys.stderr.write(str(e))
-            pass
-            return {"error": ["./vpr", "--route_file", dir+"file.route", "--place_file", dir+"file.place", "--net_file", dir+"file.net", "--full_stats", "arch.xml", ipath]}
-         path = re.findall('Final critical path: (.+) ns', output2)[0]
-         path = float(path)*1E-9*1.5
-         par.append('-l')
-         par.append(str(path))
-
-      sys.stdout.flush()
-
-      discard = open(os.devnull, 'w')
+   seed = str(random.randint(0, 30000))
+   path = "0.00000001"
+   if novpr == False:
       try:
-         ret = str(subprocess.check_output(par, stderr=log), 'UTF-8')
+         os.chdir(dir)
+         output2 = str(subprocess.check_output(["../vpr", "--route_file", "file.route", "--place_file", "file.place", "--net_file", "file.net", "--full_stats", "--seed", seed, "../arch.xml", ipath], stderr=subprocess.STDOUT), 'UTF-8')
       except subprocess.CalledProcessError as e:
-         if e.returncode == 203:
-            return {"error": {"message": "Unable to partition for given parameters", "par": par}}
-         elif e.returncode == 27:
-            return {"error": {"message": "Failed equivalence validation", "par": par}}
-         else:
-            raise
-      ret = ret.split("\n")
-      res = ret[1:]
-      for n in range(0, len(res)):
-         res[n] = res[n].split("\t")
-      ret = {"times": ret[0].split("\t"), "partitions": res, "out2": None, "out3": None}
-      if novpr == False:
+         log.write(str(e.output, 'UTF-8'))
+         sys.stderr.write(str(e))
+         os.chdir("..")
+         pass
+         return {"error": ["../vpr", "--route_file", "file.route", "--place_file", "file.place", "--net_file", "file.net", "--full_stats", "--seed", seed, "../arch.xml", ipath]}
+      path = re.findall('Final critical path: (.+) ns', output2)[0]
+      path = float(path)*1E-9*1.5
+      par.append('-l')
+      par.append(str(path))
+      os.chdir("..")
+
+   sys.stdout.flush()
+
+   discard = open(os.devnull, 'w')
+   try:
+      ret = str(subprocess.check_output(par, stderr=log), 'UTF-8')
+   except subprocess.CalledProcessError as e:
+      if e.returncode == 203:
+         return {"error": {"message": "Unable to partition for given parameters", "par": par}}
+      elif e.returncode == 27:
+         return {"error": {"message": "Failed equivalence validation", "par": par}}
+      else:
+         raise
+   ret = ret.split("\n")
+   res = ret[1:]
+   for n in range(0, len(res)):
+      res[n] = res[n].split("\t")
+   ret = {"times": ret[0].split("\t"), "partitions": res, "out2": None, "out3": None}
+   if novpr == False:
+      try:
+         os.chdir(dir)
+         output3 = str(subprocess.check_output(["../vpr", "--route_file", "file2.route", "--place_file", "file2.place", "--net_file", "file2.net", "--full_stats", "--seed", seed, "../arch.xml", opath], stderr=subprocess.STDOUT), 'UTF-8')
+      except subprocess.CalledProcessError as e:
          try:
-            output3 = str(subprocess.check_output(["./vpr", "--route_file", dir+"file2.route", "--place_file", dir+"file2.place", "--net_file", dir+"file2.net", "--full_stats", "arch.xml", opath], stderr=subprocess.STDOUT), 'UTF-8')
-         except subprocess.CalledProcessError as e:
-            log.write(str(e.output, 'UTF-8'))
-            sys.stderr.write(str(e))
+            #Try again. Sometimes VPR crashes just after packing, so use that packed netlist to place and route.
+            output3 = str(subprocess.check_output(["../vpr", "--place", "--route", "--route_file", "file2.route", "--place_file", "file2.place", "--net_file", "file2.net", "--full_stats", "--seed", seed, "../arch.xml", opath], stderr=subprocess.STDOUT), 'UTF-8')
+         except:
             pass
-            return {"error": ["./vpr", "--route_file", dir+"file2.route", "--place_file", dir+"file2.place", "--net_file", dir+"file2.net", "--full_stats", "arch.xml", ipath]}
-         ret["out2"] = parseOutput(output2)
-         ret["out3"] = parseOutput(output3)
-      sys.stdout.flush()
-   finally:
-      shutil.rmtree(dir)
+         log.write(str(e.output, 'UTF-8'))
+         sys.stderr.write(str(e))
+         os.chdir("..")
+         pass
+         return {"error": ["../vpr", "--route_file", "file2.route", "--place_file", "file2.place", "--net_file", "file2.net", "--full_stats", "--seed", seed, "../arch.xml", ipath]}
+      ret["out2"] = parseOutput(output2)
+      ret["out3"] = parseOutput(output3)
+      os.chdir("..")
+   sys.stdout.flush()
+
+   shutil.rmtree(dir)
    log.write(str(ret))
    log.write("\n")
    log.close()
@@ -172,6 +184,7 @@ if __name__ == "__main__":
       #name, numPartitions, channelWidth, type output, type output, type latch, type names
       if 'error' in res:
          sys.stderr.write(str(res)+"\n")
+         results.write(str(res)+"\n")
          errored.append(i)
       else:
          results.write(formatResults(res))
