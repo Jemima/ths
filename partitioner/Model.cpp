@@ -40,34 +40,6 @@ Model::~Model(void)
    }
 }
 
-
-//void Model::MakeSignalList(){
-   //pair<string, Signal*> signalPair;
-   //BOOST_FOREACH(signalPair, signals){
-      //delete signalPair.second;
-   //}
-   //signals.clear();
-
-   //BOOST_FOREACH(BlifNode* node, nodes){
-//#pragma warning(suppress : 6246) // Keep Visual Studio from complaining about duplicate declaration as part of the nested FOREACH macro
-      //BOOST_FOREACH(string s, node->inputs){
-         //string sigName = s;
-         //if(signals.count(s) == 0){
-            //signals[sigName] = new Signal(sigName);
-         //}
-         //signals[sigName]->sinks.push_back(node);
-      //}
-      //string s = node->output;
-      //string sigName = s;
-      //if(signals.count(s) == 0){
-         //signals[sigName] = new Signal(sigName);
-      //}
-      //signals[sigName]->source = node;
-   //}
-
-   //MakeIOList();
-//}
-
 void Model::RemoveNode(BlifNode* node){
    nodes.erase(node);
    if(node->type == ".names")
@@ -166,11 +138,11 @@ void Model::AddNode(BlifNode* node, bool traverse){
 
 //costToReach does _NOT_ include the node cost, it's just the cost of the parent in this particular path
 void Model::updateCosts(BlifNode* root, BlifNode* parent, BlifNode* node, unsigned costToReach){
-   if(explored[node->id] == true) //TODO: Check that path can't get more expensive
+   if(explored[node->id] == true && costToReach <= costs[node->id]) //TODO: Check that path can't get more expensive
       return;
    if(parent != NULL && node == root){ // cycle
       numCutLoops++;
-      CutSignal(node, signals[parent->output]);
+      CutSignal(signals[parent->output]);
       //CutLoop(parent, node)
       return;
    }
@@ -222,18 +194,6 @@ void Model::MakeIOList(Model* main){
       }
    }
 }
-
-//void Model::MakeIOList(){
-   //inputs.clear();
-   //outputs.clear();
-   //pair<string, Signal*> s;
-   //BOOST_FOREACH(s, signals){
-      //if(s.second->source == NULL)
-         //inputs.push_back(s.second);
-      //else
-         //outputs.push_back(s.second); //If it's not an input always export it as an output. We can trim unused signals later, and currently we can't detect if a signal is used in another partition or not.
-   //}                            //Excess outputs will get stripped anyway when the circuit is flattened.
-//}
 
 unsigned Model::CalculateCriticalPath(){
    //static int asd = 0;
@@ -296,26 +256,6 @@ void Model::SetDotFile(string path){
    dotPath = path;
 }
 
-void Model::CutLoops(){
-   return;
-   //Traverse the model and cut any loops
-   //Traverse signalwise, but store visited state of each node. Mark as exploring, then recurse into it.
-   //Once finished recursing, mark finalised. If we're about to expand a node marked exploring, then we have a cycle, cut the current signal and return up the stack.
-   //If it's marked finalised we have multiple paths, but not an actual cycle.
-   explored.clear();
-   if(dotPath != ""){
-      dotFile.open(dotPath);
-      dotFile << "digraph main{" << endl;
-   }
-   numCutLoops = 0;
-   BOOST_FOREACH(Signal* s, outputs){
-      this->CutLoopsRecursive(NULL, s);
-   }
-   if(dotPath != ""){
-      dotFile << "}" << endl;
-      dotFile.close();
-   }
-}
 
 BlifNode* DBG(set<BlifNode*> nodes, unsigned id){
    BOOST_FOREACH(BlifNode* node, nodes){
@@ -345,32 +285,8 @@ void Model::CutSignal(Signal* signal){
    cutLoops[name] = "qqrin"+name;
 }
 
-void Model::CutLoopsRecursive(BlifNode* parent, Signal* signal){
-   if(signal == NULL)
-      return;
-   BlifNode* node = signal->source;
-   if(node == NULL)
-      return;
-   //cerr << "Exploring " << node->id << " - " << node->output << endl;
-   if(parent != NULL && dotPath != "")
-      dotFile << parent->output << " -> " << node->output <<";" << endl;
-   if(explored[node->id] == 1){ //cycle
-      numCutLoops++;
-      CutSignal(node, signal);
-   } else if(explored[node->id] == 2){ //Already explored, and dealt with any loops
-      return;
-   } else {
-      explored[node->id] = 1;
-      BOOST_FOREACH(string s, node->inputs){
-         if(signals.count(s) != 0){ //If we've already renamed one of the signals, we won't find it in our signal list
-            CutLoopsRecursive(node, signals[s]);
-         }
-      }
-   }
-   explored[node->id] = 2;
-}
 
-double Model::RecoveryTime(unsigned voterLUTs, unsigned numPartitions){
+double Model::RecoveryTime(unsigned numPartitions){
    //resync+detect+reconfigure
    //=2*period*steps+f(area)
    double period = this->CalculateLatency();

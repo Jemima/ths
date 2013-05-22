@@ -46,10 +46,9 @@ class Model
 
       Signal* GetBaseSignal(string name);
 
-      void CutLoops();
-      void CutSignal(BlifNode* node, Signal* signal);
+      void CutSignal(Signal* signal);
 
-      double RecoveryTime(unsigned voterLUTs, unsigned numPartitions);
+      double RecoveryTime(unsigned numPartitions);
 
       void SetDotFile(string path);
    private:

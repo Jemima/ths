@@ -45,7 +45,7 @@ if __name__ == "__main__":
    times.sort()
    times = sorted(times, key=lambda x:-float(x))
    for time in times:
-      sys.stdout.write(time+"\t\t\t\t\t")
+      sys.stdout.write(time+"\tFrequency Base (TMR)\tFrequency TMR (ns)\t\t")
 
    sys.stdout.write("\n")
    for file in results:
