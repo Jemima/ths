@@ -157,10 +157,10 @@ Types marked with an * are defined in the previous section (Data Structures).
    \end{algorithmic}
 \end{algorithm}
 We're given a blif file as input.
-In line 11 we partition the input circuit into a number of sub circuits, each in a separate file.
-Then in lines 12-13 we iterate over all the partitions, and transform them into a triplicated partition with three copies and a voter circuit.
-Then in line 14 we extract the original header, which provides the name, inputs and outputs of the original circuit.
-We then, in line 15, join all the partitions together with the original name, inputs and outputs (in the same order), as the original circuit.
+In line 11 we partition the input circuit into a number of sub circuits, each in a separate file, as further expanded in Algorithm \cite{partitioner}.
+Then in lines 12-13 for each partition file, we read it in as a black box, triplicate it, insert voting logic, and write it back out.
+Next in line 14 we extract the original header, which provides the name, inputs and outputs of the original circuit.
+We then, in line 15, join all the partitions together with the original name, inputs and outputs (in the same order), as the original circuit, and finally line 16 flattens the circuit, i.e. transforms the generated heirarchical netlist into a flat netlist with only one main model, or circuit, and no submodels.
 \newpage
 
 \begin{table}
@@ -194,7 +194,7 @@ We then, in line 15, join all the partitions together with the original name, in
     \end{center}
 \end{table}
 \begin{algorithm}
-   \caption{Partition}\label{main}
+   \caption{Partition}\label{partitioner}
    \begin{algorithmic}[1]
          \Procedure{Partition}{$file$}
             \State $blif \gets$ new Blif(file) \Comment{Read in $file$}
@@ -216,11 +216,12 @@ We then, in line 15, join all the partitions together with the original name, in
                \State $partition.\mbox{AddNode}(node)$
                \If{$partition.\mbox{RecoveryTime}() > targetRecoveryTime$}
                   \State $partition.\mbox{RemoveNode}(node)$
-                  \State $\mbox{CutLoops}(partition)$
+                  \State MakeIOList$(partition, circuit)$
                   \State $file \gets partition.\mbox{WriteToFile}()$
                   \State $files \gets files+file$
                   \State $numPartitions \gets numPartitions+1$
                   \State $partition \gets$ new BlifModel \Comment{Empty Circuit}
+                  \State $partition.\mbox{AddNode}(node)$
                \EndIf
                \ForAll{$signalName \in node.inputs$}
                   \State $signal \gets model.signals[signalName]$
@@ -228,7 +229,7 @@ We then, in line 15, join all the partitions together with the original name, in
                \EndFor
             \EndWhile
             \If{$partition.size > 0$}
-               \State $\mbox{CutLoops}(partition)$
+               \State MakeIOList$(partition, circuit)$
                \State $file \gets partition.\mbox{WriteToFile}()$
                \State $files \gets files+file$
             \EndIf
@@ -237,23 +238,59 @@ We then, in line 15, join all the partitions together with the original name, in
    \end{algorithmic}
 \end{algorithm}
 \FloatBarrier
-Lines 2-6 are setting up our variables with initial values.
-We read a blif file in to memory, where it is represented as a DFG with a number of properties as described in \fixme{Reference}.
-In line 3, circuit refers to the main circuit of a blif file. As we only support non-heirarchical blif files, this will always be the only circuit.
-In lines 7-8 we push our outputs onto the queue, to start traversing.
-Line 11 pops the node from the front of the queue.
-Next, in lines 12-15 we check if this node is already marked as visited. If so, we skip it as we only add each node to exactly one partition. Otherwise, we mark it as visited and proceed to partition it.
-In lines 16-17 we add the node to the current partition, and test if we're still within our recovery time.
-If not, then in lines 18-20 we remove the current node from the partition, cut cycles within the partition, and write the partition out to a file. One file per partition.
-Then in 21-22 we update our collection of output files and increment our counter for the number of partitions, and finally, in line 23-24 we create a new empty circuit for our next partition, and add the node to it.
-Then, we add the inputs to this node to our queue, and continue traversing and partitioning until we've reached every node.
-Lastly, in lines 31-35 we check if our current partition has anything in it. If so, cut loops and write it out.
+Line 2 reads a \ac{BLIF} into memory, transforming from the \ac{BLIF} format described in \fxfatal{TODO: Reference} to the one represented by \fxfatal{TODO: Reference}.
+Lines 12-15 ensure that we visit each node only once, and thus that each node is in exactly one partition, by checking if a node has been visited before and if so, skipping it, otherwise marking it as visited and coontinuing.
+Lines 16/24 inserts the current node into the open partition, cutting any created cycles and updating values such as critical path length as outlined in Algorithm \cite{addnode}.
+Line 17 tests if the current partition recovery time is greater than our specified limit, with the algorithm used to calculate the recovery time located at Algorithm \cite{recoverytime}.
+If the recovery time is greater we execute lines 18-24, where we remove the just added node to bring our recovery time back under the limit, and then write the partition to a file.
+Line 18 calculates which signals are primary inputs or outputs for the partition, and promotes them accordingly, with more detail given in Algorithm \cite{makeiolist}.
+Writing the partition to a file simply involves outputting the name, inputs, outputs, and a list of every node in the partition in \ac{BLIF} format.
+RemoveNode, on line 19, merely removes the node from the partition's list of nodes rather than fully reversing everything AddNode does. As WriteToFile simply serialises the inputs, outputs and node list this is all that's required with the caveat that some cycles may be cut unecessarily.
+Lines 31-34 write out the final partially full partition, if there is one. See Algorithm \cite{writetofile} for a description of WriteToFile.
+
 
 \newpage
-
-
 \begin{algorithm}
-    \begin{center}
+   \begin{center}
+        \begin{tabularx}{\linewidth}{llX}
+        \toprule
+        Variable & Type & Description\\
+        \midrule
+        $partition$ & BlifModel* & Partition to create list of primary inputs and outputs for\\
+        $originalCircuit$ & BlifModel* & Original model \\
+        $signal$ & Signal* & \\
+        $signal.source$ & BlifNode* & The driver for the signal \\
+        $partition.inputs$ & List(BlifNode*) & List of primary inputs for the circuit \\
+        $partition.signals$ & Map(string $\to$ Signal*) & Map from signal name to Signal* \\
+        $originalCircuit.signals$ & Map(string $\to$ Signal*) & Map from signal name to Signal* \\
+        $signal.sinks$ & List(BlifNode*) & List of sinks for the signal \\
+
+        \bottomrule
+        \end{tabularx}
+        \caption{Variables for MakeIOList}
+        \label{varMakeiolist}
+    \end{center}
+   \caption{MakeIOList}\label{makeiolist}
+   \begin{algorithmic}[1]
+         \Procedure{MakeIOList}{$partition, originalCircuit$}
+            \ForAll{$signal \in partition.signals$}
+               \If{$signal.source = NULL$} \Comment{If this signal has no driver}
+                  \State{$partition.inputs.Add(signal)$}
+               \EndIf
+               \State $otherSignal \gets originalCircuit.signals[signal.name]$ \Comment{Get the corresponding signal in the original circuit}
+               \If{$otherSignal.sinks - signal.sinks > 0$} \Comment{If the signal has more sinks in the original circuit than it does in this partition}
+                  \State $partition.outputs.Add(signal)$
+               \EndIf
+            \EndFor
+         \EndProcedure
+   \end{algorithmic}
+\end{algorithm}
+We iterate through every signal in our partition. For each one we check if we have a source (line 4), if not it must be a primary input. Similarly, on line 7 we check if we have a sink which is not represented within our partition. If so, promote it to a primary output of the partition.
+
+
+\newpage
+\begin{algorithm}
+   \begin{center}
         \begin{tabularx}{\linewidth}{llX}
         \toprule
         Variable & Type & Description\\
@@ -269,13 +306,13 @@ Lastly, in lines 31-35 we check if our current partition has anything in it. If 
         $communicationTime$ & Float & Time, in seconds, that it takes to transmit reconfiguration request to controller\\
         \bottomrule
         \end{tabularx}
-        \caption{Variables for Partition}
-        \label{varPart}
+        \caption{Variables for Recovery Time}
+        \label{varRecoverytime}
     \end{center}
-   \caption{RecoveryTime}\label{main}
+   \caption{RecoveryTime}\label{recoverytime}
    \begin{algorithmic}[1]
          \Procedure{RecoveryTime}{$partition$}
-            \State $latency \gets frequency\times{}criticalpath$
+            \State $latency \gets frequency\times{}(criticalpath+1)$
             \State $detectionTime \gets latency$
             \State $resynchronisationTime \gets latency$
             \State $reconfigurationTime \gets \mbox{max}(numFF, numLUT)/10/15...more stuff$
@@ -285,37 +322,59 @@ Lastly, in lines 31-35 we check if our current partition has anything in it. If 
          \EndProcedure
    \end{algorithmic}
 \end{algorithm}
+The derivation of this algorithm and the values used is fully discussed in Section \fxfatal{TODO: Reference}. The criticalpath is a measure of the maximum number of latches on a path from input to output. The +1 is to account for the contribution of combinational logic, which may be up to one additional clock cycle of latency.
+
 
 \newpage
-
 \begin{algorithm}
     \begin{center}
         \begin{tabularx}{\linewidth}{llX}
         \toprule
         Variable & Type & Description\\
         \midrule
-        $partition$ & BlifModel* & BlifModel* containing DFG representing partition to cut cycles in\\
-        $state$ & Map(BlifNode* $\to$ int) & Map of whether a node is UNKNOWN, EXPLORING, or FINISHED\\
+        $partition$ & BlifModel* & BlifModel* containing DFG representing partition to add node to\\
+        $node$ & BlifNode* & Node to add\\
         $signal$ & Signal* & \\
-        $partition.outputs$ & List of Signal* & List of Signal* representing primary outputs of circuit\\
+        $signalName$ & string & \\
+        $partition.cutLoops$ & Map[string $\to$ string] & For signals which have been cut, a map of the old to the new name\\
+        $partition.signals$ & Map[string $\to$ Signal* & Map of signal name to Signal* \\
+        $signal.sinks$ & list(BlifNode*) & List of sinks for a Signal* \\
+        $signal.source$ & BlifNode* & Source, or driver, for a Signal* \\
+        $inCost$ & int & Maximum number of critical path steps to reach node, not counting the node itself \\
+        $explored$ & Map(BlifNode* $\to$ boolean) & Whether a node has been reached yet in the current iteration \\ 
         \bottomrule
         \end{tabularx}
-        \caption{Variables for Partition}
-        \label{varPart}
+        \caption{Variables for AddNode}
+        \label{varAddnode}
     \end{center}
-   \caption{CutLoops}\label{main}
+   \caption{AddNode}\label{addnode}
    \begin{algorithmic}[1]
-         \Procedure{CutLoops}{$partition$}
-            \State $state \gets Map(BlifNode* \to int, DEFAULT: 0)$
-            \ForAll{$signal \in partition.outputs$}
-               \State CutLoopsRecursive$(state, NULL, signal)$
+         \Procedure{AddNode}{$partition, node$}
+            \State $nodes.insert(node)$
+            \ForAll{$signalName in node.inputs$}
+               \If{$partition.cutLoops[signalName] \neq ""$}
+                  \State $signalName \gets cutLoops[signalName]$ \Comment{If this signal has been renamed already to avoid a cycle, rename this occurance of it.}
+               \EndIf
+               \State $signal \gets partition.signals[name]$
+               \State $signal.sinks.Add(node)$
             \EndFor
+            \State $signal \gets partition.signals[node.output]$
+            \State $signal.source \gets node$
+
+            \State $inCost \gets 0$
+            \ForAll{$signalName \in node.inputs$}
+               \State $source \gets partition.signals[signalName].source$
+               \If{$partition.costs[source] > inCost$}
+                  \State $inCost \gets partition.costs[source]$
+               \EndIf
+            \EndFor
+            \State UpdateCostsAndBreakCycles$(partition, node, NULL, node, inCost, explored, costs)$
          \EndProcedure
    \end{algorithmic}
 \end{algorithm}
-Start recursing from outputs back to detect loops.
-Line 3 starts the recursive traversal for each output, with no parent.
-
+Lines 4-6 check if one of the inputs signals for this node has been cut to remove a cycle. If so, we rename the signal appropriately, to what the new primary input is called.
+Additionally, lines 3-11 update the appropriate signals so that this node is reachable within the \ac{DFG}.
+Lines 12-19 then update the maximum path length (or latency in clock cycles) while detecting and cutting any newly created cycles.
 \newpage
 
 \begin{algorithm}
@@ -324,42 +383,209 @@ Line 3 starts the recursive traversal for each output, with no parent.
         \toprule
         Variable & Type & Description\\
         \midrule
-        $partition$ & BlifModel* & BlifModel* containing DFG representing partition to cut cycles in\\
-        $state$ & Map(BlifNode* $\to$ int) & Map of whether a node is UNKNOWN, EXPLORING, or FINISHED\\
-        $parent$ &BlifNode* & Parent node \\
-        $signal$ & Signal* & \\
-        $node$ &BlifNode* &\\
-        $signal.name$ & string & Name of a signal, as it appears in the blif file\\
-        $node$ &BlifNode* &\\
-        $node.inputs$ &List(string) & A list of names of input signals\\
-        $signalName$ & string & Name of a signal, as it appears in the blif file\\
-        $partition.signals$ & Map(string $\to$ Signal)* & Map from signal name to signal with that name in that partition \\
-        $signal$ & Signal* & \\
+        $partition$ & BlifModel* & BlifModel* containing DFG representing partition to add node to\\
+        $root$ & BlifNode* & Newly added node\\
+        $node$ & BlifNode* & Node we just came from\\
+        $node$ & BlifNode* & Current node\\
+        $costToReach$ & int & Maximum number of critical path steps to reach node, not counting the node itself \\
+        $explored$ & Map(BlifNode* $\to$ boolean) & Whether a node has been reached yet in the current iteration \\ 
+        $partition.signals$ & Map[string $\to$ Signal* & Map of signal name to Signal* \\
+        $partition.signals[parent.output]$ & BlifNode* & Signal driven by the prior node i.e. the graph edge we most recently travelled. \\
+        $node.cost$ & int & 1 for latches, 0 for LUTs \\
+        $costs$ & Map(BlifNode* $\to$ int) & Map of the cost to reach each node \\
+        $node$ & BlifNode* & \\
+        $signal.sinks$ & list(BlifNode*) & List of sinks for a Signal* \\
+        $cost$ & int & Number of critical path steps to reach node, including the node itself \\
         \bottomrule
         \end{tabularx}
-        \caption{Variables for Partition}
-        \label{varPart}
+        \caption{Variables for UpdateCostsAndBreakCycles}
+        \label{varUpdatecosts}
     \end{center}
-   \caption{CutLoopsRecursive}\label{main}
+   \caption{UpdateCostsAndBreakCycles}\label{updatecosts}
    \begin{algorithmic}[1]
-         \Procedure{CutLoopsRecursive}{$partition, state, parent, signal$}
-            \State $node \gets signal.source$
-            \If{$state[node] = EXPLORING$}\Comment{Found a cycle}
-               \State ReplaceSignalName$(parent.inputs, signal.name, "qqrin"+signal.name)$
-            \ElsIf{$state[node] = FINISHED$} \Comment{Already explored this path}
-               \State return
-            \Else{}
-               \State $state[node] = EXPLORING$
-               \ForAll{$signalName \in node.inputs$}
-                  \State $signal \gets partition.signals[signalName]$
-                  \State CutLoopsRecursive$(partition, state, node, signal)$
-               \EndFor
-            \EndIf
-            \State $state[node] \gets FINISHED$
-         \EndProcedure
+      \Procedure{UpdateCostsAndBreakCycles}{$partition, root, parent, node, costToReach, explored$}
+      \If{$explored[node] = true $and$costs[node] \ge costToReach$} \Comment{Already expanded this path, and it can't change}
+            \State return
+         \EndIf
+         \If{$parent \neq NULL $and$ node = root$} \Comment{We have a cycle, as all newly created cycles must go through the new node, and the new node should only ever be reached once at the start without cycles}
+            \State CutSignal$(partition, partition.signals[parent.output])$
+            \State return
+         \EndIf
+         \State $cost \gets costToReach+node.cost$
+         \If{$cost > costs[node]$}
+            \State $costs[node] = cost$
+         \Else
+            \State $cost = costs[node]$
+         \EndIf
+         \ForAll{$node \in partition.signals[node.output].sinks$}
+            \State UpdateCostsAndBreakCycles$(root, node, child, cost, explored)$
+         \EndFor
+         \State $explored[node] = true$
+      \EndProcedure
+   \end{algorithmic}
+\end{algorithm}
+We care about two things. One, the maximum cost to reach a node, and two, detecting and removing any cycles.
+Given an existing \ac{DAG} \fxnote{Directed Acyclic Graph} which we insert a new node into, then 1. The new node is the root node of a subtree within the \ac{DAG}. 2. Nodes which are not within the subtree cannot have the maximum cost to reach them change (as nothing has changed in any path to them). 3. Any cycles must pass through the new root node, as there are no cycles elsewhere in the graph. 4. Without any cycles, the root node will only be reached once at the start.
+Using this information we develop our traversal algorithm.
+Line 2 demonstrates an optimisation, in that once a path has been checked we need not recheck it unless we have found a more expensive path to it as otherwise nothing will change.
+Lines 5-8 check if we have detected a cycle. If so, cut it through cutting the signal, detailed in algorithm \cite{cutsignal}.
+\newpage
+
+\begin{algorithm}
+    \begin{center}
+        \begin{tabularx}{\linewidth}{llX}
+        \toprule
+        Variable & Type & Description\\
+        \midrule
+        $partition$ & BlifModel* & BlifModel* containing DFG representing partition to add node to\\
+        $partition.cutLoops$ & Map(string $\to$ string) & Map from old to new name of a cut signal. Note that only the input signal is renamed. The output signal retains the same name.\\
+        $signal$ & Signal* & The signal we're cutting\\
+        $newSignal$ & Signal* & The new signal we created\\
+        $signal.source$ & BlifNode* & The source, or driver, of a signal\\
+        $partition.signals$ & Map(string $\to$ Signal*) & A map from signal name to signal\\
+        $partition.outputs$ & list(Signal*) & The primary outputs for the circuit\\
+        $node$ & BlifNode* & \\
+        $node.inputs$ & list(string) & names of input signals to a node\\
+        \bottomrule
+        \end{tabularx}
+        \caption{Variables for CutSignal}
+        \label{varCutsignal}
+    \end{center}
+   \caption{CutSignal}\label{cutsignal}
+   \begin{algorithmic}[1]
+      \Procedure{CutSignal}{$partition, signal$}
+         \State $newSignal \gets new Signal(name)$ \Comment{Create a new signal with the same name, but currently no sources or sinks}
+         \State $newSignal.source \gets signal.source$
+         \State $partition.signals[name] \gets newSignal$
+         \State replace$(partition.outputs, signal, newSignal)$ \Comment{Replace any occurances of the old signal in the circuit outputs with the new}
+         \State $signal.name \gets "qqrin"+name$
+         \State $signal.source = NULL$
+         \State $signals[signal.name] \gets signal$
+         \State $cutLoops[newSignal.name] \gets signal.name$
+         \ForAll{$node \in signal.sinks$}
+            \State replace$(node.inputs, name, "qqrin"+name)$
+         \EndFor
+      \EndProcedure
+   \end{algorithmic}
+\end{algorithm}
+Cutting a signal consists of splitting an existing signal into two. One with the same source but no sinks as a primary output. One with the same sinks but no source as a primary input. We also need to update existing references to point to the correct signal, and record the change to update any future references as nodes get added.
+
+\newpage
+\subsection{TMR}
+Given a file containing a partition, read it in as a black box, triplicate it, add voter logic, write back out to file.
+
+
+\begin{algorithm}
+    \begin{center}
+        \begin{tabularx}{\linewidth}{llX}
+        \toprule
+        Variable & Type & Description\\
+        \midrule
+        $partition$ & BlifModel* & BlifModel* containing DFG representing partition to add node to\\
+        $partition.cutLoops$ & Map(string $\to$ string) & Map from old to new name of a cut signal. Note that only the input signal is renamed. The output signal retains the same name.\\
+        $signal$ & Signal* & The signal we're cutting\\
+        $newSignal$ & Signal* & The new signal we created\\
+        $signal.source$ & BlifNode* & The source, or driver, of a signal\\
+        $partition.signals$ & Map(string $\to$ Signal*) & A map from signal name to signal\\
+        $partition.outputs$ & list(Signal*) & The primary outputs for the circuit\\
+        $node$ & BlifNode* & \\
+        $node.inputs$ & list(string) & names of input signals to a node\\
+        \bottomrule
+        \end{tabularx}
+        \caption{Variables for TMR}
+        \label{varTMR}
+    \end{center}
+   \caption{TMR}\label{TMR}
+   \begin{algorithmic}[1]
+      \Procedure{TMR}{$file$}
+         \State $circuit \gets file.read()$
+         \State $header \gets circuit.header$
+         \State $voter \gets voter.read()$
+         \State $subcktDefinition1 \gets MakeSubcktDefinition(circuit)$
+         \State $subcktDefinition2 \gets MakeSubcktDefinition(circuit)$
+         \State $subcktDefinition3 \gets MakeSubcktDefinition(circuit)$
+         \State $voterDefinition \gets MakeSubcktDefinition(voter)$
+         \State $subcktDefinition.ConnectInputs(circuit.inputs)$
+         \State $voterDefinition.ConnectInputs(subcktDefinition1.outputs, subcktDefinition2.outputs, subcktDefinition3.outputs)$
+         \State $voterDefinition.ConnectOutputs(circuit.outputs)$
+         \State $file.write(header)$
+         \State $file.write(voterDefinition)$
+         \State $file.write(subcktDefinition1)$
+         \State $file.write(subcktDefinition2)$
+         \State $file.write(subcktDefinition3)$
+         \State $file.write(voter)$
+         \State $file.write(circuit)$
+      \EndProcedure
+   \end{algorithmic}
+\end{algorithm}
+This method operates on the \ac{BLIF} in a low level way, dealing manipulating the actual file contents, rather than operating on an abstract circuit representation, as we transform a flat circuit, into a heirarchical circuit, in which out original flat circuit remains untouched but we insert voting and similar logic around it.
+We read in our partition circuit and voter circuit. We now create three partition subcircuit and one voter subcircuit definitions. We match up our signal names between them appropriately, and then write out our subcircuit definitions, followed by our partition and voter subcircuits.
+
+This transforms a file from format:
+\begin{lstlisting}
+.name partition
+.inputs ...
+contents
+\end{lstlisting}
+Into one in format:
+\begin{lstlisting}
+.name TMR
+.inputs ...
+.subckt partition
+.subckt partition
+.subckt partition
+.subckt voter
+.end
+
+.name voter
+...
+.end
+.name partition
+...
+.end
+\end{lstlisting}
+
+\subsection{BlifJoin}
+Given a list of blif files, concatenates them all together, creates
+subcircuit definitions to connect them all together, and writes them to a file
+\subsection{Flatten}
+
+\begin{algorithm}
+    \begin{center}
+        \begin{tabularx}{\linewidth}{llX}
+        \toprule
+        Variable & Type & Description\\
+        \midrule
+        $file$ & file & File to flatten\\
+        \bottomrule
+        \end{tabularx}
+        \caption{Variables for Flatten}
+        \label{varFlatten}
+    \end{center}
+   \caption{Flatten}\label{Flatten}
+   \begin{algorithmic}[1]
+      \Procedure{Flatten}{$file$}
+         \Comment{Flattening is currently performed by abc (link), called with parameters:}
+         \State ./abc -o output -c echo file
+         \Comment{Due to bug in abc, clock information is stripped from latches, so we then call grep and sed to fix the output file}
+         \State $latch \gets $split(grep -m 1 '\.latch' file)
+         \If{$latch$}
+            \State sed -ri 's/(\textbackslash.latch.+)(2)/\textbackslash1 '+latch[3] + ' ' + latch[4] + ' 2/' output
+         \EndIf
+      \EndProcedure
    \end{algorithmic}
 \end{algorithm}
 
+      BEGIN Flatten(file)
+      END Flatten(file)
+./abc is provided an input file, given the command to echo the current file,
+and told to output everything to output
+grep is called to search for latches, and return the latch information if
+there is one. If there is, replace the faulty latch information with the
+correct information.
+This assumes that there is only one global clock, all latches are triggered on
+the same signal (e.g. rising edge, falling etc), and all latches have initial
+state don't care, which holds true for all provided benchmarks.
 \end{document}
 
 
@@ -407,108 +633,4 @@ Line 3 starts the recursive traversal for each output, with no parent.
       %END ReplaceSignalName
 %String replace, given a list of strings, a string to match, and a string to replace it with.
 
-      %BEGIN Triplicate(file)
-         %Variables:
-            %voter - string containing blif voter circuit
-            %file - string containing path to input file
-            %circuit - string containing blif circuit
-            %output - output circuit
-            %subckt - string representing subcircuit text for blif file
-            %inputs - array of input names
-            %outputs - array of output names
-            %name - string containing circuit name
-            %str - temporary string variable
-            %n - temporary integer counter
-
-         %voter <- "voter.blif"->GetContents()
-         %name <- ParseLine(file->GetNextLine())
-         %inputs <- ParseLine(file->GetNextLine())
-         %outputs <- ParseLine(file->GetNextLine())
-         %file->seek(0)
-         %circuit <- file->GetContents()
-         %output->write(".model output\n")
-         %output->write(".inputs "+inputs+"\n")
-         %output->write(".outputs "+outputs+"\n")
-
-         %subckt <- "\n.subckt "+name
-         %FOREACH(str in inputs)
-             %subckt <- subckt + " " + str + "=" + str
-         %n <- 0
-         %FOREACH(str in outputs)
-            %subckt <- subckt + " " + str + "=" + "qq" + n + "//replace"
-            %n <- n+1
-         %subckt <- subckt->replace("=qqrin", "=")
-
-         %output->write(subckt->replace("//replace", '0'))
-         %output->write(subckt->replace("//replace", '1'))
-         %output->write(subckt->replace("//replace", '2'))
-
-         %n <- 0
-         %FOREACH(str in outputs)
-            %output->write("\n.subckt voter a=qq"+n+"0 b=qq"+n+"1 c=qq"+n+"2
-            %out="str)
-            %n <- n+1
-
-         %output->write(voter)
-         %output->write(circuit)
-         %return output
-      %END Triplicate
-%file->GetNextLine reads the next line from the file. Note that lines may be
-%continued according to the blif specification by ending the line with a '\'
-%file->GetContents returns the entire contents of the file.
-%This probably needs to be tidied up. Sort out exactly how much detail to go
-%into. I suspect this would be better represented graphically.
-%Basically, given a voter and a circuit, embed both as subcircuits into a new
-%heirarchical blif file, create three instances of the circuit and one of the
-%voter, and connect each set of three corresponding outputs to one voter, to
-%the single corresponding overall output.
-
-      %BEGIN Join(files, header)
-         %Variables:
-            
-         %output->write(header)
-         %tail <- ""
-         %count <- 0
-         %FOREACH(file in files)
-            %name <- ParseLine(file->GetNextLine())
-            %inputs <- ParseLine(file->GetNextLine())
-            %outputs <- ParseLine(file->GetNextLine())
-            %prefix <- "p"+count
-            %file->seek(0)
-            %circuit <- file->GetContents()
-            %subckt <- ".subckt "+prefix+name
-            %FOREACH(str in inputs)
-               %subckt <- subckt + str + "=" + str
-            %FOREACH(str in outputs)
-               %subckt <- subckt + str + "=" + str
-            %circuit->replace(".model ", ".model "+prefix)
-            %circuit->replace(".subckt ", ".subckt "+prefix)
-            %tail <- tail+circuit
-            %output->write(subckt)
-            %count <- count+1
-
-         %output->write(tail)
-
-         %return output
-      %END Join
-%Given a list of blif files, concatenates them all together, creates
-%subcircuit definitions to connect them all together, and writes them to a file
-
-      %BEGIN Flatten(file)
-         %Flattening is currently performed by abc (link), called with parameters:
-         %./abc -o output -c echo file
-         %Due to bug in abc, clock information is stripped from latches, so we then
-         %called grep and sed to fix the output file
-         %latch = split(grep -m 1 '\.latch' file)
-         %IF(latch)
-            %sed -ri 's/\.latch.+)(2)/\1 '+latch[3] + ' ' + latch[4] + ' 2/' output
-      %END Flatten(file)
-%./abc is provided an input file, given the command to echo the current file,
-%and told to output everything to output
-%grep is called to search for latches, and return the latch information if
-%there is one. If there is, replace the faulty latch information with the
-%correct information.
-%This assumes that there is only one global clock, all latches are triggered on
-%the same signal (e.g. rising edge, falling etc), and all latches have initial
-%state don't care, which holds true for all provided benchmarks.
 %\end{document}
