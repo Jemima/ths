@@ -177,7 +177,7 @@ if __name__ == "__main__":
    errored = []
    total = len(runArgs)
    sys.stderr.write("Running, 0/"+str(total)+"\n")
-   results.write("File\tPartitions\tChannel Width Base\tChannel Width TMR\tNumber of Inputs Base\tNumber of Inputs TMR\tNumber of Outputs Base\tNumber of Outputs TMR\tNumber of LUTs Base\tNumber of LUTs TMR\tNumber of Latches Base\tNumber of Latches TMR\tNetDelay Base (s)\tNetDelay TMR (s)\tLogicDelay Base (s)\tLogicDelay TMR (s)\tPeriod Base (ns)\tPeriod TMR (ns)\n")
+   results.write("File\tUnused\tNumber of Nodes\tEstimated Latency\tPartitions\tChannel Width Base\tChannel Width TMR\tNumber of Inputs Base\tNumber of Inputs TMR\tNumber of Outputs Base\tNumber of Outputs TMR\tNumber of LUTs Base\tNumber of LUTs TMR\tNumber of Latches Base\tNumber of Latches TMR\tNetDelay Base (s)\tNetDelay TMR (s)\tLogicDelay Base (s)\tLogicDelay TMR (s)\tPeriod Base (ns)\tPeriod TMR (ns)\n")
    results.write("Per partition values\tRecovery Time\tNumber of Outputs\tNumber of Inputs\tNumber of cut loops\tNumber of latches\tNumber of LUTs\tCritical Path Length\n")
    for i, res in enumerate(pool.imap(doRun, runArgs)):
       #results.write(str(res)+"\n\n")

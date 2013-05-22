@@ -13,13 +13,12 @@ def parse(fileName):
    for line in file:
       if line[0] == '/':
          line = line.split()
-         lines[line[0]] = [line[1], line[19], line[20]]
+         lines[line[0]] = [line[4], line[19], line[20]]
 
    return lines
 if __name__ == "__main__":
    parser = argparse.ArgumentParser(description="Collate multiple results files, and generate a summary")
    parser.add_argument("indir", type=str, help="Input directory")
-   parser.add_argument("outfile", type=str, help="Output summary file")
 
    params = parser.parse_args()
    files = [os.path.join(params.indir, f) for f in os.listdir(params.indir)]
@@ -35,20 +34,31 @@ if __name__ == "__main__":
       for inner in info[outer]:
          results[inner] = {}
 
+   times = []
    for outer in info:
-      sys.stdout.write(outer+"\t")
+      time = outer[len(params.indir)+1:outer.rindex('.')]
+      times.append(time)
+      
       for inner in info[outer]:
-         results[inner][outer] = info[outer][inner]
+         results[inner][time] = info[outer][inner]
 
-   pp = pprint.PrettyPrinter()
-   pp.pprint(results)
+   times.sort()
+   times = sorted(times, key=lambda x:-float(x))
+   for time in times:
+      sys.stdout.write(time+"\t\t\t\t\t")
+
+   sys.stdout.write("\n")
    for file in results:
       sys.stdout.write(file)
       sys.stdout.write("\t")
-      for run in results[file]:
-         for res in results[file][run]:
-            sys.stdout.write(res+"\t")
-      print("\n")
+      for time in times:
+         if time in results[file]:
+            for res in results[file][time]:
+               sys.stdout.write(res+"\t")
+            sys.stdout.write("\t\t")
+         else:
+            sys.stdout.write("N/A\tN/A\tN/A\t")
+      sys.stdout.write("\n")
 
 
 #We have structure resultfile -> bliffile -> results

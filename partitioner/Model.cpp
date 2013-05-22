@@ -166,7 +166,7 @@ void Model::AddNode(BlifNode* node, bool traverse){
 
 //costToReach does _NOT_ include the node cost, it's just the cost of the parent in this particular path
 void Model::updateCosts(BlifNode* root, BlifNode* parent, BlifNode* node, unsigned costToReach){
-   if(explored[node->id] == true)
+   if(explored[node->id] == true) //TODO: Check that path can't get more expensive
       return;
    if(parent != NULL && node == root){ // cycle
       numCutLoops++;
@@ -326,7 +326,7 @@ BlifNode* DBG(set<BlifNode*> nodes, unsigned id){
 }
 
 //node is a sink of signal
-void Model::CutSignal(BlifNode* node, Signal* signal){
+void Model::CutSignal(Signal* signal){
    //node->output is now PO, called [name], and has no sinks
    string name = signal->name;
    Signal* sig = new Signal(name);
