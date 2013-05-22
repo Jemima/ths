@@ -103,7 +103,7 @@ def doRun(args):
       os.chdir("..")
    sys.stdout.flush()
 
-   shutil.rmtree(dir)
+   #shutil.rmtree(dir)
    log.write(str(ret))
    log.write("\n")
    log.close()
@@ -114,7 +114,7 @@ def formatResults(res):
    partitions = res['partitions']
    base = res['out2']
    tmr = res['out3']
-   fields = ['channelWidth', 'type input', 'type output', 'type names', 'type latch', 'NetDelay', 'LogicDelay', 'Period']
+   fields = ['channelWidth', 'type input', 'type output', 'type names', 'type latch', 'Duration', 'NetDelay', 'LogicDelay', 'Period']
    sRet = "{0}\t{1}\t{2}\t{3}\t{4}\t".format(times[0], times[1], times[2], times[3], times[9].strip())
    if base != None and tmr != None:
       for field in fields:
@@ -177,7 +177,7 @@ if __name__ == "__main__":
    errored = []
    total = len(runArgs)
    sys.stderr.write("Running, 0/"+str(total)+"\n")
-   results.write("File\tUnused\tNumber of Nodes\tEstimated Latency\tPartitions\tChannel Width Base\tChannel Width TMR\tNumber of Inputs Base\tNumber of Inputs TMR\tNumber of Outputs Base\tNumber of Outputs TMR\tNumber of LUTs Base\tNumber of LUTs TMR\tNumber of Latches Base\tNumber of Latches TMR\tNetDelay Base (s)\tNetDelay TMR (s)\tLogicDelay Base (s)\tLogicDelay TMR (s)\tPeriod Base (ns)\tPeriod TMR (ns)\n")
+   results.write("File\tUnused\tNumber of Nodes\tEstimated Latency\tPartitions\tChannel Width Base\tChannel Width TMR\tNumber of Inputs Base\tNumber of Inputs TMR\tNumber of Outputs Base\tNumber of Outputs TMR\tNumber of LUTs Base\tNumber of LUTs TMR\tNumber of Latches Base\tNumber of Latches TMR\tVPR Duration Base\tVPR Duration TMR\tNetDelay Base (s)\tNetDelay TMR (s)\tLogicDelay Base (s)\tLogicDelay TMR (s)\tPeriod Base (ns)\tPeriod TMR (ns)\n")
    results.write("Per partition values\tRecovery Time\tNumber of Outputs\tNumber of Inputs\tNumber of cut loops\tNumber of latches\tNumber of LUTs\tCritical Path Length\n")
    for i, res in enumerate(pool.imap(doRun, runArgs)):
       #results.write(str(res)+"\n\n")

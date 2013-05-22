@@ -8,10 +8,7 @@
 #include <boost/range/adaptor/map.hpp>
 namespace po = boost::program_options;
 
-const double MAX_AREA = 800; //Max area allowed to be used per partition
-const double MAX_TIME = 100; //Max time allowed for pipeline to finish ( = steps/clock+constant)
 const double RECOVERY_TIME = 0.1; //Max recovery time allowed in seconds
-const double VOTER_LUTS = 1;
 const double CLOCK_PERIOD = 1E-8;
 
 using namespace std;
@@ -25,12 +22,11 @@ enum NodeState{
 
 stringstream outPartition;
 stringstream out;
-int partitionCounter = 0;
+unsigned partitionCounter = 0;
 
 void TMR(Model* model, string outPath){
    stringstream path;
    path << outPath << partitionCounter << ".blif";
-   model->CutLoops();
    Blif::Write(path.str(), model);
    outPartition << model->outputs.size() << "\t" << model->inputs.size() << "\t" << model->numCutLoops << "\t" << model->numLatches << "\t" << model->numLUTs << "\t" << model->CalculateCriticalPath() << endl;
 }
@@ -52,10 +48,7 @@ int main(int argc, char * argv[])
       ("help,h", "produce help message")
       ("infile,f", po::value<string>(), "input file")
       ("outfile,o", po::value<string>(), "output path prefix. Required unless -c is also passed")
-      ("voter-area,v", po::value<double>(), "area of voter circuit")
       ("clock-period,p", po::value<double>(), "estimate for final clock period")
-      ("max-area,a", po::value<double>(), "maximum area per partition")
-      //("max-time,t", po::value<double>(), "maximum time per partition")
       ("recovery-time,r", po::value<double>(), "maximum recovery time per partition")
       ("quiet,q", "suppress all output besides output list")
       ("calculate,c", "doesn't partition, just calculates circuit stats e.g. circuit critical path and outputs to STDOUT")
@@ -83,26 +76,11 @@ int main(int argc, char * argv[])
    if(vm.count("quiet") != 0)
       quiet = true;
 
-   double voterLUTs = VOTER_LUTS;
-   if(vm.count("voter-area")){
-      voterLUTs = vm["voter-area"].as<double>();
-      if(!quiet) cout << "Setting voter area"<< endl;
-   }
    //double area = voterArea;
    double clockPeriod = CLOCK_PERIOD;
    if(vm.count("clock-period")){
       clockPeriod = vm["clock-period"].as<double>();
       if(!quiet) cout << "Setting clock period"<< endl;
-   }
-   double maxArea = MAX_AREA;
-   if(vm.count("max-area")){
-      maxArea = vm["max-area"].as<double>();
-      if(!quiet) cout << "Setting max area"<< endl;
-   }
-   double maxTime = MAX_TIME;
-   if(vm.count("max-time")){
-      maxTime = vm["max-time"].as<double>();
-      if(!quiet) cout << "Setting max time"<< endl;
    }
    double recoveryTime = RECOVERY_TIME;
    if(vm.count("recovery-time")){
@@ -164,9 +142,9 @@ int main(int argc, char * argv[])
                }
             }
             nodes[nodeId] = Current;
-            double recTime = current->RecoveryTime(voterLUTs, targetPartitions);
+            double recTime = current->RecoveryTime(targetPartitions);
             current->AddNode(curr, true);
-            if(current->RecoveryTime(voterLUTs, targetPartitions) > recoveryTime){
+            if(current->RecoveryTime(targetPartitions) > recoveryTime){
                current->RemoveNode(curr);
                current->MakeIOList(model);
                outPartition << recTime << "\t";
@@ -181,8 +159,8 @@ int main(int argc, char * argv[])
                currName << "partition" << model->name << partitionCounter;
                current->name = currName.str();
                current->AddNode(curr, true);
-               current->RecoveryTime(voterLUTs, targetPartitions);
-               if(current->RecoveryTime(voterLUTs, targetPartitions) > recoveryTime){
+               current->RecoveryTime(targetPartitions);
+               if(current->RecoveryTime(targetPartitions) > recoveryTime){
                   cerr << "Unable to meet partition requirements, even with only one node per partition. Please relax the requirements" << endl;
                   return 203;
                }
@@ -197,7 +175,7 @@ int main(int argc, char * argv[])
          if(current->nodes.size() > 0){
             partitionCounter++;
             current->MakeIOList(model);
-            outPartition << current->RecoveryTime(voterLUTs, targetPartitions) << "\t";
+            outPartition << current->RecoveryTime(targetPartitions) << "\t";
             TMR(current, outPath);
          }
          delete current;
