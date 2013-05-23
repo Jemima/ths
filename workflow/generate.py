@@ -103,7 +103,7 @@ def doRun(args):
       os.chdir("..")
    sys.stdout.flush()
 
-   #shutil.rmtree(dir)
+   shutil.rmtree(dir)
    log.write(str(ret))
    log.write("\n")
    log.close()
