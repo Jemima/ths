@@ -38,6 +38,7 @@ def doRun(args):
    mainParams = args[2]
    novpr = args[3]
    logPath = args[4]
+   channelWidth = args[5]
    if logPath == None:
       log = open(os.devnull, 'w')
    else:
@@ -50,16 +51,23 @@ def doRun(args):
    ret = []
    seed = str(random.randint(0, 30000))
    path = "0.00000001"
+   vprParams = ["../vpr", "--route_file", "file.route", "--place_file", "file.place", "--net_file", "file.net", "--full_stats", "--seed", seed]
+   if channelWidth != None:
+      vprParams.append("--route_chan_width")
+      vprParams.append(str(channelWidth))
+
+   vprParams.append("../arch.xml")
    if novpr == False:
       try:
          os.chdir(dir)
-         output2 = str(subprocess.check_output(["../vpr", "--route_file", "file.route", "--place_file", "file.place", "--net_file", "file.net", "--full_stats", "--seed", seed, "../arch.xml", ipath], stderr=subprocess.STDOUT), 'UTF-8')
+         vprParams.append(ipath)
+         output2 = str(subprocess.check_output(vprParams, stderr=subprocess.STDOUT), 'UTF-8')
       except subprocess.CalledProcessError as e:
          log.write(str(e.output, 'UTF-8'))
          sys.stderr.write(str(e))
          os.chdir("..")
          pass
-         return {"error": ["../vpr", "--route_file", "file.route", "--place_file", "file.place", "--net_file", "file.net", "--full_stats", "--seed", seed, "../arch.xml", ipath]}
+         return {"error": vprParams}
       path = re.findall('Final critical path: (.+) ns', output2)[0]
       path = float(path)*1E-9*1.5
       par.append('-l')
@@ -86,18 +94,29 @@ def doRun(args):
    if novpr == False:
       try:
          os.chdir(dir)
-         output3 = str(subprocess.check_output(["../vpr", "--route_file", "file2.route", "--place_file", "file2.place", "--net_file", "file2.net", "--full_stats", "--seed", seed, "../arch.xml", opath], stderr=subprocess.STDOUT), 'UTF-8')
+         try:
+            os.remove("file.net")
+            os.remove("file.place")
+            os.remove("file.route")
+            os.remove("file.sdc")
+         except:
+            pass
+         vprParams.pop()
+         vprParams.append(opath)
+         output3 = str(subprocess.check_output(vprParams, stderr=subprocess.STDOUT), 'UTF-8')
       except subprocess.CalledProcessError as e:
          try:
             #Try again. Sometimes VPR crashes just after packing, so use that packed netlist to place and route.
-            output3 = str(subprocess.check_output(["../vpr", "--place", "--route", "--route_file", "file2.route", "--place_file", "file2.place", "--net_file", "file2.net", "--full_stats", "--seed", seed, "../arch.xml", opath], stderr=subprocess.STDOUT), 'UTF-8')
+            vprParams.insert(0, "--place")
+            vprParams.insert(0, "--route")
+            output3 = str(subprocess.check_output(vprParams, stderr=subprocess.STDOUT), 'UTF-8')
          except:
             pass
          log.write(str(e.output, 'UTF-8'))
          sys.stderr.write(str(e))
          os.chdir("..")
          pass
-         return {"error": ["../vpr", "--route_file", "file2.route", "--place_file", "file2.place", "--net_file", "file2.net", "--full_stats", "--seed", seed, "../arch.xml", ipath]}
+         return {"error": vprParams}
       ret["out2"] = parseOutput(output2)
       ret["out3"] = parseOutput(output3)
       os.chdir("..")
@@ -139,6 +158,7 @@ if __name__ == "__main__":
    parser.add_argument("-v", "--novpr", action="store_true", help="Skip running VPR")
    parser.add_argument("-r", "--recoverytime", type=float, help="Max recovery time")
    parser.add_argument("-n", "--numthreads", type=int, help="Maximum number of threads to use. Defaults to 4")
+   parser.add_argument("-w", "--channelwidth", type=int, help="Channel width for VPR to use")
 
    params = parser.parse_args()
    results = open(params.results, 'w')
@@ -167,7 +187,7 @@ if __name__ == "__main__":
       if fnmatch(f, "*.blif"):
          ipath = os.path.abspath(f)
          opath = os.path.abspath(params.outdir)+'/'+os.path.basename(f)
-         runArgs.append([ipath, opath, pars, novpr, params.log])
+         runArgs.append([ipath, opath, pars, novpr, params.log, params.channelwidth])
          #doRun([ipath, opath, pars, novpr, log])
    #exit()
    if threads != None:
