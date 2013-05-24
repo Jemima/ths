@@ -45,19 +45,25 @@ if __name__ == "__main__":
    times.sort()
    times = sorted(times, key=lambda x:-float(x))
    for time in times:
-      sys.stdout.write(time+"\tFrequency Base (TMR)\tFrequency TMR (ns)\t\t")
+      sys.stdout.write(time+",NumPartitions,Frequency Base (s),Frequency TMR (ns),Slowdown Factor,,")
 
    sys.stdout.write("\n")
    for file in results:
       sys.stdout.write(file)
-      sys.stdout.write("\t")
+      sys.stdout.write(",")
       for time in times:
          if time in results[file]:
             for res in results[file][time]:
-               sys.stdout.write(res+"\t")
-            sys.stdout.write("\t\t")
+               sys.stdout.write(res+",")
+            sys.stdout.write(
+                  str(
+                     float(results[file][time][2]) /
+                     float(results[file][time][1])
+                     )
+                  )
+            sys.stdout.write(",,,")
          else:
-            sys.stdout.write("N/A\tN/A\tN/A\t")
+            sys.stdout.write("N/A,N/A,N/A,N/A,,,")
       sys.stdout.write("\n")
 
 

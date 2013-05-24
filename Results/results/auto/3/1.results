@@ -1,0 +1,38 @@
+File	Unused	Number of Nodes	Estimated Latency	Partitions	Channel Width Base	Channel Width TMR	Number of Inputs Base	Number of Inputs TMR	Number of Outputs Base	Number of Outputs TMR	Number of LUTs Base	Number of LUTs TMR	Number of Latches Base	Number of Latches TMR	VPR Duration Base	VPR Duration TMR	NetDelay Base (s)	NetDelay TMR (s)	LogicDelay Base (s)	LogicDelay TMR (s)	Period Base (ns)	Period TMR (ns)
+Per partition values	Recovery Time	Number of Outputs	Number of Inputs	Number of cut loops	Number of latches	Number of LUTs	Critical Path Length
+/home/dsmu186/ths/workflow/blifs/clma.blif	1	8414	1.40278e-08	1	66	72	62	62	82	82	8365	25211	33	99	351.74	975.82	4.1514e-09	5.77998e-09	5.20048e-09	5.17978e-09	9.35188	10.9598	
+	0.000784709	116	96	34	33	8381	11
+	
+	
+	
+
+/home/dsmu186/ths/workflow/blifs/s38417.blif	1	7559	9.47929e-09	1	44	56	29	29	106	106	6042	19371	1463	4389	115.1	1108.6	2.16047e-09	3.05338e-09	4.15906e-09	4.85104e-09	6.31953	7.90442	
+	0.000577977	1245	1190	1161	1463	6096	41
+	
+	
+	
+
+/home/dsmu186/ths/workflow/blifs/s38584.1.blif	1	7541	7.18619e-09	1	44	48	38	38	304	304	6177	19853	1260	3780	125.55	449.01	1.53284e-09	2.0839e-09	3.21552e-09	4.93512e-09	4.79079	7.06145	
+	0.00059279	1322	1103	1065	1260	6281	55
+	
+	
+	
+
+/home/dsmu186/ths/workflow/blifs/ex1010.blif	1	4598	8.89763e-09	1	58	62	10	10	10	10	4598	13804	0	0	139.06	639.55	3.4431e-09	4.06663e-09	2.48865e-09	3.18753e-09	5.93175	7.25416	
+	0.000429218	10	10	0	0	4598	1
+	
+	
+	
+
+/home/dsmu186/ths/workflow/blifs/pdc.blif	1	4575	9.85466e-09	1	66	72	16	16	40	40	4575	13765	0	0	124.39	402.79	3.72478e-09	4.40848e-09	2.84499e-09	3.18753e-09	6.56977	7.59601	
+	0.00042922	40	16	0	0	4575	1
+	
+	
+	
+
+/home/dsmu186/ths/workflow/blifs/elliptic.blif	1	4724	1.17231e-08	1	50	62	131	131	114	114	3602	12059	1122	3366	74.41	974.12	2.29311e-09	2.70333e-09	5.52232e-09	6.2074e-09	7.81543	8.91073	
+	0.000341502	1253	1272	1141	1122	3602	47
+	
+	
+	
+

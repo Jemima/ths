@@ -1,0 +1,8 @@
+File	Unused	Number of Nodes	Estimated Latency	Partitions	Channel Width Base	Channel Width TMR	Number of Inputs Base	Number of Inputs TMR	Number of Outputs Base	Number of Outputs TMR	Number of LUTs Base	Number of LUTs TMR	Number of Latches Base	Number of Latches TMR	VPR Duration Base	VPR Duration TMR	NetDelay Base (s)	NetDelay TMR (s)	LogicDelay Base (s)	LogicDelay TMR (s)	Period Base (ns)	Period TMR (ns)
+Per partition values	Recovery Time	Number of Outputs	Number of Inputs	Number of cut loops	Number of latches	Number of LUTs	Critical Path Length
+/home/dsmu186/ths/workflow/blifs/clma.blif	1	8414	1.43731e-08	1	64	72	62	62	82	82	8365	25211	33	99	283.56	885.51	4.06663e-09	5.5024e-09	5.51542e-09	5.51542e-09	9.58205	11.0178	
+	0.000784716	116	96	34	33	8381	11
+	
+	
+	
+
