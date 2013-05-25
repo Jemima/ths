@@ -16,6 +16,8 @@ from fnmatch import fnmatch
 
 def parseOutput(s):
    out = {}
+   if "unrouteable" in s:
+      return {'error': 'unrouteable'}
    stats = re.findall('(\d+) (LUTs of size \d+)', s)
    for st in stats:
       out[st[1]] = st[0]
@@ -33,100 +35,108 @@ def parseOutput(s):
    return out
 
 def doRun(args): 
-   ipath = args[0]
-   opath = args[1]
-   mainParams = args[2]
-   novpr = args[3]
-   logPath = args[4]
-   channelWidth = args[5]
-   if logPath == None:
-      log = open(os.devnull, 'w')
-   else:
-      log = open(logPath, 'a')
-   par = ["./main.py"]
-   par.extend(mainParams)
-   par.append(ipath)
-   par.append(opath)
-   dir = tempfile.mkdtemp(dir=os.getcwd())+"/"
-   ret = []
-   seed = str(random.randint(0, 30000))
-   path = "0.00000001"
-   vprParams = ["../vpr", "--route_file", "file.route", "--place_file", "file.place", "--net_file", "file.net", "--full_stats", "--seed", seed]
-   if channelWidth != None:
-      vprParams.append("--route_chan_width")
-      vprParams.append(str(channelWidth))
-
-   vprParams.append("../arch.xml")
-   if novpr == False:
-      try:
-         os.chdir(dir)
-         vprParams.append(ipath)
-         output2 = str(subprocess.check_output(vprParams, stderr=subprocess.STDOUT), 'UTF-8')
-      except subprocess.CalledProcessError as e:
-         log.write(str(e.output, 'UTF-8'))
-         sys.stderr.write(str(e))
-         os.chdir("..")
-         pass
-         return {"error": vprParams}
-      path = re.findall('Final critical path: (.+) ns', output2)[0]
-      path = float(path)*1E-9*1.5
-      par.append('-l')
-      par.append(str(path))
-      os.chdir("..")
-
-   sys.stdout.flush()
-
-   discard = open(os.devnull, 'w')
    try:
-      ret = str(subprocess.check_output(par, stderr=log), 'UTF-8')
-   except subprocess.CalledProcessError as e:
-      if e.returncode == 203:
-         return {"error": {"message": "Unable to partition for given parameters", "par": par}}
-      elif e.returncode == 27:
-         return {"error": {"message": "Failed equivalence validation", "par": par}}
+      ipath = args[0]
+      opath = args[1]
+      mainParams = args[2]
+      novpr = args[3]
+      logPath = args[4]
+      channelWidth = args[5]
+      if logPath == None:
+         log = open(os.devnull, 'w')
       else:
-         raise
-   ret = ret.split("\n")
-   res = ret[1:]
-   for n in range(0, len(res)):
-      res[n] = res[n].split("\t")
-   ret = {"times": ret[0].split("\t"), "partitions": res, "out2": None, "out3": None}
-   if novpr == False:
-      try:
-         os.chdir(dir)
-         try:
-            os.remove("file.net")
-            os.remove("file.place")
-            os.remove("file.route")
-            os.remove("file.sdc")
-         except:
-            pass
-         vprParams.pop()
-         vprParams.append(opath)
-         output3 = str(subprocess.check_output(vprParams, stderr=subprocess.STDOUT), 'UTF-8')
-      except subprocess.CalledProcessError as e:
-         try:
-            #Try again. Sometimes VPR crashes just after packing, so use that packed netlist to place and route.
-            vprParams.insert(0, "--place")
-            vprParams.insert(0, "--route")
-            output3 = str(subprocess.check_output(vprParams, stderr=subprocess.STDOUT), 'UTF-8')
-         except:
-            pass
-         log.write(str(e.output, 'UTF-8'))
-         sys.stderr.write(str(e))
-         os.chdir("..")
-         pass
-         return {"error": vprParams}
-      ret["out2"] = parseOutput(output2)
-      ret["out3"] = parseOutput(output3)
-      os.chdir("..")
-   sys.stdout.flush()
+         log = open(logPath, 'a')
+      par = ["./main.py"]
+      par.extend(mainParams)
+      par.append(ipath)
+      par.append(opath)
+      dir = tempfile.mkdtemp(dir=os.getcwd())+"/"
+      ret = []
+      seed = str(random.randint(0, 30000))
+      path = "0.00000001"
+      vprParams = ["../vpr", "--route_file", "file.route", "--place_file", "file.place", "--net_file", "file.net", "--full_stats", "--seed", seed]
+      if channelWidth != None:
+         vprParams.append("--route_chan_width")
+         vprParams.append(str(channelWidth))
 
-   shutil.rmtree(dir)
-   log.write(str(ret))
-   log.write("\n")
-   log.close()
-   return ret
+      vprParams.append("../arch.xml")
+      if novpr == False:
+         try:
+            os.chdir(dir)
+            vprParams.append(ipath)
+            output2 = str(subprocess.check_output(vprParams, stderr=subprocess.STDOUT), 'UTF-8')
+         except subprocess.CalledProcessError as e:
+            log.write(str(e.output, 'UTF-8'))
+            sys.stderr.write(str(e))
+            os.chdir("..")
+            pass
+            return {"error": vprParams}
+         reto2 = parseOutput(output2)
+         if "error" in reto2:
+            return reto2
+         path = re.findall('Final critical path: (.+) ns', output2)[0]
+         path = float(path)*1E-9*1.5
+         par.append('-l')
+         par.append(str(path))
+         os.chdir("..")
+
+      sys.stdout.flush()
+
+      discard = open(os.devnull, 'w')
+      try:
+         ret = str(subprocess.check_output(par, stderr=log), 'UTF-8')
+      except subprocess.CalledProcessError as e:
+         if e.returncode == 203:
+            return {"error": {"message": "Unable to partition for given parameters", "par": par}}
+         elif e.returncode == 27:
+            return {"error": {"message": "Failed equivalence validation", "par": par}}
+         else:
+            raise
+      ret = ret.split("\n")
+      res = ret[1:]
+      for n in range(0, len(res)):
+         res[n] = res[n].split("\t")
+      ret = {"times": ret[0].split("\t"), "partitions": res, "out2": None, "out3": None}
+      if novpr == False:
+         try:
+            os.chdir(dir)
+            try:
+               os.remove("file.net")
+               os.remove("file.place")
+               os.remove("file.route")
+               os.remove("file.sdc")
+            except:
+               pass
+            vprParams.pop()
+            vprParams.append(opath)
+            output3 = str(subprocess.check_output(vprParams, stderr=subprocess.STDOUT), 'UTF-8')
+         except subprocess.CalledProcessError as e:
+            try:
+               #Try again. Sometimes VPR crashes just after packing, so use that packed netlist to place and route.
+               vprParams.insert(0, "--place")
+               vprParams.insert(0, "--route")
+               output3 = str(subprocess.check_output(vprParams, stderr=subprocess.STDOUT), 'UTF-8')
+            except:
+               pass
+            log.write(str(e.output, 'UTF-8'))
+            sys.stderr.write(str(e))
+            os.chdir("..")
+            pass
+            return {"error": vprParams}
+         ret["out3"] = parseOutput(output3)
+         os.chdir("..")
+      sys.stdout.flush()
+
+      shutil.rmtree(dir)
+      log.write(str(ret))
+      log.write("\n")
+      log.close()
+      return ret
+   except Exception as e:
+      print(e)
+      import traceback
+      traceback.print_exc()
+      return {"error": e}
 
 def formatResults(res):
    times = res['times']
@@ -136,8 +146,13 @@ def formatResults(res):
    fields = ['channelWidth', 'type input', 'type output', 'type names', 'type latch', 'Duration', 'NetDelay', 'LogicDelay', 'Period']
    sRet = "{0}\t{1}\t{2}\t{3}\t{4}\t".format(times[0], times[1], times[2], times[3], times[9].strip())
    if base != None and tmr != None:
-      for field in fields:
-         sRet += "{0}\t{1}\t".format(base[field], tmr[field])
+      if 'error' in base:
+         sRet += str(base)
+      elif 'error' in tmr:
+         sRet += str(tmr)
+      else:
+         for field in fields:
+            sRet += "{0}\t{1}\t".format(base[field], tmr[field])
 
    sRet +="\n"
    for line in partitions:
@@ -188,7 +203,7 @@ if __name__ == "__main__":
          ipath = os.path.abspath(f)
          opath = os.path.abspath(params.outdir)+'/'+os.path.basename(f)
          runArgs.append([ipath, opath, pars, novpr, params.log, params.channelwidth])
-         #doRun([ipath, opath, pars, novpr, log])
+         #doRun([ipath, opath, pars, novpr, params.log, params.channelwidth])
    #exit()
    if threads != None:
       pool = Pool(processes=threads)
@@ -207,6 +222,7 @@ if __name__ == "__main__":
          results.write(str(res)+"\n")
          errored.append(i)
       else:
+         sys.stderr.write(str(res))
          results.write(formatResults(res))
          results.flush()
          sys.stderr.write("Completed "+str(i+1)+"/"+str(total)+". Finished "+res["times"][0]+"\n")

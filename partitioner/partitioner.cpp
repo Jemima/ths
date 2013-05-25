@@ -52,6 +52,7 @@ int main(int argc, char * argv[])
       ("recovery-time,r", po::value<double>(), "maximum recovery time per partition")
       ("quiet,q", "suppress all output besides output list")
       ("calculate,c", "doesn't partition, just calculates circuit stats e.g. circuit critical path and outputs to STDOUT")
+      ("breadth-first,b", "Use breadth first instead of depth first traversal. Generated circuits tend to be larger and slower, with no reason to use BFS over DSF.")
       ("dot-file,d", po::value<string>(), "Output the circuit as a dot file")
       ;
 
@@ -96,6 +97,11 @@ int main(int argc, char * argv[])
    if(vm.count("calculate")){
       justCalculate = true;
       if(!quiet) cout << "Calculating stats only"<< endl;
+   }
+   bool bfs = false;
+   if(vm.count("breadth-first")){
+      bfs = true;
+      if(!quiet) cout << "Using breadth first traversal"<< endl;
    }
 
    if(error){
@@ -167,7 +173,10 @@ int main(int argc, char * argv[])
             }
             BOOST_FOREACH(string sig, curr->inputs){ 
                if(model->GetBaseSignal(sig)->source != NULL){
-                  queue.push_front(model->GetBaseSignal(sig)->source);
+                  if(bfs) //If BFS use a FILO queue, where we pop from front
+                     queue.push_back(model->GetBaseSignal(sig)->source);
+                  else //If DFS use a FIFO queue
+                     queue.push_front(model->GetBaseSignal(sig)->source);
                }
             }
          }
