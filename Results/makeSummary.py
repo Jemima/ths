@@ -13,6 +13,8 @@ def parse(fileName):
    for line in file:
       if line[0] == '/':
          line = line.split()
+         sys.stderr.write("***")
+         sys.stderr.write(str(line))
          lines[line[0]] = [line[4], line[19], line[20]]
 
    return lines

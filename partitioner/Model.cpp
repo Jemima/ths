@@ -70,23 +70,15 @@ void Model::RemoveNode(BlifNode* node){
    }
    //Need to retraverse entire graph to update critical path
    //We may have cut a loop we didn't need to, but ignore it. Just means one extra voter than the minimum
-   int cost = 0;
-   int max = 0;
-   explored.clear();
-   costs.clear();
-   pair<string, Signal*> sp;
-   BOOST_FOREACH(sp, signals){
-      int t = CalculateCriticalPathRecursive(sp.second->source, cost);
-      if(t > max)
-         max = t;
-   }
-   maxCost = max;
+   //Assign the old critical path back to it
+   maxCost = oldMaxCost;
 }
 
 
 
 void Model::AddNode(BlifNode* node, bool traverse){
    nodes.insert(node);
+   oldMaxCost = maxCost;
    if(node->type == ".latch")
       numLatches++;
    else if(node->type == ".names")

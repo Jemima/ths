@@ -57,6 +57,7 @@ class Model
       void CutLoopsRecursive(BlifNode* parent, Signal* signal);
       int CalculateCriticalPathRecursive(BlifNode* node, int cost);
       unsigned maxCost;
+      unsigned oldMaxCost;
       void init();
       unordered_map<string, string> cutLoops;
       unordered_map<unsigned long, unsigned> costs;

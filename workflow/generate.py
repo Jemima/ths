@@ -123,6 +123,7 @@ def doRun(args):
             os.chdir("..")
             pass
             return {"error": vprParams}
+         ret["out2"] = parseOutput(output2)
          ret["out3"] = parseOutput(output3)
          os.chdir("..")
       sys.stdout.flush()
@@ -153,6 +154,11 @@ def formatResults(res):
       else:
          for field in fields:
             sRet += "{0}\t{1}\t".format(base[field], tmr[field])
+   else:
+      sys.stderr.write("Base: ")
+      sys.stderr.write(str(base))
+      sys.stderr.write("TMR: ")
+      sys.stderr.write(str(tmr))
 
    sRet +="\n"
    for line in partitions:
@@ -222,7 +228,6 @@ if __name__ == "__main__":
          results.write(str(res)+"\n")
          errored.append(i)
       else:
-         sys.stderr.write(str(res))
          results.write(formatResults(res))
          results.flush()
          sys.stderr.write("Completed "+str(i+1)+"/"+str(total)+". Finished "+res["times"][0]+"\n")
