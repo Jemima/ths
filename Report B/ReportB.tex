@@ -237,17 +237,22 @@ Triple Modular Redundancy is a commonly used method for creating fault tolerant 
 
 This approach requires three times as many circuit elements (as the circuits are triplicated) plus whatever is required for voters. By minimising the number of voters, we can thus reduce the overhead of our approach.
 
-Once an error occurs it takes up to $T_{path}$ to reach the voter and be detected, where $T_{path}$ is given by the frequency and number of register stages. This is called the \emph{error detection time}. Detection of an error can be used to trigger reconfiguration, where \emph{reconfiguration time} $= T_R$ is dependent upon the circuit size. Once the error has been detected and the circuit reconfigured it must then be resynchronised with the other partitions, which takes up to $T_{path}$ using the previously described technique.
+Once an error occurs it takes up to $T_{path}$ to reach the voter and be detected, where $T_{path}$ is given by the clock period and number of register stages. This is called the \emph{error detection time}. Detection of an error can then be used to trigger reconfiguration.
+Sending a request to the reconfiguration controller goes through a token ring network consisting of the other voters, and the reconfiguration controller. In the worst case it takes one full cycle of the network to receive the token, one full cycle to reach the reconfiguration controller, and three cycles to transmit the request, giving $5\times TimePerHop$. Benchmarks of a sample voter indicate $50$ clock cycles per hop is a good estimate.
+\emph{Reconfiguration time} $= T_R$ is dependent upon the circuit size. For a Virtex-5 device, each reconfiguration area consists of $160$ \acp{LUT} and $160$ latches, where only whole reconfiguration areas can be reconfigured. The bitstream size for this area is \fxfatal{Fill in} which takes $15.4\mu{}s$ to reconfigure at $100MHz$.
+Once the error has been detected and the circuit reconfigured it must then be resynchronised with the other partitions, which takes up to $T_{path}$ using the previously described technique.
 
-The error recovery time consists of the time to detect the error then reconfigure and resynchronise the circuit, thus is a function of the circuit area, clock frequency, and number of register stages. Therefore it is required that the number of register stages and area are small enough, and frequency large enough, that our error recovery time is within a user specified limit.
+The error recovery time consists of the time to detect the error, send a request to the configuration controller, and then reconfigure and resynchronise the circuit, thus is a function of the circuit area, clock frequency, and number of register stages. Therefore it is required that the number of register stages and area are small enough, and frequency large enough, that our error recovery time is within a user specified limit.
 \begin{align}
     \mbox{Error Recovery Time} &=\mbox{Error Detection Time} + \mbox{Reconfiguration Time} + \mbox{Resynchronisation Time}\notag\\
-    \mbox{Error Detection Time} &<= T_{path} = \frac{1}{\mbox{Clock Frequency}}\times\mbox{Register Stages}\notag\\
-    \mbox{Reconfiguration Time} &= \frac{1}{\mbox{Reconfiguration Speed}}\times\mbox{Bitstream Size}+Constant\notag\\
-     &\propto \mbox{Partition Size in Frames}\notag\\
-    \mbox{Resynchronisation Time} &<= T_{path} = \frac{1}{\mbox{Clock Frequency}}\times\mbox{Register Stages}\notag\\
-    \therefore \mbox{Error Recovery Time} &<= \frac{2\times\mbox{Register Stages}}{\mbox{Clock Frequency}} + \frac{\mbox{Bitstream Size}}{\mbox{Reconfiguration Speed}}+Constant\label{ERT}
+    \mbox{Error Detection Time} &<= T_{path} = \mbox{Clock Period}\times\mbox{Register Stages}\notag\\
+    \mbox{Communication Time} &= \mbox{Cycles per flit per hop}\times\mbox{Number of flits}\times\mbox{NumStops}\times \mbox{Clock Period}\notag\\
+    \mbox{Communication Time} &= 50\times 5\times (\mbox{NumPartitions}+1)\times \mbox{Clock Period}\notag\\
+    \mbox{Reconfiguration Time} &= \mbox{Clock Period}\times \frac{\mbox{Bitstream Size}}{\mbox{Reconfiguration Speed}}\notag\\
+    &= \mbox{Clock Period}\times \left\lceil \frac{\mbox{max}(numLUTs, numLatches)}{160}\right\rceil\times 1.54\times10^{-5}\notag\\
+    \mbox{Resynchronisation Time} &<= T_{path} = \mbox{Clock Period}\times\mbox{Register Stages}\notag\\
 \end{align}\cite{DiesselChange}
+
 Additionally, as each voter circuit adds some constant overhead in terms of area, power usage and clock frequency slowdown it is desirable to have each partition as large as possible. This thesis is concerned with implementing and assessing this \ac{TMR} design; a discussion of other \ac{TMR} methods and our reasons for not using them is included below.
  
 This method only works when at most one \ac{SEU} occurs within the error detection and recovery time; should \acp{SEU} occur in two of the three partitions then it is impossible for the voter to determine the correct value necessitating a complete reload of the configuration memory (\emph{scrubbing}). Therefore, we require the error detection and recovery time to be sufficiently small that the likelihood of multiple events occurring within that time period are sufficiently small.
@@ -318,6 +323,14 @@ Section \fxfatal{Reference} discusses the variation in results due to the stocha
 \subsubsection{Router}
 \ac{VPR}'s router supports three different algorithms:\fxnote{Awkward phrasing, fix} breadth\_first, which focuses solely on routing a design; timing\_driven, the default, which tends to use slightly more tracks (~5\%) than breadth\_first while providing much faster routes (2$\times$--10$\times$) with less CPU time; and directed\_search, which like breadth\_first is routability driven however uses A* to improve runtime. We will be using the default timing\_driven algorithm.\fxnote{TODO: Reason?}
 There are a number of options setting algorithm parameters, all of which we will leave at their defaults, though we will be changing the route\_chan\_width parameter as we collect results. route\_chan\_width specifies the width of the channels in the architecture. If omitted \ac{VPR} will perform a binary search on channel capacity to determine the minimum channel width.
+
+
+\chapter{Algorithm}
+
+
+
+
+
 
 \chapter{Benchmarking}
 \section{Overview}

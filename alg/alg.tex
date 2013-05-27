@@ -83,34 +83,47 @@ The following are complex types, which are further defined below. This is merely
         \toprule
         Name & Description\\
         \midrule
-        Blif & Parent object, contains all information about a BLIF file and provides useful operations \\
-        Model & Represents a circuit within a BLIF file, and provides methods to manipulate said circuit \\
-        BlifNode & A circuit element, or node in the DFG representing the circuit \\
+        Blif & Parent object, contains all information about a \ac{BLIF} file and provides useful operations \\
+        Model & Represents a circuit within a \ac{BLIF} file, and provides methods to manipulate said circuit \\
+        BlifNode & A circuit element, or node in the \ac{DFG} representing the circuit \\
         Signal & A signal within a specific circuit, or Model, representing a set of edges with common source \\
         \bottomrule
         \end{tabularx}
 
-   \begin{figure}
-      \includegraphics{doxygen/classBlif__coll__graph.pdf}
-   \end{figure}
-   \begin{figure}
-      \includegraphics{doxygen/classBlifNode__coll__graph.pdf}
-   \end{figure}
-   \begin{figure}
-      \includegraphics{doxygen/classModel__coll__graph.pdf}
-   \end{figure}
-   \begin{figure}
-      \includegraphics{doxygen/classSignal__coll__graph.pdf}
-   \end{figure}
 
    \subsection{Blif}
+      Contains helper functions to read in a \ac{BLIF} and represent it as a \ac{DFG}.
+      The circuit itself is represented as a Model within Blif.
+      \begin{figure}
+         \includegraphics{doxygen/classBlif__coll__graph.pdf}
+      \end{figure}
       
    \subsection{Model}
+      Represents the circuit as a \ac{DFG}, with a list of BlifNodes and the Signals both between nodes, and the primary inputs/outputs of the circuit.
+      Also contains a mapping from Signal name to Signal.
+      \begin{figure}
+         \includegraphics{doxygen/classModel__coll__graph.pdf}
+      \end{figure}
+
+   \subsection{BlifNode}
+      Contains the names of the input and output Signals, as well as the properties of the node (type, etc).
+      Does not contain direct references to Signals, merely their names.
+      \begin{figure}
+         \includegraphics{doxygen/classBlifNode__coll__graph.pdf}
+      \end{figure}
+
+   \subsection{Signal}
+      Contains references to the signal source, and a list of its sinks. Also stores the signal name.
+      \begin{figure}
+         \includegraphics{doxygen/classSignal__coll__graph.pdf}
+      \end{figure}
+
+
       Represents the circuit as a DFG. Contains a list of nodes, map of signal name $\to$ Signal*, and lists of primary inputs and outputs for the circuit.
       Each node contains the names of its input and output signals, allowing the Signal* to be looked up, then the Signal* contains pointers to its source and sink nodes.
       This allows the DFG to be traversed by going from node, to signal, to node, etc.
       A BlifNode represents the information in a circuit element declaration within a \ac{BLIF} file, which includes only the name of its input and output signals. The actual Signal itself is a separate circuit specific construct designed to allow for ease of traversal of the circuit as a \ac{DFG}.
-      As such, we don't directly point to signals from a BlifNode, as the Signal depends on the circuit context.
+      As such, we don't directly point to signals from a BlifNode*, as the Signal depends on the circuit context.
       \fixme{TODO: Image showing DFG traversal, and example of blif file and class contents}
 
 \newpage
@@ -118,6 +131,8 @@ The following are complex types, which are further defined below. This is merely
 Types marked with an * are custom types defined previously in section \ref{secDatastructures}.
 \subsection{Main}
 Partition, Triplicate, Join and Flatten are all implemented in separate programs. Main is responsible for taking an input file and running it through our toolchain to produce a TMR'd output file.
+
+
 \begin{algorithm}
     \begin{center}
         \begin{tabular}{lll}
@@ -147,10 +162,10 @@ Partition, Triplicate, Join and Flatten are all implemented in separate programs
    \end{algorithmic}
 \end{algorithm}
 We're given a blif file as input.
-In line 11 we partition the input circuit into a number of sub circuits, each in a separate file, as further expanded in Algorithm \ref{partition}.
-Then in lines 12-13 for each partition file, we read it in as a black box, triplicate it, insert voting logic, and write it back out.
-Next in line 14 we extract the original header, which provides the name, inputs and outputs of the original circuit.
-We then, in line 15, join all the partitions together with the original name, inputs and outputs (in the same order), as the original circuit, and finally line 16 flattens the circuit, i.e. transforms the generated heirarchical netlist into a flat netlist with only one main model, or circuit, and no submodels.
+In line 2 we partition the input circuit into a number of sub circuits, each in a separate file, as further expanded in Algorithm \ref{partition}.
+Then in lines 3-4 for each partition file, we read it in as a black box, triplicate it, insert voting logic, and write it back out.
+Next in line 6 we extract the original header, which provides the name, inputs and outputs of the original circuit.
+We then, in line 7, join all the partitions together with the original name, inputs and outputs (in the same order), as the original circuit, and finally line 8 flattens the circuit, i.e. transforms the generated heirarchical netlist into a flat netlist with only one main model, or circuit, and no submodels.
 
 \newpage
 \subsection{Partition}
@@ -237,7 +252,7 @@ Line 17 tests if the current partition recovery time is greater than our specifi
 If the recovery time is greater we execute lines 18-24, where we remove the just added node to bring our recovery time back under the limit, and then write the partition to a file.
 Line 18 calculates which signals are primary inputs or outputs for the partition, and promotes them accordingly, with more detail given in Algorithm \ref{makeiolist}.
 Writing the partition to a file simply involves outputting the name, inputs, outputs, and a list of every node in the partition in \ac{BLIF} format.
-RemoveNode, on line 19, merely removes the node from the partition's list of nodes rather than fully reversing everything AddNode does. As WriteToFile simply serialises the inputs, outputs and node list this is all that's required with the caveat that some cycles may be cut unecessarily.
+RemoveNode, on line 19, merely removes the node from the partition's list of nodes rather than fully reversing everything AddNode does. As WriteToFile simply serialises the inputs, outputs and node list this is all that's required.
 Lines 31-34 write out the final partially full partition, if there is one. Again, WriteToFile simply outputs the circuit name, list of inputs, outputs and clocks, and list of nodes, with no further processing required.
 
 
@@ -290,7 +305,7 @@ For a given partition, calculate its error recovery time.
         Variable & Type & Description\\
         \midrule
         $latency$ &\bf  float & Circuit latency (i.e. time for input to completely propagate to output) in seconds\\
-        $clockFrequency$ &\bf  Integer & Operating frequency of the circuit, in seconds\\
+        $clockPeriod$ &\bf  Integer & Period of the circuit, in seconds\\
         $criticalPath$ &\bf  Integer & Maximum number of steps between an input and an output\\
         $numFF$ &\bf  Integer & Number of Latches in circuit\\
         $numLUT$ &\bf  Integer & Number of look up tables in circuit\\
@@ -304,7 +319,7 @@ For a given partition, calculate its error recovery time.
    \caption{RecoveryTime}\label{recoverytime}
    \begin{algorithmic}[1]
          \Procedure{RecoveryTime}{$partition$}
-            \State $latency \gets frequency\times{}(criticalpath+1)$
+            \State $latency \gets clockPeriod\times{}(criticalpath+1)$
             \State $detectionTime \gets latency$
             \State $resynchronisationTime \gets latency$
             \State $reconfigurationTime \gets \mbox{max}(numFF, numLUT)/10/15...more stuff$
@@ -321,7 +336,7 @@ The derivation of this algorithm and the values used is fully discussed in Secti
 \subsection{AddNode}
 Insert a node into an existing partition, or circuit, while updating appropriate parameters (i.e. maximum path length and signals) which are depended upon by other components (i.e. recovery time calculation and \ac{DFG} traversal respectively).
 Additionally, detect any newly created cycles and cut them.
-This ensures that the circuit is always (except within this method) an acyclic graph with every node reachable.
+This ensures that the circuit is always an acyclic graph with every node reachable.
 \begin{algorithm}
     \begin{center}
         \begin{tabularx}{\linewidth}{llX}
@@ -332,8 +347,8 @@ This ensures that the circuit is always (except within this method) an acyclic g
         $node$ &\bf  BlifNode* & Node to add\\
         $signal$ &\bf  Signal* & \\
         $signalName$ &\bf  string & \\
-        $partition.cutLoops$ &\bf  Map[string $\to$ string] & For signals which have been cut, a map of the old to the new name\\
-        $partition.signals$ &\bf  Map[string $\to$ Signal* & Map of signal name to Signal* \\
+        $partition.cutLoops$ &\bf  Map(string $\to$ string) & For signals which have been cut, a map of the old to the new name\\
+        $partition.signals$ &\bf  Map(string $\to$ Signal*) & Map of signal name to Signal* \\
         $signal.sinks$ &\bf  List(BlifNode*) & List of sinks for a Signal* \\
         $signal.source$ &\bf  BlifNode* & Source, or driver, for a Signal* \\
         $inCost$ &\bf  int & Maximum number of critical path steps to reach node, not counting the node itself \\
@@ -388,7 +403,7 @@ This turns a possibly cyclic \ac{DFG} with partially computed path lengths, into
         $node$ &\bf  BlifNode* & Current node\\
         $costToReach$ &\bf  int & Maximum number of critical path steps to reach node, not counting the node itself \\
         $explored$ &\bf  Map(BlifNode* $\to$ boolean) & Whether a node has been reached yet in the current iteration \\ 
-        $partition.signals$ &\bf  Map[string $\to$ Signal* & Map of signal name to Signal* \\
+        $partition.signals$ &\bf  Map(string $\to$ Signal*) & Map of signal name to Signal* \\
         $partition.signals[parent.output]$ &\bf  BlifNode* & Signal driven by the prior node i.e. the graph edge we most recently travelled. \\
         $node.cost$ &\bf  int & 1 for latches, 0 for LUTs \\
         $costs$ &\bf  Map(BlifNode* $\to$ int) & Map of the cost to reach each node \\
@@ -414,7 +429,7 @@ This turns a possibly cyclic \ac{DFG} with partially computed path lengths, into
          \Else
             \State $cost = costs[node]$
          \EndIf
-         \ForAll{$node \in partition.signals[node.output].sinks$}
+         \ForAll{$child \in partition.signals[node.output].sinks$}
             \State UpdateCostsAndBreakCycles$(root, node, child, cost, explored)$
          \EndFor
          \State $explored[node] = true$
@@ -422,7 +437,13 @@ This turns a possibly cyclic \ac{DFG} with partially computed path lengths, into
    \end{algorithmic}
 \end{algorithm}
 We care about two things. One, the maximum cost to reach a node, and two, detecting and removing any cycles.
-Given an existing \ac{DAG} \fxnote{Directed Acyclic Graph} which we insert a new node into, then 1. The new node is the root node of a subtree within the \ac{DAG}. 2. Nodes which are not within the subtree cannot have the maximum cost to reach them change (as nothing has changed in any path to them). 3. Any cycles must pass through the new root node, as there are no cycles elsewhere in the graph. 4. Without any cycles, the root node will only be reached once at the start.
+Given an existing \ac{DAG} \fxnote{Directed Acyclic Graph} which we insert a new node into, then
+\begin{enumerate}
+   \item The new node is the root node of a subtree within the \ac{DAG}.
+   \item Nodes which are not within the subtree cannot have the maximum cost to reach them change (as nothing has changed in any path to them).
+   \item Any cycles must pass through the new node, as all the new edges are to or from the new node.
+   \item Correspondingly, without any cycles the root node will only be reached once at the start.
+\end{enumerate}
 Using this information we develop our traversal algorithm.
 Line 2 demonstrates an optimisation, in that once a path has been checked we need not recheck it unless we have found a more expensive path to it as otherwise nothing will change.
 Lines 5-8 check if we have detected a cycle. If so, cut it through cutting the signal, detailed in algorithm \ref{cutsignal}.

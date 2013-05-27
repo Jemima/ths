@@ -296,6 +296,6 @@ double Model::RecoveryTime(unsigned numPartitions){
    //Detection time = latency(+something? multiple errors?)
    
    //Communication time
-   double communicationTime = 100*(numPartitions+1)*period;
+   double communicationTime = 5*50*(numPartitions+1)*period;
    return reconfigurationTime + latency + latency + communicationTime;
 }
