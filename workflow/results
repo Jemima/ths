@@ -1,14 +1,3 @@
 File	Unused	Number of Nodes	Estimated Latency	Partitions	Channel Width Base	Channel Width TMR	Number of Inputs Base	Number of Inputs TMR	Number of Outputs Base	Number of Outputs TMR	Number of LUTs Base	Number of LUTs TMR	Number of Latches Base	Number of Latches TMR	VPR Duration Base	VPR Duration TMR	NetDelay Base (s)	NetDelay TMR (s)	LogicDelay Base (s)	LogicDelay TMR (s)	Period Base (ns)	Period TMR (ns)
 Per partition values	Recovery Time	Number of Outputs	Number of Inputs	Number of cut loops	Number of latches	Number of LUTs	Critical Path Length
-/home/dave/projects/ths/workflow/tb/tseng.blif	1	1431	8.80004e-09	7	100	100	52	52	122	122	1046	3783	385	1155	5.39	21.2	1.05015e-09	2.93714e-09	4.81654e-09	7.28332e-09	5.86669	10.2205	
-	2.19808e-05	104	121	64	65	160	8
-	2.19808e-05	101	154	43	47	160	8
-	2.20688e-05	74	120	42	41	160	13
-	2.19984e-05	77	129	52	53	160	9
-	2.19104e-05	104	156	56	57	160	4
-	2.18928e-05	121	125	79	80	160	3
-	2.18928e-05	64	72	42	42	86	3
-	
-	
-	
-
+{'error': CalledProcessError(2, ['./main.py', '-n', '1', '-t', '-b', '-l', '1.0475334000000002e-08', '/home/dave/projects/ths/workflow/tb/tseng.blif', '/tmp/tseng.blif'])}

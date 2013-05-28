@@ -48,8 +48,6 @@ def doRun(args):
          log = open(logPath, 'a')
       par = ["./main.py"]
       par.extend(mainParams)
-      par.append(ipath)
-      par.append(opath)
       dir = tempfile.mkdtemp(dir=os.getcwd())+"/"
       ret = []
       seed = str(random.randint(0, 30000))
@@ -75,7 +73,7 @@ def doRun(args):
          if "error" in reto2:
             return reto2
          path = re.findall('Final critical path: (.+) ns', output2)[0]
-         path = float(path)*1E-9*1.5
+         path = float(path)*1E-9*1.8
          par.append('-l')
          par.append(str(path))
          os.chdir("..")
@@ -84,6 +82,8 @@ def doRun(args):
 
       discard = open(os.devnull, 'w')
       try:
+         par.append(ipath)
+         par.append(opath)
          ret = str(subprocess.check_output(par, stderr=log), 'UTF-8')
       except subprocess.CalledProcessError as e:
          if e.returncode == 203:
@@ -177,6 +177,7 @@ if __name__ == "__main__":
    parser.add_argument("-R", "--results", type=str, help="Location of results file", required=True)
    parser.add_argument("-l", "--log", type=str, help="Location of log file")
    parser.add_argument("-v", "--novpr", action="store_true", help="Skip running VPR")
+   parser.add_argument("-b", "--breadthfirst", action="store_true", help="Run partitioner breadth first")
    parser.add_argument("-r", "--recoverytime", type=float, help="Max recovery time")
    parser.add_argument("-n", "--numthreads", type=int, help="Maximum number of threads to use. Defaults to 4")
    parser.add_argument("-w", "--channelwidth", type=int, help="Channel width for VPR to use")
@@ -199,6 +200,10 @@ if __name__ == "__main__":
       pars.extend(["-r", str(recoverytime)])
    if test != None:
       pars.append("-t")
+
+   bfs = params.breadthfirst
+   if bfs != None and bfs == True:
+      pars.append("-b")
 
    runArgs = []
    files = [os.path.join(params.indir, f) for f in os.listdir(params.indir)]
