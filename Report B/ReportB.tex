@@ -295,6 +295,7 @@ The design flow process can be split into a number of sub processes as illustrat
     \item The placer locates each \ac{CLB} within the \ac{FPGA} architecture, deciding which physical block implements which logic block.
     \item The router makes the required connections between each element by deciding which switches are on or off. This includes the connections within each \ac{CLB} (local routing) and in between \acp{CLB} (global routing).
 \end{enumerate}
+For our partitioner we will insert an additional step into the design flow between mapping and packing, which operates directly on a netlist. The additional steps are described more fully in section \fxerror{Reference}.
 
 \begin{figure}
     \begin{center}
@@ -326,9 +327,32 @@ There are a number of options setting algorithm parameters, all of which we will
 
 
 \chapter{Algorithm}
+For our partitioner, we operate on a netlist after optimisation and technology mapping, but before packing. Our goal is to take an input netlist and transform it into a netlist in the same format, with the same set of outputs for each set of inputs, but with redundant components.
+
+\fxfatal{Diagram of tool flow}
+\begin{itemize}
+   \item Partition
+   \item Triplicate
+   \item Join
+   \item Flatten - Use abc to transform our heirarchical circuit into a format supported by VPR.
+   \item Test - Use the verification abilities of abc, described more fully by \fxfatal{reference}. Essentially, given the original circuit and our transformed circuit, verify that every set of inputs produces the same set of outputs in both circuits.
+
+\end{itemize}
 
 
+\chapter{Results}
+\section{Benchmarking Procedure}
+These results were collected by running benchmark circuits through an automated test suite written in Python by the author. For each benchmark circuit, and each target recovery time, 10 repetitions were performed, due to the variation in reported values due to the random nature of placement.
+The original circuit is run through VPR to collect base results, then the circuit is run through our partitioner to TMR it. The TMR'd version is then verified by abc as being functionally equivalent to the orignal, and then run through VPR to collect TMR'd results. Each run of VPR used a randomly generated seed for the placer.
+The mean of the reported values across the 10 repetitions was then taken.
+The benchmarks used were the 20 largest MCNC LGSynth93 circuits, as provided by the open source VTR project \fxwarning{Reference} and described in table \fxerror{Reference}.
+The set of target recovery times used is $10^{-3}, 10^{-4}, 10^{-5}$s.
 
+\section{Sanity Check}
+The following results are for the tseng circuit at a target recovery time of $10^{-4}$s. The reported values can be compared to each other as a manual sanity check.
+Compare Area usage.
+Compare Recovery Time.
+Compare Partition Size.
 
 
 

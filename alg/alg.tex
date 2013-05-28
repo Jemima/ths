@@ -322,8 +322,8 @@ For a given partition, calculate its error recovery time.
             \State $latency \gets clockPeriod\times{}(criticalpath+1)$
             \State $detectionTime \gets latency$
             \State $resynchronisationTime \gets latency$
-            \State $reconfigurationTime \gets \mbox{max}(numFF, numLUT)/10/15...more stuff$
-            \State $communicationTime \gets numPartitions\times{}latency\times{}more stuff$
+            \State $reconfigurationTime \gets \mbox{max}(numFF, numLUT)/160\times 1.48^{-5}$
+            \State $communicationTime \gets 5\times 50\times(numPartitions+1)\times clockPeriod$
             \State $recoveryTime \gets detectionTime+resynchronisationTime+reconfigurationTime+communicationTime$
             \State return $recoveryTime$
          \EndProcedure
@@ -360,10 +360,10 @@ This ensures that the circuit is always an acyclic graph with every node reachab
    \begin{algorithmic}[1]
          \Procedure{AddNode}{$partition, node$}
             \State $nodes.insert(node)$
-            \ForAll{$signalName in node.inputs$}
-               \If{$partition.cutLoops[signalName] \neq ""$}
-                  \State $signalName \gets cutLoops[signalName]$ \Comment{If this signal has been renamed already to avoid a cycle, rename this occurance of it.}
-               \EndIf
+            \ForAll{$signalName \in node.inputs$}
+               %\If{$partition.cutLoops[signalName] \neq ""$}
+                  %\State $signalName \gets cutLoops[signalName]$ \Comment{If this signal has been renamed already to avoid a cycle, rename this occurance of it.}
+               %\EndIf
                \State $signal \gets partition.signals[name]$
                \State $signal.sinks.Add(node)$
             \EndFor
@@ -372,7 +372,8 @@ This ensures that the circuit is always an acyclic graph with every node reachab
 
             \State $inCost \gets 0$
             \ForAll{$signalName \in node.inputs$}
-               \State $source \gets partition.signals[signalName].source$
+               \State $signal \gets partition.signals[signalName]$
+               \State $source \gets signal.source$
                \If{$partition.costs[source] > inCost$}
                   \State $inCost \gets partition.costs[source]$
                \EndIf
@@ -399,12 +400,12 @@ This turns a possibly cyclic \ac{DFG} with partially computed path lengths, into
         \midrule
         $partition$ &\bf  Model* & Model* containing DFG representing partition to add node to\\
         $root$ &\bf  BlifNode* & Newly added node\\
-        $node$ &\bf  BlifNode* & Node we just came from\\
-        $node$ &\bf  BlifNode* & Current node\\
+        $parent$ &\bf  BlifNode* & Node we just came from\\
         $costToReach$ &\bf  int & Maximum number of critical path steps to reach node, not counting the node itself \\
         $explored$ &\bf  Map(BlifNode* $\to$ boolean) & Whether a node has been reached yet in the current iteration \\ 
         $partition.signals$ &\bf  Map(string $\to$ Signal*) & Map of signal name to Signal* \\
-        $partition.signals[parent.output]$ &\bf  BlifNode* & Signal driven by the prior node i.e. the graph edge we most recently travelled. \\
+        $parent.output$ &\bf string & Name of the signal the parent nodes drives i.e. the signal we reached this node from\\
+        $signal$ & \bf Signal* & Signal we reached this node from\\
         $node.cost$ &\bf  int & 1 for latches, 0 for LUTs \\
         $costs$ &\bf  Map(BlifNode* $\to$ int) & Map of the cost to reach each node \\
         $node$ &\bf  BlifNode* & \\
@@ -416,11 +417,12 @@ This turns a possibly cyclic \ac{DFG} with partially computed path lengths, into
    \caption{UpdateCostsAndBreakCycles}\label{updatecosts}
    \begin{algorithmic}[1]
       \Procedure{UpdateCostsAndBreakCycles}{$partition, root, parent, node, costToReach, explored$}
-      \If{$explored[node] = true $ and $costs[node] \ge costToReach$} \Comment{Already expanded this path, and it can't change}
+      \If{$explored[node] = true $ and $costs[node] \ge costToReach$} \Comment{Already expanded this path, and we haven't found a more expensive route to it. No point continuing down it}
             \State return
          \EndIf
          \If{$parent \neq NULL $ and $ node = root$} \Comment{We have a cycle, as all newly created cycles must go through the new node, and the new node should only ever be reached once at the start without cycles}
-            \State CutSignal$(partition, partition.signals[parent.output])$
+            \State $signal \gets partition.signals[parent.output]$ \Comment{The signal edge we came in on}
+            \State CutSignal$(partition, signal)$
             \State return
          \EndIf
          \State $cost \gets costToReach+node.cost$
@@ -446,51 +448,51 @@ Given an existing \ac{DAG} \fxnote{Directed Acyclic Graph} which we insert a new
 \end{enumerate}
 Using this information we develop our traversal algorithm.
 Line 2 demonstrates an optimisation, in that once a path has been checked we need not recheck it unless we have found a more expensive path to it as otherwise nothing will change.
-Lines 5-8 check if we have detected a cycle. If so, cut it through cutting the signal, detailed in algorithm \ref{cutsignal}.
+Lines 5-8 check if we have detected a cycle. If so, cut it through cutting the signal, which splits the signal into two. A primary output with the same source, and a primary input with the same sinks, as detailed further in subsection \ref{cutsignal}.
 
 
 \newpage
-\subsection{CutSignal}
+\subsection{CutSignal}\label{cutsignal}
 Given a signal, cut it, by splitting it into two signals. One of which is a primary input with the sinks of the previous signal. One of which is a primary output with the source of the previous signal.
 
-\begin{algorithm}
-    \begin{center}
-        \begin{tabularx}{\linewidth}{llX}
-        \toprule
-        Variable & Type & Description\\
-        \midrule
-        $partition$ &\bf  Model* & Model* containing DFG representing partition to add node to\\
-        $partition.cutLoops$ &\bf  Map(string $\to$ string) & Map from old to new name of a cut signal. Note that only the input signal is renamed. The output signal retains the same name.\\
-        $signal$ &\bf  Signal* & The signal we're cutting\\
-        $newSignal$ &\bf  Signal* & The new signal we created\\
-        $signal.source$ &\bf  BlifNode* & The source, or driver, of a signal\\
-        $partition.signals$ &\bf  Map(string $\to$ Signal*) & A map from signal name to signal\\
-        $partition.outputs$ &\bf  List(Signal*) & The primary outputs for the circuit\\
-        $node$ &\bf  BlifNode* & \\
-        $node.inputs$ &\bf  List(string) & names of input signals to a node\\
-        \bottomrule
-        \end{tabularx}
-    \end{center}
-   \caption{CutSignal}\label{cutsignal}
-   \begin{algorithmic}[1]
-      \Procedure{CutSignal}{$partition, signal$}
-         \State $newSignal \gets new Signal(name)$ \Comment{Create a new signal with the same name, but currently no sources or sinks}
-         \State $newSignal.source \gets signal.source$
-         \State $partition.signals[name] \gets newSignal$
-         \State replace$(partition.outputs, signal, newSignal)$ \Comment{Replace any occurances of the old signal in the circuit outputs with the new}
-         \State $signal.name \gets "qqrin"+name$
-         \State $signal.source = NULL$
-         \State $signals[signal.name] \gets signal$
-         \State $cutLoops[newSignal.name] \gets signal.name$
-         \ForAll{$node \in signal.sinks$}
-            \State replace$(node.inputs, name, "qqrin"+name)$
-         \EndFor
-      \EndProcedure
-   \end{algorithmic}
-\end{algorithm}
-Cutting a signal consists of splitting an existing signal into two. One with the same source but no sinks as a primary output. One with the same sinks but no source as a primary input. We also need to update existing references to point to the correct signal, and record the change to update any future references as nodes get added.
-To that end, lines 3-5 create a new signal with the same source, no sinks, and replace all existing instances with the new signal.
-We now in lines 6-12 rename the previous signal to a reserved name, set it to have no source, and update all its sinks to refer to the correct, renamed signal.
+%\begin{algorithm}
+    %\begin{center}
+        %\begin{tabularx}{\linewidth}{llX}
+        %\toprule
+        %Variable & Type & Description\\
+        %\midrule
+        %$partition$ &\bf  Model* & Model* containing DFG representing partition to add node to\\
+        %$partition.cutLoops$ &\bf  Map(string $\to$ string) & Map from old to new name of a cut signal. Note that only the input signal is renamed. The output signal retains the same name.\\
+        %$signal$ &\bf  Signal* & The signal we're cutting\\
+        %$newSignal$ &\bf  Signal* & The new signal we created\\
+        %$signal.source$ &\bf  BlifNode* & The source, or driver, of a signal\\
+        %$partition.signals$ &\bf  Map(string $\to$ Signal*) & A map from signal name to signal\\
+        %$partition.outputs$ &\bf  List(Signal*) & The primary outputs for the circuit\\
+        %$node$ &\bf  BlifNode* & \\
+        %$node.inputs$ &\bf  List(string) & names of input signals to a node\\
+        %\bottomrule
+        %\end{tabularx}
+    %\end{center}
+   %\caption{CutSignal}\label{cutsignal}
+   %\begin{algorithmic}[1]
+      %\Procedure{CutSignal}{$partition, signal$}
+         %\State $newSignal \gets new Signal(name)$ \Comment{Create a new signal with the same name, but currently no sources or sinks}
+         %\State $newSignal.source \gets signal.source$
+         %\State $partition.signals[name] \gets newSignal$
+         %\State replace$(partition.outputs, signal, newSignal)$ \Comment{Replace any occurances of the old signal in the circuit outputs with the new}
+         %\State $signal.name \gets "qqrin"+name$
+         %\State $signal.source = NULL$
+         %\State $signals[signal.name] \gets signal$
+         %\State $cutLoops[newSignal.name] \gets signal.name$
+         %\ForAll{$node \in signal.sinks$}
+            %\State replace$(node.inputs, name, "qqrin"+name)$
+         %\EndFor
+      %\EndProcedure
+   %\end{algorithmic}
+%\end{algorithm}
+%Cutting a signal consists of splitting an existing signal into two. One with the same source but no sinks as a primary output. One with the same sinks but no source as a primary input. We also need to update existing references to point to the correct signal, and record the change to update any future references as nodes get added.
+%To that end, lines 3-5 create a new signal with the same source, no sinks, and replace all existing instances with the new signal.
+%We now in lines 6-12 rename the previous signal to a reserved name, set it to have no source, and update all its sinks to refer to the correct, renamed signal.
 
 \newpage
 \subsection{TMR}
@@ -535,7 +537,7 @@ Given a file containing a partition, read it in as a black box, triplicate it, a
       \EndProcedure
    \end{algorithmic}
 \end{algorithm}
-This method operates on the \ac{BLIF} in a low level way, dealing manipulating the actual file contents, rather than operating on an abstract circuit representation, as we transform a flat circuit, into a heirarchical circuit, in which out original flat circuit remains untouched but we insert voting and similar logic around it.
+This method operates on the \ac{BLIF} in a low level way, dealing with manipulating the actual file contents, rather than operating on an abstract circuit representation, as we transform a flat circuit, into a heirarchical circuit, in which our original flat circuit remains untouched but we insert voting and similar logic around it.
 We read in our partition circuit and voter circuit. We now create three partition subcircuit and one voter subcircuit definitions. We match up our signal names between them appropriately, and then write out our subcircuit definitions, followed by our partition and voter subcircuits.
 
 This transforms a file from format:
