@@ -75,7 +75,7 @@ def doRun(args):
          if "error" in reto2:
             return reto2
          path = re.findall('Final critical path: (.+) ns', output2)[0]
-         path = float(path)*1E-9*1.5
+         path = float(path)*1E-9*1.8
          par.append('-l')
          par.append(str(path))
          os.chdir("..")
