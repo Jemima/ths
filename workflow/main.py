@@ -17,7 +17,7 @@ if __name__ == "__main__":
    parser.add_argument("-l", "--latency", type=float, help="Circuit operating frequency in seconds")
    parser.add_argument("-t", "--test", action="store_true", help="Test generated file")
    parser.add_argument("-c", "--count", type=int, help="Maximum number of inputs to test")
-   #parser.add_argument("-a", "--area", type=int, help="Maximum area to pass to partitioner")
+   parser.add_argument("-b", "--breadthfirst", action="store_true", help="Partitioner should use worse breadth first traversal")
    parser.add_argument("-r", "--recoverytime", type=str, help="Maximum per partition recovery time")
    parser.add_argument("-n", "--numthreads", type=int, help="Maximum number of threads to use")
 
@@ -40,8 +40,12 @@ if __name__ == "__main__":
       recoverytime = params.recoverytime
       if recoverytime == None:
          recoverytime = "1e-2" 
+      bfs = params.breadthfirst
+      pars = ["./partitioner", "-q", "-r", str(recoverytime), "-f", params.infile, "-o", dirSplit, '-p', str(critical)]
+      if bfs != None and bfs == True:
+         pars.append("-b")
       try:
-         output = subprocess.check_output(["./partitioner", "-q", "-r", str(recoverytime), "-f", params.infile, "-o", dirSplit, '-p', str(critical)]).decode(sys.stdout.encoding).strip().split('\n')
+         output = subprocess.check_output(pars).decode(sys.stdout.encoding).strip().split('\n')
       except subprocess.CalledProcessError as e:
          sys.stderr.write("Partitioner error: "+str(e.output, 'UTF-8')+"\n")
          raise
