@@ -1,10 +1,17 @@
-all: ReportB.pdf
+DOTDIR=doxygen
+IMDIR=images
 
-pdf: ReportB.pdf
+$(IMDIR)/%.pdf:
+	for f in $$(ls doxygen/*.dot); do echo $${f%.*}; s=`basename $$f .dot`; dot -Tpdf -oimages/$$s.pdf $$f; done;
 
-ReportB.pdf: clean ReportB.tex
-	for f in $$(ls doxygen/*.dot); do echo $${f%.*}; dot -Tpdf -o$${f%.*}.pdf $$f; done;
-	texi2pdf ReportB.tex
 
-clean:
+all : ReportB.pdf
+
+pdf : ReportB.pdf
+
+ReportB.pdf : ReportB.tex $(IMDIR)/%.pdf
+	texi2pdf --tidy ReportB.tex
+
+clean :
 	rm -f *.ps *.dvi *.aux *.toc *.idx *.ind *.ilg *.log *.out *.brf *.blg *.bbl ReportB.pdf
+	rm -r *.t2d

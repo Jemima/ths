@@ -13,9 +13,7 @@ def parse(fileName):
    for line in file:
       if line[0] == '/':
          line = line.split()
-         sys.stderr.write("***")
-         sys.stderr.write(str(line))
-         lines[line[0]] = [line[4], line[19], line[20]]
+         lines[line[0]] = [line[4], max(float(line[11]), float(line[13])), max(float(line[12]), float(line[14])), line[21], line[22]]
 
    return lines
 if __name__ == "__main__":
@@ -23,14 +21,45 @@ if __name__ == "__main__":
    parser.add_argument("indir", type=str, help="Input directory")
 
    params = parser.parse_args()
-   files = [os.path.join(params.indir, f) for f in os.listdir(params.indir)]
-   files.sort(key=os.path.getsize)
-   files.reverse()
+   dirs = [os.path.join(params.indir, f) for f in os.listdir(params.indir)]
    info = {}
-   for f in files:
-      if fnmatch(f, "*.results"):
-         info[f] = parse(f)
+   for d in dirs:
+      info[d] = {}
+      files = [os.path.join(d, f) for f in os.listdir(d)]
+      files.sort(key=os.path.getsize)
+      files.reverse()
+      for f in files:
+         if fnmatch(f, "*.results"):
+            bn = os.path.basename(f)
+            info[d][bn] = parse(f)
    
+   summary = {}
+   for d in info:
+      for run in info[d]:
+         summary[run] = {}
+         for f in info[d][run]:
+            summary[run][f] = [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0]]
+
+   for d in info:
+      for run in info[d]:
+         for f in info[d][run]:
+            for n in range(0, len(info[d][run][f])):
+               try:
+                  field = info[d][run][f][n]
+                  summary[run][f][n][1] += float(field)
+                  summary[run][f][n][0] += 1.0
+               except:
+                  pass
+
+   for run in summary:
+      for f in summary[run]:
+         for n in range(0, len(summary[run][f])):
+            field = summary[run][f][n][1]/summary[run][f][n][0]
+            summary[run][f][n] = field
+         summary[run][f][2] = summary[run][f][2]/summary[run][f][1]
+         summary[run][f][4] = summary[run][f][4]/summary[run][f][3]
+
+   info = summary
    results = {}
    for outer in info:
       for inner in info[outer]:
@@ -38,7 +67,7 @@ if __name__ == "__main__":
 
    times = []
    for outer in info:
-      time = outer[len(params.indir)+1:outer.rindex('.')]
+      time = outer[0:outer.rindex('.')]
       times.append(time)
       
       for inner in info[outer]:
@@ -47,7 +76,7 @@ if __name__ == "__main__":
    times.sort()
    times = sorted(times, key=lambda x:-float(x))
    for time in times:
-      sys.stdout.write(time+",NumPartitions,Frequency Base (s),Frequency TMR (ns),Slowdown Factor,,")
+      sys.stdout.write(time+",Number of Partitions, Number of BLEs (original), Increase in BLE Number, Clock Period (original) (ns), Clock Slowdown Factor,,")
 
    sys.stdout.write("\n")
    for file in results:
@@ -56,16 +85,11 @@ if __name__ == "__main__":
       for time in times:
          if time in results[file]:
             for res in results[file][time]:
-               sys.stdout.write(res+",")
-            sys.stdout.write(
-                  str(
-                     float(results[file][time][2]) /
-                     float(results[file][time][1])
-                     )
-                  )
-            sys.stdout.write(",,,")
+               print("%.2f" % res, end=",")
+               #sys.stdout.write(str(res)+",")
+            sys.stdout.write(",,")
          else:
-            sys.stdout.write("N/A,N/A,N/A,N/A,,,")
+            sys.stdout.write("N/A,N/A,N/A,N/A,N/A,,,")
       sys.stdout.write("\n")
 
 
