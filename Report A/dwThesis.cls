@@ -3,6 +3,8 @@
 % By Harish Bhanderi <harish.bhanderi@cantab.net
 % Version 1.0 released 15/07/2002
 % Version 1.1 released 14/07/2010
+% Modified by David Munro <david.munro@gmail.com>/<dsmu186@cse.unsw.edu.au> to conform to UNSW CSE thesis guidelines.
+% 1.1a released 08/10/2012
 %-------------------------- identification ---------------------
 %\NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{dwThesis}[2012/10/08 dsmu Thesis Class]
