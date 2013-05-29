@@ -499,44 +499,44 @@ Given a signal, cut it, by splitting it into two signals. One of which is a prim
 Given a file containing a partition, read it in as a black box, triplicate it, add voter logic, write back out to file.
 
 
-\begin{algorithm}
-    \begin{center}
-        \begin{tabularx}{\linewidth}{llX}
-        \toprule
-        Variable & Type & Description\\
-        \midrule
-        $file$ &\bf  File & File to triplicate\\
-        $circuit$ &\bf  string & Contents of the circuit file\\
-        $header$ &\bf  string & String containing the circuit name, inputs and outputs as they appear in the \ac{BLIF}\\
-        $voter$ &\bf  string & Contents of the voter circuit file\\
-        $subcktDefintionN$ &\bf  string & String representing a subcircuit in \ac{BLIF} format\\
-        $voterDefintionN$ &\bf  string & String representing a subcircuit in \ac{BLIF} format\\
-        \bottomrule
-        \end{tabularx}
-    \end{center}
-   \caption{TMR}\label{TMR}
-   \begin{algorithmic}[1]
-      \Procedure{TMR}{$file$}
-         \State $circuit \gets file.read()$
-         \State $header \gets circuit.header$
-         \State $voter \gets voter.read()$
-         \State $subcktDefinition1 \gets MakeSubcktDefinition(circuit)$
-         \State $subcktDefinition2 \gets MakeSubcktDefinition(circuit)$
-         \State $subcktDefinition3 \gets MakeSubcktDefinition(circuit)$
-         \State $voterDefinition \gets MakeSubcktDefinition(voter)$
-         \State $subcktDefinition.ConnectInputs(circuit.inputs)$
-         \State $voterDefinition.ConnectInputs(subcktDefinition1.outputs, subcktDefinition2.outputs, subcktDefinition3.outputs)$ \Comment{Connect the outputs of the partitions to the inputs of the voter}
-         \State $voterDefinition.ConnectOutputs(circuit.outputs)$
-         \State $file.write(header)$
-         \State $file.write(voterDefinition)$
-         \State $file.write(subcktDefinition1)$
-         \State $file.write(subcktDefinition2)$
-         \State $file.write(subcktDefinition3)$
-         \State $file.write(voter)$
-         \State $file.write(circuit)$
-      \EndProcedure
-   \end{algorithmic}
-\end{algorithm}
+%\begin{algorithm}
+    %\begin{center}
+        %\begin{tabularx}{\linewidth}{llX}
+        %\toprule
+        %Variable & Type & Description\\
+        %\midrule
+        %$file$ &\bf  File & File to triplicate\\
+        %$circuit$ &\bf  string & Contents of the circuit file\\
+        %$header$ &\bf  string & String containing the circuit name, inputs and outputs as they appear in the \ac{BLIF}\\
+        %$voter$ &\bf  string & Contents of the voter circuit file\\
+        %$subcktDefintionN$ &\bf  string & String representing a subcircuit in \ac{BLIF} format\\
+        %$voterDefintionN$ &\bf  string & String representing a subcircuit in \ac{BLIF} format\\
+        %\bottomrule
+        %\end{tabularx}
+    %\end{center}
+   %\caption{TMR}\label{TMR}
+   %\begin{algorithmic}[1]
+      %\Procedure{TMR}{$file$}
+         %\State $circuit \gets file.read()$
+         %\State $header \gets circuit.header$
+         %\State $voter \gets voter.read()$
+         %\State $subcktDefinition1 \gets MakeSubcktDefinition(circuit)$
+         %\State $subcktDefinition2 \gets MakeSubcktDefinition(circuit)$
+         %\State $subcktDefinition3 \gets MakeSubcktDefinition(circuit)$
+         %\State $voterDefinition \gets MakeSubcktDefinition(voter)$
+         %\State $subcktDefinition.ConnectInputs(circuit.inputs)$
+         %\State $voterDefinition.ConnectInputs(subcktDefinition1.outputs, subcktDefinition2.outputs, subcktDefinition3.outputs)$ \Comment{Connect the outputs of the partitions to the inputs of the voter}
+         %\State $voterDefinition.ConnectOutputs(circuit.outputs)$
+         %\State $file.write(header)$
+         %\State $file.write(voterDefinition)$
+         %\State $file.write(subcktDefinition1)$
+         %\State $file.write(subcktDefinition2)$
+         %\State $file.write(subcktDefinition3)$
+         %\State $file.write(voter)$
+         %\State $file.write(circuit)$
+      %\EndProcedure
+   %\end{algorithmic}
+%\end{algorithm}
 This method operates on the \ac{BLIF} in a low level way, dealing with manipulating the actual file contents, rather than operating on an abstract circuit representation, as we transform a flat circuit, into a heirarchical circuit, in which our original flat circuit remains untouched but we insert voting and similar logic around it.
 We read in our partition circuit and voter circuit. We now create three partition subcircuit and one voter subcircuit definitions. We match up our signal names between them appropriately, and then write out our subcircuit definitions, followed by our partition and voter subcircuits.
 
