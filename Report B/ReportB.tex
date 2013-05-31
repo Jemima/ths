@@ -239,14 +239,14 @@
    One additional technique specific to \ac{SRAM} based \acp{FPGA} relates to the protection of the off-chip configuration memory. As \ac{SRAM} is volatile and loads the state from off chip at power up, this external configuration memory must also be protected from \acp{SEU}. This can be accomplished by incorporating error detection and correction techniques in the RAM, something already in place on a number of mainstream \acp{FPGA} such as the Virtex-4 and -5\cite{DuttonSEU}.
 
 
-   \section{\acl{TMR}}
+   \section{\acl{TMR}}\label{secTMR}
    Triple Modular Redundancy is a commonly used method for creating fault tolerant systems in which a given circuit is implemented three times with independent components, with the outputs feeding into a voter circuit to determine the majority value. Any \ac{SEU} will affect the output value of at most one version, so the majority vote is still correct. For transient errors that are not in a feedback loop correcting the output is enough to fix the error; however, \acp{SEU} in feedback paths or in the configuration memory will persist, and this require some method for eliminating them. One possible approach is resetting the system but while this occurs the system is unavailable so a reset may not be a feasible solution. Instead, partial reconfiguration can reconfigure only the faulty circuit while the redundant circuits continue operating and providing output. After reconfiguration the circuit must then be resynchronised to the same state as the other two. We use the approach presented by \cite{DiesselChange} which involves running the circuit until the state converges, which is guaranteed (for acyclic circuits) to occur within a timeframe given by the number of register stages and the clock frequency. In order for this approach to always resynchronise correctly the circuit must have no feedback loops which may carry incorrect data. To solve this we simply ensure that all feedback loops are \textit{cut}, that is, the value is voted on before being passed back into the circuit. This has the additional benefit of correcting transient errors which would otherwise be caught in a feedback cycle by ensuring the cycle data is correct.
 
    This approach requires three times as many circuit elements (as the circuits are triplicated) plus whatever is required for voters. By minimising the number of voters, we can thus reduce the overhead of our approach.
 
    Once an error occurs it takes up to $T_{path}$ to reach the voter and be detected, where $T_{path}$ is given by the clock period and number of register stages. This is called the \textit{error detection time}. Detection of an error can then be used to trigger reconfiguration.
    Sending a request to the reconfiguration controller goes through a token ring network consisting of the other voters, and the reconfiguration controller. In the worst case it takes one full cycle of the network to receive the token, one full cycle to reach the reconfiguration controller, and three cycles to transmit the request, giving $5\times TimePerHop$. Benchmarks of a sample voter indicate $50$ clock cycles per hop is a good estimate.
-   \textit{Reconfiguration time} $= T_R$ is dependent upon the circuit size. For a Virtex-5 device, each reconfiguration area consists of $160$ \acp{LUT} and $160$ latches, where only whole reconfiguration areas can be reconfigured. The bitstream size for this area is \fxfatal{Fill in} which takes $15.4\mu{}s$ to reconfigure at $100MHz$.
+   \textit{Reconfiguration time} $= T_R$ is dependent upon the circuit size. For a Virtex-5 device, each reconfiguration area consists of $160$ \acp{LUT} and $160$ latches, where only whole reconfiguration areas can be reconfigured. The bitstream size for this area is 47232 which takes $14.8\mu{}s$ to reconfigure at $100MHz$.
    Once the error has been detected and the circuit reconfigured it must then be resynchronised with the other partitions, which takes up to $T_{path}$ using the previously described technique.
 
    The error recovery time consists of the time to detect the error, send a request to the configuration controller, and then reconfigure and resynchronise the circuit, thus is a function of the circuit area, clock frequency, and number of register stages. Therefore it is required that the number of register stages and area are small enough, and frequency large enough, that our error recovery time is within a user specified limit.
@@ -256,7 +256,7 @@
       \mbox{Communication Time} &= \mbox{Cycles per flit per hop}\times\mbox{Number of flits}\times\mbox{NumStops}\times \mbox{Clock Period}\notag\\
       \mbox{Communication Time} &= 50\times 5\times (\mbox{NumPartitions}+1)\times \mbox{Clock Period}\notag\\
       \mbox{Reconfiguration Time} &= \mbox{Clock Period}\times \frac{\mbox{Bitstream Size}}{\mbox{Reconfiguration Speed}}\notag\\
-      &= \mbox{Clock Period}\times \left\lceil \frac{\mbox{max}(numLUTs, numLatches)}{160}\right\rceil\times 1.54\times10^{-5}\notag\\
+      &= \mbox{Clock Period}\times \left\lceil \frac{\mbox{max}(numLUTs, numLatches)}{160}\right\rceil\times 1.48\times10^{-5}\notag\\
       \mbox{Resynchronisation Time} &<= T_{path} = \mbox{Clock Period}\times\mbox{Register Stages}\notag\\
    \end{align}\cite{DiesselChange}
 
@@ -335,7 +335,7 @@
 
 
    \chapter{Algorithm}
-   For our partitioner, we operate on a netlist in \ac{BLIF} format (described in subsection \ref{secBlif} after optimisation and technology mapping, but before packing. Our goal is to take an input netlist and transform it into a netlist in the same format, with the same set of outputs for each set of inputs, but with redundant components.
+   For our partitioner, we operate on a netlist in \ac{BLIF} format (described in subsection \ref{secBlif}) after optimisation and technology mapping, but before packing. Our goal is to take an input netlist and transform it into a netlist in the same format, with the same set of outputs for each set of inputs, but with redundant components.
 
 
    Figure \ref{algToolflow} illustrates a typical \ac{CAD} toolchain with our custom partitioner added and the substeps expanded (c.f. Figure \ref{CADFlow} for an example without). The below points are more fully expanded in Subsection \ref{secAlgorithm}.
@@ -346,6 +346,15 @@
       \item Flatten - Use abc to transform a heirarchical circuit into a format supported by VPR.
       \item Test - Use the verification abilities of abc to verify that the generated circuit is equivalent to the original.
    \end{itemize}
+   
+   \begin{figure}
+      \begin{center}
+         \includegraphics[width=\linewidth]{images/CadFlowWPartitioner.pdf}
+         \caption{Custom Tool Flow}
+         \label{algToolflow}
+      \end{center}
+   \end{figure}
+   
 
    \section{Data Structures}\label{secDatastructures}
    \subsection{Basic Types}
@@ -356,6 +365,7 @@
          Name & Closest C++ Equivalent & Description\\
          \midrule
          Integer &  int & Whole number \\
+         Boolean &  bool & True or False \\
          Float & float & Floating point number \\
          Queue & std::list & FIFO queue \\
          List(type) & std::list$\langle$type$\rangle$ & \\
@@ -364,6 +374,7 @@
          Map(KeyType $\to$ ValueType, DEFAULT:  DefaultValue) & std::unordered\_map$\langle$KeyType, ValueType$\rangle$ &  A map to translate values of type KeyType to values of type ValueType. If the key isn't present, returns DefaultValue \\
          \bottomrule
       \end{tabularx}
+      \caption{Basic Data Types}
    \end{table}
    The following are custom complex types, which are further defined below. This is merely a quick description of each.
    \begin{table}
@@ -377,6 +388,7 @@
          Signal & A signal within a specific circuit, or Model, representing a set of edges with common source \\
          \bottomrule
       \end{tabularx}
+      \caption{Complex Data Types}
    \end{table}
 
 
@@ -384,15 +396,16 @@
    Contains helper functions to read in a \ac{BLIF} and represent it as a \ac{DFG}.
    The circuit itself is represented as a Model within Blif.
    \begin{table}
-      \begin{tabular}{lll}
+      \begin{tabularx}{\linewidth}{llX}
          \toprule
          Field Name & Type & Description\\
          \midrule
-         masterOutputs & \textbf{List(string)} & List of outputs for the original file \\
-         masterInputs & \textbf{List(string)} & List of inputs for the original file \\
+         masterOutputs & \textbf{List(String)} & List of outputs for the original file \\
+         masterInputs & \textbf{List(String)} & List of inputs for the original file \\
          main & \textbf{Model} & The main circuit in the \ac{BLIF} file\\
          \bottomrule
-      \end{tabular}
+      \end{tabularx}
+      \caption{Fields in Blif object}
    \end{table}
 
    \subsection{Model}
@@ -403,47 +416,50 @@
          \toprule
          Field Name & Type & Description\\
          \midrule
-         name & \textbf{string} & Name of the circuit \\
-         signals & \textbf{Map(string $\to$ Signal, DEFAULT: NULL)} & Map from signal name to Signal object \\
+         name & \textbf{ String} & Name of the circuit \\
+         signals & \textbf{Map(String $\to$ Signal, DEFAULT: NULL)} & Map from signal name to Signal object \\
          outputs & \textbf{List(Signal)} & List of output Signal objects \\
          inputs & \textbf{List(Signal)} & List of input Signal objects \\
          nodes & \textbf{List(BlifNode)} & List of all nodes in a circuit \\
-         numLatches & \textbf{int} & Number of latches within a circuit \\
-         numLUTs & \textbf{int} & Number of LUTs within a circuit \\
+         numLatches & \textbf{ Integer} & Number of latches within a circuit \\
+         numLUTs & \textbf{ Integer} & Number of LUTs within a circuit \\
          \bottomrule
       \end{tabularx}
+      \caption{Fields in Model object}
    \end{table}
 
    \subsection{BlifNode}
    Contains the names of the input and output Signals, as well as the properties of the node (type, etc).
    Does not contain direct references to Signals, merely their names.
    \begin{table}
-      \begin{tabularx}{\linewidth}{lXX}
+      \begin{tabularx}{\linewidth}{llX}
          \toprule
          Field Name & Type & Description\\
          \midrule
-         output & \textbf{string} & Name of output signal \\
-         clock & \textbf{string} & Name of clock signal \\
+         output & \textbf{ String} & Name of output signal \\
+         clock & \textbf{ String} & Name of clock signal \\
          inputs & \textbf{List(string)} & List of input signal names \\
-         cost & \textbf{int} & How many clock cycles this node contributes to the critical path. 0 for \acp{LUT} and 1 for latches. \\
-         type & \textbf{string} & Type of node, "latch" or "names" (\ac{LUT}) \\
-         contents & \textbf{string} & Parameters describing node which are not used by partitioner but required to recreate \ac{BLIF} file e.g. initial latch state\\
+         cost & \textbf{ Integer} & How many clock cycles this node contributes to the critical path. 0 for \acp{LUT} and 1 for latches. \\
+         type & \textbf{ String} & Type of node, "latch" or "names" (\ac{LUT}) \\
+         contents & \textbf{ String} & Parameters describing node which are not used by partitioner but required to recreate \ac{BLIF} file e.g. initial latch state\\
          \bottomrule
       \end{tabularx}
+      \caption{Fields in BlifNode object}
    \end{table}
 
    \subsection{Signal}
    Contains references to the signal source, and a list of its sinks. Also stores the signal name.
    \begin{table}
-      \begin{tabularx}{\linewidth}{lXX}
+      \begin{tabularx}{\linewidth}{llX}
          \toprule
          Field Name & Type & Description\\
          \midrule
-         name & \textbf{string} & Name of the signal \\
+         name & \textbf{ String} & Name of the signal \\
          source & \textbf{BlifNode} & Pointer to source node which drives this signal \\
          sinks & \textbf{List(BlifNode)} & List of pointers to this node's sinks.\\
          \bottomrule
       \end{tabularx}
+      \caption{Fields in Signal object}
    \end{table}
 
    Represents the circuit as a DFG. Contains a list of nodes, map of signal name $\to$ Signal*, and lists of primary inputs and outputs for the circuit.
@@ -467,10 +483,10 @@
             Variable & Type & Description\\
             \midrule
             $input$ & \textbf{File} &  Input blif file\\
-            $targetRecoveryTime$ & \textbf{float} &  Per partition recovery time (in seconds) \\
+            $targetRecoveryTime$ & \textbf{ Float} &  Per partition recovery time (in seconds) \\
             $files$ & \textbf{List(File)} &  circuit partitions, one per file \\
             $file$ & \textbf{File} &  \\
-            $header$ & \textbf{string} &  string containing the first three lines of the input file \\
+            $header$ & \textbf{ String} &  string containing the first three lines of the input file \\
             $output$ & \textbf{File} &  output file\\
             \bottomrule
          \end{tabular}
@@ -504,22 +520,22 @@
             Variable & Type & Description\\
             \midrule
             $file$ &\textbf{ File  } &  input file\\
-            $targetRecoveryTime$ &\textbf{  float } &  maximum per partition recovery time (in seconds)\\
+            $targetRecoveryTime$ &\textbf{ Float } &  maximum per partition recovery time (in seconds)\\
             $blif$ &\textbf{  Blif* } &  In-memory representation of input blif file\\
             $circuit$ &\textbf{   Model* } &  Main circuit from input file, represented as DFG\\
             $partition$ &\textbf{   Model* } &  Circuit, which we are adding nodes to, to make our partition\\
             $queue$ &\textbf{  Queue } &  FIFO queue of nodes to visit\\
-            $visited$ &\textbf{   Map(BlifNode*$\to$ bool)} &  Map of whether a BlifNode is visited\\
+            $visited$ &\textbf{   Map(BlifNode*$\to$ Boolean)} &  Map of whether a BlifNode is visited\\
             $signal$ &\textbf{  Signal* } &  \\
             $circuit.outputs$ &\textbf{  List(Signal*) } &  List of output Signal* of a circuit\\
             $signal.source$ &\textbf{  BlifNode* } &  Node which drives this Signal*\\
-            $queue.size$ &\textbf{  integer } &  Number of nodes in queue\\
+            $queue.size$ &\textbf{ Integer } &  Number of nodes in queue\\
             $node$ &\textbf{  BlifNode* } &  \\
             $file$ &\textbf{  File } &  \\
             $files$ &\textbf{  List(File) } &  \\
-            $numPartitions$ &\textbf{  int } &  Counter of number of partitions\\
-            $signalName$ &\textbf{  string } &  Name of a Signal*\\
-            $node.inputs$ &\textbf{  List(string) } &  List of names of signals which are inputs to this node\\
+            $numPartitions$ &\textbf{ Integer } &  Counter of number of partitions\\
+            $signalName$ &\textbf{ String } &  Name of a Signal*\\
+            $node.inputs$ &\textbf{  List(String) } &  List of names of signals which are inputs to this node\\
             $model.signals$ &\textbf{  Map(string $\to$ Signal*) } &  Map from signal name to Signal* representing it in that Model*\\
             \bottomrule
          \end{tabularx}
@@ -597,8 +613,8 @@
             $signal$ &\textbf{  Signal* } &  \\
             $signal.source$ &\textbf{  BlifNode* } &  The driver for the signal \\
             $partition.inputs$ &\textbf{  List(BlifNode*) } &  List of primary inputs for the circuit \\
-            $partition.signals$ &\textbf{  Map(string $\to$ Signal*) } &  Map from signal name to Signal* \\
-            $originalCircuit.signals$ &\textbf{  Map(string $\to$ Signal*) } &  Map from signal name to Signal* \\
+            $partition.signals$ &\textbf{  Map(String $\to$ Signal*) } &  Map from signal name to Signal* \\
+            $originalCircuit.signals$ &\textbf{  Map(String $\to$ Signal*) } &  Map from signal name to Signal* \\
             $signal.sinks$ &\textbf{  List(BlifNode*) } &  List of sinks for the signal \\
 
             \bottomrule
@@ -619,7 +635,17 @@
          \EndProcedure
       \end{algorithmic}
    \end{algorithm}
+   
+   \begin{figure}
+      \begin{center}
+         \includegraphics[width=\linewidth]{images/MakeIOList.pdf}
+         \caption{MakeIOList}
+         \label{imMakeiolist}
+      \end{center}
+   \end{figure}
    We iterate through every signal in our partition. For each one we check if we have a source (line 4), if not it must be a primary input. Similarly, on line 7 we check if we have a sink which is not represented within our partition. If so, promote it to a primary output of the partition.
+   
+   So for example, in Figure \ref{imMakeiolist} signal 2 has no source within the partition, and so is promoted to primary input. Signal 3 and 4 both have outputs outside the partition, and so are promoted to primary outputs.
 
 
    \newpage
@@ -631,15 +657,16 @@
             \toprule
             Variable & Type & Description\\
             \midrule
-            $latency$ &\textbf{  float } &  Circuit latency (i.e. time for input to completely propagate to output) in seconds\\
-            $clockPeriod$ &\textbf{  Integer } &  Period of the circuit, in seconds. This is estimated as $1.8\times$ the clock period of the original circuit\\
-            $criticalPath$ &\textbf{  Integer } &  Maximum number of steps between an input and an output\\
-            $numFF$ &\textbf{  Integer } &  Number of Latches in circuit\\
-            $numLUT$ &\textbf{  Integer } &  Number of look up tables in circuit\\
-            $resynchronisationTime$ &\textbf{  Float } &  Time, in seconds, that it takes to resynchronise circuit\\
-            $detectionTime$ &\textbf{  Float } &  Time, in seconds, that it takes to detect an error\\
-            $ReconfigureTime$ &\textbf{  Float } &  Time, in seconds, that it takes to reconfigure circuit\\
-            $communicationTime$ &\textbf{  Float } &  Time, in seconds, that it takes to transmit reconfiguration request to controller\\
+            $latency$ &\textbf{ Float } &  Circuit latency (i.e. time for input to completely propagate to output) in seconds\\
+            $clockPeriod$ &\textbf{ Integer } & Estimated period of the final circuit, in seconds. This is estimated as $1.8\times$ the clock period of the original circuit\\
+            $criticalPath$ &\textbf{ Integer } &  Maximum number of steps between an input and an output\\
+            $numFF$ &\textbf{ Integer } &  Number of Latches in circuit\\
+            $numLUT$ &\textbf{ Integer } &  Number of look up tables in circuit\\
+            $resynchronisationTime$ &\textbf{ Float } &  Time, in seconds, that it takes to resynchronise circuit\\
+            $detectionTime$ &\textbf{ Float } &  Time, in seconds, that it takes to detect an error\\
+            $reconfigurationTime$ &\textbf{ Float } &  Time, in seconds, that it takes to reconfigure circuit\\
+            $communicationTime$ &\textbf{ Float } &  Time, in seconds, that it takes to transmit reconfiguration request to controller\\
+            $numPartitions$ &\textbf{ Integer } &  Estimated final number of partitions \\
             \bottomrule
          \end{tabularx}
       \end{center}
@@ -656,7 +683,9 @@
          \EndProcedure
       \end{algorithmic}
    \end{algorithm}
-   The derivation of this algorithm and the values used is fully discussed in Section \fxfatal{TODO: Reference}. The criticalpath is a measure of the maximum number of latches on a path from input to output. The +1 is to account for the contribution of combinational logic, which may be up to one additional clock cycle of latency.
+   The derivation of this algorithm and the values used is fully discussed in Section \ref{secTMR}. The criticalpath is a measure of the maximum number of latches on a path from input to output. The +1 is to account for the contribution of combinational logic, which may be up to one additional clock cycle of latency.
+   Not shown is the calculation of $clockPeriod$ and $numPartitions$.
+   
 
 
    \newpage
@@ -673,13 +702,13 @@
             $partition$ &\textbf{  Model* } &  Model* containing DFG representing partition to add node to\\
             $node$ &\textbf{  BlifNode* } &  Node to add\\
             $signal$ &\textbf{  Signal* } &  \\
-            $signalName$ &\textbf{  string } &  \\
-            $partition.cutLoops$ &\textbf{  Map(string $\to$ string) } &  For signals which have been cut, a map of the old to the new name\\
-            $partition.signals$ &\textbf{  Map(string $\to$ Signal*) } &  Map of signal name to Signal* \\
+            $signalName$ &\textbf{ String } &  Name of a Signal*\\
+            $newName$ &\textbf{ String } &  The new name of a Signal* if and after it's been cut\\
+            $partition.signals$ &\textbf{  Map(String $\to$ Signal*) } &  Map of signal name to Signal* \\
             $signal.sinks$ &\textbf{  List(BlifNode*) } &  List of sinks for a Signal* \\
             $signal.source$ &\textbf{  BlifNode* } &  Source, or driver, for a Signal* \\
-            $inCost$ &\textbf{  int } &  Maximum number of critical path steps to reach node, not counting the node itself \\
-            $explored$ &\textbf{  Map(BlifNode* $\to$ boolean) } &  Whether a node has been reached yet in the current iteration \\ 
+            $inCost$ &\textbf{ Integer } &  Maximum number of critical path steps to reach node, not counting the node itself \\
+            $explored$ &\textbf{  Map(BlifNode* $\to$ Boolean) } &  Whether a node has been reached yet in the current iteration \\ 
             \bottomrule
          \end{tabularx}
       \end{center}
@@ -687,11 +716,13 @@
       \begin{algorithmic}[1]
          \Procedure{AddNode}{$partition, node$}
          \State $nodes.insert(node)$
-         \ForAll{$signalName \in node.inputs$}
-         %\If{$partition.cutLoops[signalName] \neq ""$}
-         %\State $signalName \gets cutLoops[signalName]$ \Comment{If this signal has been renamed already to avoid a cycle, rename this occurance of it.}
-         %\EndIf
-         \State $signal \gets partition.signals[name]$
+         \ForAll{$name \in node.inputs$}
+         \If{IsRenamed($signalName$)}
+             \State $newName \gets$ GetNewName$(name)$ \Comment{If this signal has been renamed already to avoid a cycle, rename this occurrence of it.}
+             \State Replace$(node.inputs, signalName, newName)$ \Comment{Replace the original name with what it was renamed to}
+             \State $signalName \gets newName$
+         \EndIf
+         \State $signal \gets partition.signals[signalName]$
          \State $signal.sinks.Add(node)$
          \EndFor
          \State $signal \gets partition.signals[node.output]$
@@ -727,16 +758,16 @@
             $partition$ &\textbf{  Model* } &  Model* containing DFG representing partition to add node to\\
             $root$ &\textbf{  BlifNode* } &  Newly added node\\
             $parent$ &\textbf{  BlifNode* } &  Node we just came from\\
-            $costToReach$ &\textbf{  int } &  Maximum number of critical path steps to reach node, not counting the node itself \\
-            $explored$ &\textbf{  Map(BlifNode* $\to$ boolean) } &  Whether a node has been reached yet in the current iteration \\ 
-            $partition.signals$ &\textbf{  Map(string $\to$ Signal*) } &  Map of signal name to Signal* \\
-            $parent.output$ &\textbf{ string } &  Name of the signal the parent nodes drives i.e. the signal we reached this node from\\
+            $costToReach$ &\textbf{ Integer } &  Maximum number of critical path steps to reach node, not counting the node itself \\
+            $explored$ &\textbf{  Map(BlifNode* $\to$ Boolean) } &  Whether a node has been reached yet in the current iteration \\ 
+            $partition.signals$ &\textbf{  Map(String $\to$ Signal*) } &  Map of signal name to Signal* \\
+            $parent.output$ &\textbf{ String } &  Name of the signal the parent nodes drives i.e. the signal we reached this node from\\
             $signal$ & \textbf{ Signal* } &  Signal we reached this node from\\
-            $node.cost$ &\textbf{  int } &  1 for latches, 0 for LUTs \\
-            $costs$ &\textbf{  Map(BlifNode* $\to$ int) } &  Map of the cost to reach each node \\
+            $node.cost$ &\textbf{ Integer } &  1 for latches, 0 for LUTs \\
+            $costs$ &\textbf{  Map(BlifNode* $\to$ Integer) } &  Map of the cost to reach each node \\
             $node$ &\textbf{  BlifNode* } &  \\
             $signal.sinks$ &\textbf{  List(BlifNode*) } &  List of sinks for a Signal* \\
-            $cost$ &\textbf{  int } &  Number of critical path steps to reach node, including the node itself \\
+            $cost$ &\textbf{ Integer } &  Number of critical path steps to reach node, including the node itself \\
             \bottomrule
          \end{tabularx}
       \end{center}
@@ -788,7 +819,14 @@
 
    \newpage
    \subsection{CutSignal}\label{cutsignal}
-   Given a signal, cut it, by splitting it into two signals. One of which is a primary input with the sinks of the previous signal. One of which is a primary output with the source of the previous signal.
+   Given a signal, cut it, by splitting it into two signals. One of which is a primary input with the sinks of the previous signal name a special name to flag it as a cut loop. One of which is a primary output with the source of the previous signal and the original name. Update the partition's signal list appropriately.
+   \begin{figure}
+      \begin{center}
+         \includegraphics[width=\linewidth]{images/CutSignal.pdf}
+         \caption{AddNode}
+         \label{imAddnode}
+      \end{center}
+   \end{figure}
 
    \newpage
    \subsection{Triplicate}\label{algTriplicate}
@@ -903,7 +941,7 @@
    \subsection{Test}\label{algTest}
    abc is also used to optionally test the generated circuit to verify that it is equivalent to the original. It does this by creating a miter circuit, which is derived by pairing inputs for the two circuits, and feeding output pairs into an XOR gate which are then ORd to produce the single output. For any given input, the miter circuit output is 0 if both circuits produce the same set of outputs for the input set, and 1 if the outputs differ, which turns verification into a \ac{SAT}.
    The circuits are then simplified by merging equivalent nodes and removing redundant while being regularly tested for various inputs. This proceeds until a counter example is found, or the circuit is shown to have constant output 0 for all possible inputs \ref{abcSEC, abcCEC}.
-   While \ac{SAT} is NP-complete, in practice the large amount of redundancy in TMR'd circuits allows allows testing to complete in only a few seconds for any of our benchmarks.
+   While solving a \ac{SAT} is NP-complete, in practice the large amount of redundancy in TMR'd circuits allows allows testing to complete in only a few seconds for any of our benchmarks.
 
    \section{Performance}
    The algorithm must visit each node in the input circuit once to add it to a partition, giving a factor of $n$.
@@ -913,6 +951,12 @@
    Triplicating is linear in the number of inputs and outputs, joining is $O(nk)$ where n is the number of circuits, and k is the number of inputs and outputs for each circuit. 
    In practice, joining, triplicating and flattening are all subsecond, while partitioning and testing are a few seconds. This compares to \ac{VPR}'s running time of up to an hour for some \ac{TMR}'d benchmark circuits.
    \fxfatal{Add in table of results}
+   
+   \section{Verification}
+   A threefold approach to verifying the correctness of the implementation was taken.
+   Firstly, small sample circuits were partitioned and the resulting circuits were examined manually to verify correct operation. Manual verification is, however, not practical for all but the smallest circuits so the small sample circuits were generally just used to test specific corner cases, while two other methods were used to check the benchmarks. As detailed earlier in this section, abc was used to verify that the generated circuits were functionally equivalent. That is to say, for any set of inputs both the original and TMR'd circuit had identical outputs.
+   Next, circuit properties such as number of elements could be examined and compared to expected results, as is done in Section \ref{resSanity}.
+   One additional incidental test was verification that the generated file is a valid \ac{BLIF} file. \ac{VPR} and abc are both quite picky and generally either error out or crash on circuits which don't exactly match the expected format.
 
 
    \section{Design Choices}
@@ -930,7 +974,7 @@
 
    \section{Input File Format}\label{secBlif}
    The \ac{BLIF} file format is a textual format which describes an arbitrary sequential or combinational network of logic functions\cite{BLIF}.
-   Of the full \ac{BLIF} specification, \ac{VPR} only supports a subset of, and hence our partitioner is also designed to only support that same subset.
+   Our partitioner only supports a subset of the \ac{BLIF} specification, specifically only those elements supported by \ac{VPR} and used in our benchmark files.
    \begin{lstlisting}[caption=BLIF file layout, label=SampleBlif]
       .model voter
       .inputs in1 in2 in3
@@ -971,12 +1015,12 @@
    The original circuit is run through VPR to collect base results, then the circuit is run through our partitioner to TMR it. The TMR'd version is then verified by abc as being functionally equivalent to the orignal, and then run through VPR to collect TMR'd results. Each run of VPR used a randomly generated seed for the placer.
    The mean of the reported values across the 10 repetitions was then taken.
    The benchmarks used were the 20 largest MCNC LGSynth93 circuits, as provided by the open source VTR project \fxwarning{Reference} and described in table \ref{benchmarkList}.
-   The set of target recovery times used is $10^{-3}, 2.5\times10^{-4}, 7.5\times10^{-5}$s.
+   The set of target recovery times used is $10^{-3}, 2.5\times10^{-4}$ and $7.5\times10^{-5}$s.
    The voter used is a simple 3-input \ac{LUT}, which uses one \ac{BLE} per output signal from each partition.
 
    \begin{table}
       \begin{center}
-         \begin{tabular}{lcccc}
+         \begin{tabular}{lrrrr}
             \toprule
             & \multicolumn{4}{c}{Number of:}\\
             \cmidrule{2-5}
@@ -1037,15 +1081,80 @@
    }
 
 
-   \section{Sanity Check}
-   The following results are for the tseng circuit at a target recovery time of $10^{-4}$s. The reported values can be compared to each other as a manual sanity check.
-   Compare Area usage.
-   Compare Recovery Time.
-   Compare Partition Size.
+   \section{Sanity Check}\label{resSanity}
+   The following results are for the tseng.blif circuit at a target recovery time of $10^{-4}$s. The reported values can be compared to each other as a manual sanity check allowing for additional confirmation of the correct operation of the partitioner.
+   
+   We are able to confirm all the values which should add up, do:
+   \begin{eqnarray*}
+   	LUTsTMR &=& 3\times NumLutsBase + \sum PartitionOutputs\\
+   	LatchesTMR &=&  3\times NumLatchesBase\\
+   	NumNodes &=& \sum LUTs+\sum Latches = LUTsBase+LatchesBase\\
+   	Outputs &>& CutLoops\\
+   	RecoveryTime &=& ClockPeriod\times CriticalPath\times 2 + 250\times3\times ClockPeriod + \\
+   	& &ClockPeriod\times \left\lceil \frac{NumBLEs}{160}\right\rceil\times 1.54\times10^{-5}\\
+   	&=& 10.9\times10^{-9}(2\times20+750)+4\times1.48\times10^{-5}\\
+   	&=& 8.649\times10^{-6}+5.92\times10^{-5}\\
+   	&=& 6.78\times10^{-5}\\\
+   	...
+   \end{eqnarray*}
+   In Table \ref{tabSanityPartitions} Outputs is the number of feedforward edges (signals going to other partitions) $+$ the number of feedback edges (cut cycles).
+   
+   Some other observations from this data: Our estimated clock period was conservative. We estimated 10.9ns when the circuit actually came in at 8.9ns.
+   \ac{VPR} takes much longer on triplicated circuits than on the original. 6 times longer in this example.
+      \begin{table}
+   	\begin{tabular}{lr}
+   	\toprule
+File & tseng.blif\\
+Number of Nodes & 1431\\
+Estimated Latency (ns)& 10.9\\
+Partitions & 2\\
+Number of Inputs Base & 52\\
+Number of Inputs TMR & 52\\
+Number of Outputs Base & 122\\
+Number of Outputs TMR & 122\\
+Number of LUTs Base & 1046\\
+Number of LUTs TMR & 3730\\
+Number of Latches Base & 385\\
+Number of Latches TMR & 1155\\
+VPR Duration Base (s) & 15.93\\
+VPR Duration TMR (s) & 92.99\\
+NetDelay Base (ns) & 1.60\\
+NetDelay TMR (ns) & 2.30\\
+LogicDelay Base (ns) & 4.48\\
+LogicDelay TMR (ns) & 6.56\\
+Period Base (ns) & 6.08\\
+Period TMR (ns) & 8.87\\
+\bottomrule
+   	\end{tabular}
+   	\caption{Detail from one run of tseng.blif, recovery time $7.5\times10^{-5}$}\label{tabSanity}
+   \end{table}
+   
+      \begin{table}
+   	\begin{tabular}{lrrrrrr}
+   	\toprule
+Recovery Time (s) & Outputs & Inputs & Cut Loops & Latches & \acp{LUT} & Critical Path Length\\
+   		\midrule
+6.78E-05 & 305 & 304 & 206 & 206 & 640 & 20\\
+5.27E-05 & 287 & 303 & 179 & 179 & 406 & 4\\
+\bottomrule
+   	\end{tabular}
+   	\caption{Partition detail from one run of tseng.blif, recovery time $7.5\times10^{-5}$}\label{tabSanityPartitions}
+   \end{table}
 
    \section{Stochastic Nature of Placement}
-   As \ac{VPR}'s placer uses simulated annealing which contains a random factor, there was variation between different runs, potentially extremely large such as the example in table \fxfatal{Add in}.
-   The number of runs was arbitrarily set at 10, as it is large enough that one outlier won't sway the results too significantly, however small enough that collection of results could occur in a reasonable amount of time. 10 runs for one set of parameters would take around one third to one half of a day to finish on the server used ($8\times$ Intel Xeon X7560 CPUs at 2.27GHz).
+   As \ac{VPR}'s placer uses simulated annealing which contains a random factor, there was variation between different runs, potentially extremely large such as the example in table \ref{tabStochastic} where one run had a $40\%$ slowdown, while another run with exactly the same set of parameters had a $140\%$ slowdown.
+   The number of runs was arbitrarily set at 10 as a compromise between accuracy and running time. 10 runs for one set of parameters takes around half a day.
+   \begin{table}
+   	\begin{tabular}{lrrrr}
+   	\toprule
+   		Name & NumPartitions & Frequency Base (ns) & Frequency TMR (ns) & Slowdown Factor\\
+   		\midrule
+s38584.1.blif &	1 & 3.22 & 4.61 & 1.43\\
+s38584.1.blif &	1 & 2.06 & 4.94 & 2.40\\
+\bottomrule
+   	\end{tabular}
+   	\caption{Comparison of slowdown factors between runs with same input parameters}\label{tabStochastic}
+   \end{table}
 
    \section{Area}
    As expected, area usage is slightly greater than tripled, which corresponds to results in literature \cite{HardeningTechniques}. The number of \acp{BLE} used is equal to three times to original, plus the total voter area. The larger the number of partitions, the greater the area usage due to the additional voters required.
@@ -1053,12 +1162,18 @@
    \section{Operating Frequency}
    In general, the more partitions the slower the resulting circuit. This result is unsurprising, as increasing the number of voters increases the number of signals to be routed pushing average wire length upwards. Average slowdown is around the \fxfatal{Value} mark, though it varies considerably from circuit to circuit.
    For our recovery time calculations, as they required an estimate of the final circuit clock period we used an estimate of $1.8\times$ the original circuit's clock period. As we can see from the results, in the general case this factor is sufficiently conservative, and we can likely get away with a lower value, say 1.5 for most cases.
+   
+   \section{Running Time}
+   	Seconds for the entire partitioning process, minutes for VPR on the first file, and around 4 times longer for VPR on the TMR file, up to one hour. \fxfatal{Flesh out section}
 
    \section{Recovery Time}
+   
+   \section{DFS vs BFS}
+   See appendix. \fxfatal{flesh out}
 
 
    \chapter{Limitations and Future Work}
-   Our algorithm implementation is still just a first pass at the problem to evaluate it's feasibility. There is still much work to be done.
+   Our algorithm implementation is still just a first pass at the problem to evaluate its feasibility. There is still much work to be done.
    
    Some notable limitations are that our implementation operates on \ac{BLIF} files and targets a theoretical simplified architecture. In practice, it would be ideal to use and target industry standard tools, formats and architectures.
    There are a number of assumptions and approximations made as part of the implementation, especially in the calculation of recovery time. Improving the accuracy of approximations allows the partitioner to find better solutions.
@@ -1066,151 +1181,161 @@
    The traversal algorithm can be updated with a heuristic and the capability of backtracking to find denser partitions. However, the limiting factor tends to be the partition size, and when (as in the benchmark circuits), there are many more \acp{LUT} than latches, the ability to reduce the number of partitions through clever partitioning is extremely limited.
 
    \chapter{Conclusion}
-   The algorithm shows promise. Though there is still much work to be done the intial results collected in this thesis indicate that the partitioning method described by \fxfatal{reference} and implemented by this thesis is capable of providing effective fault tolerance with overhead not too much greater than a typical \ac{TMR} solution which \ac{TMR}s the entire circuit, and scrubs regularly.
+   This thesis was focussed on the effect of a new \ac{TMR} technique on a circuit's performance. From a performance standpoint the algorithm shows promise. While there is still much work to be done the initial results collected in this thesis indicate that the partitioning method described by \fxfatal{reference} and implemented by this thesis is capable of providing more effective fault tolerance with overhead not too much greater than typical \ac{TMR} solutions as commonly implemented today.
 
-
-
-   \chapter{Benchmarking}
-   \section{Overview}
-
-   For benchmarking we use 20 MCNC benchmarks (detailed in Table \ref{benchmarkList}) obtained as part of the \ac{VTR} project\footnote{\url{http://code.google.com/p/vtr-verilog-to-routing/}} which we will be using to evaluate the performance of our partitioner and our \ac{TMR} scheme in general.
-   Additionally, we're looking for ways of estimating area usage and timing information from a \ac{BLIF} file or \ac{DFG}, without needing to actually place and route the partial circuit after each iteration, as doing so is computationally prohibitive.
-   \fxfatal{Here to the end of section gets rewritten}
-   To start with we made simple test circuits to compare to our benchmarks by triplicating each entire benchmark and adding in simple voter logic. As progress is made on the partitioner we can start collecting results from further partitioned circuits; however triplicating the entire circuit should be sufficient for rough approximations provided $elements_{circuit} >> elements_{voter}$.
-
-   To make the test circuits we created a small Python script which, given an input circuit and input voter circuit, triplicates the circuit and adds voting logic. It creates a hierarchical \ac{BLIF} file, that is, it contains nested subcircuits, which are then passed through an external program called \ac{ABC}\cite{abc} to flatten it into a format \ac{VPR} can read.
-
-   \subsection{Expected Results}
-   As is well described in literature (e.g. \cite{HardeningTechniques}), the area usage should increase by a factor of slightly more than three. There are three copies of each component, plus additional components for the voting circuitry. Maximum frequency is expected to decrease slightly due to the additional components increasing wire length and crowding routing channels however this is likely to vary depending on circuit.
-   \section{Methodology}\label{BenchmarkMethod}
-   To start with, we wanted to collect rough estimates on the impact of partitioning a circuit to provide a baseline with which to compare our partitioning algorithm, and to develop the rough estimates needed for our partitioning algorithm. To that end we first created a simple Python script to take an arbitrary input circuit, triplicate it, and insert arbitrary voter logic. These triplicated circuits were then placed and routed by \ac{VPR}, as were the original benchmarks, and the results compared.
-   \newpage
-   \fxnote{Just to fix formatting. Temporary}
-   \ac{VPR} is used with our architecture file (described in Section \ref{ArchFile}) and the command line options
-   \begin{lstlisting}
-      VPR architecture.xml circuit.blif --full_stats[ --route_chan_width x]
-   \end{lstlisting} where x is the width of the routing channels and - -full\_stats tells \ac{VPR} to be more verbose in its output.
-   As mentioned earlier, if - -route\_chan\_width is excluded then \ac{VPR} determines the minimum channel width needed to successfully route the circuit \cite{VPRManual}. We then place and route our benchmark circuits and our partitioned circuits. \ac{VPR} itself then reports the area usage, critical path time (inverse of the frequency), and other statistics we analysed. Unfortunately \ac{VPR} does not report the number of register stages however our partitioner will, as it needs to calculate the number of steps for its time estimation function.
-
-   \section{Results}\label{BenchmarkResults}
-   The results listed in Tables \ref{medianRes} and \ref{timing} highlight information of interest in a few key circuits, rather than including page after page of tables. Any aggregate statistics (e.g. median) are calculated on the entire result set, not just the results included. No collected results were considered to be outliers and the only exclusions from the median calculation are those where the operation was not able to be completed, so there is no data.
-   These tables list the median characteristics of the \ac{TMR} versions of our benchmark circuits as a percentage of the original (100\% is the same, 200\% is double, 50\% is half); additionally, they detail the time taken to pack, place and route.
-   \begin{table}
-      \begin{adjustwidth}{-1.0cm}{-1.05cm}
-         \begin{tabularx}{1.1\textwidth}{lXXXXXXllX}
-            \toprule
-            Width & Num. Latches & Num. \acp{LUT} & FPGA Width & Channel Width & Num. Wire Segments & Used Area & Frequency & CPU Time\\
-            \midrule
-            Auto Width         & 300\% & 301\% & 169\% & 119\% & 106\% & 301\% & 93\% & 405\%\\
-            200 Width          & 300\% & 301\% & 169\% & N/A   & 110\% & 301\% & 85\% & 385\%\\
-            60 Width           & 300\% & 301\% & 169\% & N/A   & 113\% & 302\% & 86\% & 444\%\\
-            \bottomrule
-         \end{tabularx}
-         \caption{Median values for specified channel widths as a percentage of non \ac{TMR} equivalent}
-         \label{medianRes}
-      \end{adjustwidth}
-   \end{table}
-
-   \begin{table}
-      \begin{adjustwidth}{-1cm}{-1.1cm}
-         \begin{tabularx}{1.1\textwidth}{lXXXXXXXXX}
-            \toprule
-            Name & Num. Latches & Num. \acp{LUT} & FPGA Width & Num. Wire Segments & Used Area & Frequency & CPU Time\\
-            \midrule
-            pdc 200 width   & N/A   & 300\% & 176\% & 104\% & 301\% &  75\% & 425\%\\
-            tseng 200 width & 300\% & 312\% & 169\% & 126\% & 308\% &  102\% & 388\%\\
-            \bottomrule
-         \end{tabularx}
-         \caption{Increase in circuits with maximum and minimum frequency slowdown}
-         \label{timing}
-      \end{adjustwidth}
-   \end{table}
-   \section{Discussion}
-   Our simple voter circuit consists of one 3-\ac{LUT} per output. Therefore we expect the number of logic elements (latches and combinational logic) to be exactly three times larger, with an additional 3-\ac{LUT} per original circuit output. As shown in Table \ref{medianRes} our triplicated circuits are just slightly over three times as large. Circuit area should be roughly tripled as well, which again, matches, with the width increasing by $1.69 \approx \sqrt{3}$ and the used area increasing by just over triple. The partitioned circuits require slightly larger channels, in order to route the extra wires needed, and the additional elements and wires lead to slightly more segments per wire, and a slightly lower maximum frequency. Of note is that the time to place and route the partitioned circuits was much higher, taking around four times longer.
-
-   Circuits were 15\% slower on average, with a worst case of 25\% overall and a best case (in 200 width circuits) of a 2\% speedup. For minimum channel routing the smallest median slowdown was observed as on average the minimum channel width needed for partitioned versions was higher, giving the router more flexibility. For 60 width circuits some were unable to be routed, therefore the results do not represent all circuits. For those reasons the reported statistics are taken from the 200 width circuits.
-
-   The speedup, while small, is unusual. It is likely due to the packer having more options, and due to the larger available area (as the packer will only increase the number of \acp{CLB}, and hence \ac{FPGA} area used, when it can no longer fit new primitives in the current block).
-
-
-   \chapter{Partitioning Algorithm}
-   \fxerror{All this section gets replaced with new algorithm description}
-
-
-   \section{Estimating Restrictions}
-   As mentioned earlier, in order to partition our circuit we need a method of calculating the partition's (including voter logic) recovery time, which is based on circuit area (affects time to reconfigure), number of register stages (affects time to detect errors and resynchronise), and frequency (affects time to detect errors and resynchronise). Calculating the number of register stages is accomplished while traversing the \ac{DFG}.
-   Area and timing information are more difficult to determine as they rely on the placement and routing of the circuit. Placing and routing each partial partition every step as we traverse is not computationally feasible in a reasonable amount of time, as placement and routing are relatively slow processes and one of our goals is for our partitioning stage to be approximately as fast as the other stages. Therefore, we need a way of estimating them. To do so we have collected preliminary benchmark information for a number of test circuits and analysed them for patterns allowing us to accurately estimate area and timing from a given circuit without placing and routing.
-
-   \subsection{Results for Time and Area Estimation}
-   Figure \ref{AreaVElements} illustrates the relationship between used circuit area and the number of the most common primitive. In every benchmark circuit there were more combinational logic elements than any other primitive, hence we looked at the relationship with the number of combinational logic elements. Table \ref{timing2} duplicates what was shown in Table \ref{timing}, and is shown again for convenience. It details the increase in circuit characteristics between the \ac{TMR} and non \ac{TMR} versions of the circuit, as a percentage of the original (100\% is no change, 200\% is double, and so on) that displayed the greatest decrease in maximum frequency.
-   \begin{figure}
-      \begin{center}
-         \includegraphics[width=0.7\textwidth]{images/area-v-elements.png}
-         \caption{Circuit Area compared to number of Logic Elements}
-         \label{AreaVElements}
-      \end{center}
-   \end{figure}
-
-
-   \begin{table}
-      \begin{adjustwidth}{-1cm}{-1cm}
-         \begin{tabularx}{1.1\textwidth}{XXXXXXXXXXXXXXXXXXXXXXXXXX}
-            \toprule
-            Name & Num. Latches & Num. \acp{LUT} & FPGA Width & Num. Wire Segments & Used Area & Frequency & CPU Time\\
-            \midrule
-            pdc 200 width   & N/A   & 300\% & 176\% & 104\% & 301\% &  75\% & 425\%\\
-            \bottomrule
-         \end{tabularx}
-         \caption{Circuit characteristics of benchmark with greatest frequency slowdown, expressed as a percentage of non \ac{TMR} base}
-         \label{timing2}
-      \end{adjustwidth}
-   \end{table}
-   \subsection{Discussion of Time and Area Estimation}
-   As shown in Figure \ref{AreaVElements} the area usage can be accurately estimated, as there is a clear relationship between the number of nodes and the area usage. The architecture we are using has one latch and one \ac{LUT} per \ac{BLE}, so for our supported logic elements the number of \acp{BLE} used is close to linear in $max(num_{latch}, num_{names})$. \ac{VPR}'s packer can be either timing or area driven. Currently we are using default settings (mostly area driven) giving us the linear relationship shown in Figure \ref{AreaVElements}; however even when completely timing driven the packer still tries to fill every \ac{CLB}\cite{AAPackThesis}.
-
-   After we have a basic partitioning algorithm, an area of further investigation is the impact of changing \ac{VPR}'s settings on the benchmark results, and the accuracy of our estimation functions.
-
-   Timing information, on the other hand, is harder to estimate with no obvious pattern, with maximum frequency appearing independent of the number of nodes. In Section \ref{BenchmarkResults} we saw that the median slowdown was 15\% with a 25\% worst result. Conversely, for a few rare cases the partitioned version is actually faster. Initially we will do a rough place and (optionally) route of the original circuit to determine a base time, then multiply it by an experimentally determined slowdown factor to obtain an estimate for the frequency. Initially we are using a slowdown factor of 2 (so half speed after partitioning) which easily encompasses all test circuits we've tried. We can then modify this factor by hand to examine if the impact of it on the final partition's performance warrants improving our estimation function.
-
-   \chapter{What next}
-
-   \section{Progress}
-   The initial partitioner implementation is still in progress. We anticipate a basic working version by November 2012, and then will spend the next months collecting results and improving the partitioner.
-   Done:
-   \begin{itemize}
-      \item Can read a \ac{BLIF} file into a \ac{DFG}.
-      \item Can traverse a circuit represented as a \ac{DFG}
-      \item Have basic area and timing estimation functions.
-      \item Can triplicate an arbitrary circuit (in a single \ac{BLIF} file) and insert arbitrary voter logic (stored in another \ac{BLIF} file).
-      \item Initial benchmarks.
-   \end{itemize}
-   To Do:
-   \begin{itemize}
-      \item Write \ac{DFG} to \ac{BLIF}.
-      \item Incorporate Python scripts into partitioning toolchain.
-      \item Benchmark initial partitioning algorithm.
-      \item Improve partitioner benchmarks.
-      \item Investigate the effect of changing \ac{VPR}'s default parameters upon our results.
-      \item Combine functionality of Python scripts and C++ partitioner into one program.
-      \item Incorporate that single program into \ac{VTR}'s design flow, likely as part of \ac{VPR}.
-   \end{itemize}
-   \section{Schedule}
-   Figure \ref{Schedule} illustrates our anticipated schedule from the beginning of October 2011 until Thesis B is due. The rest of the year is allocated towards an initial partitioner implementation and preliminary results. December is set aside for Christmas holidays, and then most of 2012 will be used for collecting results and further refining the partitioning algorithm on the basis of the collected results.
-   \begin{figure}
-      \begin{center}
-         \includegraphics[width=\textwidth]{images/schedule.png}
-         \caption{Schedule}
-         \label{Schedule}
-      \end{center}
-   \end{figure}
-
-   \chapter{Conclusion}
-   We are currently on track with our initial schedule, and expect to begin collecting results on our partitioner implementation, rather than the effects of generic \ac{TMR}, at the end of this year. During the Christmas holidays progress will likely be quite limited however as we are very close to a working implementation it is believed to be achievable.
-   Our results collected so far reflect only \ac{TMR} in general, rather than our specific implementation, and they match those of literature and our expectations. We expect slightly worse performance from our partitioner due to additional logic being inserted, but not significantly so.
 
    \appendix
    \chapter{Results}
    This appendix tabulates the data used to calculate the relationships discussed in this thesis.
+   
+      \begin{table}
+      \footnotesize
+      \begin{adjustwidth}{-1cm}{-1.2cm}
+         \begin{tabularx}{1.1\textwidth}{XXXXXX}
+            \toprule
+            File & Number of Partitions &  Number of BLEs (original) &  Increase in BLE Number &  Clock Period (original) (ns) &  Clock Slowdown Factor\\
+            \midrule
+clma.blif & 1 & 8365 & 3.01 & 9.33 & 1.18\\
+s38584.1.blif & 1 & 6177 & 3.21 & 4.92 & 1.45\\
+s38417.blif & 1 & 6042 & 3.21 & 6.22 & 1.27\\
+ex1010.blif & 1 & 4598 & 3 & 5.88 & 1.25\\
+pdc.blif & 1 & 4575 & 3.01 & 6.7 & 1.16\\
+spla.blif & 1 & 3690 & 3.01 & 5.95 & 1.18\\
+elliptic.blif & 1 & 3602 & 3.35 & 7.56 & 1.23\\
+frisc.blif & 1 & 3539 & 3.27 & 10.94 & 1.2\\
+s298.blif & 1 & 1930 & 3.01 & 8.46 & 1.34\\
+apex2.blif & 1 & 1878 & 3 & 5.26 & 1.19\\
+seq.blif & 1 & 1750 & 3.02 & 4.47 & 1.2\\
+bigkey.blif & 1 & 1699 & 3.21 & 2.29 & 1.25\\
+des.blif & 1 & 1591 & 3.15 & 3.9 & 1.14\\
+alu4.blif & 1 & 1522 & 3.01 & 4.47 & 1.19\\
+diffeq.blif & 1 & 1494 & 3.28 & 6.55 & 1.12\\
+misex3.blif & 1 & 1397 & 3.01 & 4.3 & 1.25\\
+dsip.blif & 1 & 1362 & 3.17 & 2.22 & 1.26\\
+apex4.blif & 1 & 1262 & 3.02 & 4.36 & 1.23\\
+ex5p.blif & 1 & 1064 & 3.06 & 4.37 & 1.33\\
+tseng.blif & 1 & 1046 & 3.49 & 5.9 & 1.26\\
+Mean &         &           &        &          & 1.23\\
+\bottomrule
+         \end{tabularx}
+         \caption{Results for target recovery time $1\times10^{-3}$s}
+         \label{Results1e-3}
+      \end{adjustwidth}
+   \end{table}
+   
+      \begin{table}
+      \footnotesize
+      \begin{adjustwidth}{-1cm}{-1.2cm}
+         \begin{tabularx}{1.1\textwidth}{XXXXXX}
+            \toprule
+            File & Number of Partitions &  Number of BLEs (original) &  Increase in BLE Number &  Clock Period (original) (ns) &  Clock Slowdown Factor\\
+            \midrule
+clma.blif & 4 & 8365 & 3.08 & 9.47 & 1.29\\
+s38584.1.blif & 3 & 6177 & 3.27 & 4.92 & 1.74\\
+s38417.blif & 3 & 6042 & 3.27 & 6.36 & 1.26\\
+ex1010.blif & 2 & 4598 & 3.27 & 6.69 & 1.44\\
+pdc.blif & 2 & 4575 & 3.12 & 6.33 & 1.38\\
+spla.blif & 2 & 3690 & 3.12 & 5.83 & 1.47\\
+elliptic.blif & 2 & 3602 & 3.38 & 7.6 & 1.21\\
+frisc.blif & 2 & 3539 & 3.35 & 10.91 & 1.31\\
+s298.blif & 1 & 1930 & 3.01 & 8.5 & 1.36\\
+apex2.blif & 1 & 1878 & 3 & 4.91 & 1.24\\
+seq.blif & 1 & 1750 & 3.02 & 4.36 & 1.23\\
+bigkey.blif & 1 & 1699 & 3.21 & 2.3 & 1.19\\
+des.blif & 1 & 1591 & 3.15 & 4.15 & 1.05\\
+alu4.blif & 1 & 1522 & 3.01 & 4.32 & 1.26\\
+diffeq.blif & 1 & 1494 & 3.28 & 6.4 & 1.17\\
+misex3.blif & 1 & 1397 & 3.01 & 4.72 & 1.14\\
+dsip.blif & 1 & 1362 & 3.17 & 2.19 & 1.29\\
+apex4.blif & 1 & 1262 & 3.02 & 4.56 & 1.28\\
+ex5p.blif & 1 & 1064 & 3.06 & 4.63 & 1.24\\
+tseng.blif & 1 & 1046 & 3.49 & 5.82 & 1.23\\
+Mean &         &           &        &          & 1.29\\
+\bottomrule
+         \end{tabularx}
+         \caption{Results for target recovery time $2.5\times10^{-4}$s}
+         \label{Results2.5e-4}
+      \end{adjustwidth}
+   \end{table}
+
+      \begin{table}
+      \footnotesize
+      \begin{adjustwidth}{-1cm}{-1.2cm}
+         \begin{tabularx}{1.1\textwidth}{XXXXXX}
+            \toprule
+            File & Number of Partitions &  Number of BLEs (original) &  Increase in BLE Number &  Clock Period (original) (ns) &  Clock Slowdown Factor\\
+            \midrule
+clma.blif      &  \multicolumn{5}{c}{Could not partition for such a small recovery time}\\
+s38584.1.blif  &   \multicolumn{5}{c}{Could not partition for such a small recovery time}\\
+s38417.blif    &   \multicolumn{5}{c}{Could not partition for such a small recovery time}\\
+ex1010.blif    & 10 & 4598 & 3.31 & 5.76 & 1.55\\
+pdc.blif       & 15 & 4575 & 3.23 & 6.23 & 1.55\\
+spla.blif      & 8 & 3690 & 3.19 & 6.38 & 1.51\\
+elliptic.blif  &  \multicolumn{5}{c}{Could not partition for such a small recovery time}\\
+frisc.blif &   \multicolumn{5}{c}{Could not partition for such a small recovery time}\\
+s298.blif      & 5 & 1930 & 3.05 & 8.44 & 1.47\\
+apex2.blif     & 3 & 1878 & 3.13 & 4.82 & 1.41\\
+seq.blif       & 3 & 1750 & 3.21 & 4.51 & 1.33\\
+bigkey.blif    & 3 & 1699 & 3.21 & 2.33 & 1.53\\
+des.blif       & 3 & 1591 & 3.3 & 3.95 & 1.45\\
+alu4.blif      & 3 & 1522 & 3.14 & 5.34 & 1.17\\
+diffeq.blif    & 3 & 1494 & 3.38 & 6.54 & 1.48\\
+misex3.blif    & 3 & 1397 & 3.16 & 4.59 & 1.2\\
+dsip.blif      & 3 & 1362 & 3.24 & 2.2 & 1.44\\
+apex4.blif     & 2 & 1262 & 3.26 & 4.63 & 1.38\\
+ex5p.blif      & 2 & 1064 & 3.4 & 4.5 & 1.43\\
+tseng.blif     & 2 & 1046 & 3.57 & 5.99 & 1.51\\
+Mean &         &           &        &          & 1.42\\
+
+\bottomrule
+         \end{tabularx}
+         \caption{Results for target recovery time $7.5\times10^{-5}$s}
+         \label{Results7.5e-5}
+      \end{adjustwidth}
+   \end{table}
+   
+         \begin{table}
+      \footnotesize
+      \begin{adjustwidth}{-1cm}{-1.2cm}
+         \begin{tabularx}{1.1\textwidth}{XXXXXX}
+            \toprule
+            File & Number of Partitions &  Number of BLEs (original) &  Increase in BLE Number &  Clock Period (original) (ns) &  Clock Slowdown Factor\\
+            \midrule
+
+   clma.blif      & \multicolumn{5}{c}{Could not partition for such a small recovery time}\\
+s38584.1.blif  &  \multicolumn{5}{c}{Could not partition for such a small recovery time}\\
+s38417.blif    &  \multicolumn{5}{c}{Could not partition for such a small recovery time}\\
+ex1010.blif    & 11 & 4598 & 3.9 & 5.92 & 1.82\\
+pdc.blif       &   \multicolumn{5}{c}{Could not partition for such a small recovery time}\\
+spla.blif      & 8 & 3690 & 3.9 & 5.6 & 1.84\\
+elliptic.blif  & 10 & 3602 & 3.96 & 7.52 & 1.48\\
+frisc.blif     &   \multicolumn{5}{c}{Could not partition for such a small recovery time}\\
+s298.blif      & 5 & 1930 & 3.24 & 8.74 & 1.53\\
+apex2.blif     & 3 & 1878 & 3.64 & 5.17 & 1.41\\
+seq.blif       & 3 & 1750 & 3.67 & 4.43 & 1.53\\
+bigkey.blif    & 3 & 1699 & 3.63 & 2.3 & 1.73\\
+des.blif       & 3 & 1591 & 3.57 & 4.05 & 1.41\\
+alu4.blif      & 3 & 1522 & 3.56 & 4.45 & 1.57\\
+diffeq.blif    & 3 & 1494 & 3.44 & 6.6 & 1.23\\
+misex3.blif    & 3 & 1397 & 3.5 & 4.55 & 1.41\\
+dsip.blif      & 3 & 1362 & 3.55 & 2.19 & 1.53\\
+apex4.blif     & 2 & 1262 & 3.47 & 4.41 & 1.55\\
+ex5p.blif      & 2 & 1064 & 3.49 & 4.9 & 1.44\\
+tseng.blif     & 2 & 1046 & 3.62 & 5.92 & 1.71\\
+Mean    &  &  &  & &1.55\\
+\bottomrule
+         \end{tabularx}
+         \caption{Results for target recovery time $7.5\times10^{-5}$s using Breadth instead of Depth First Traversal}
+         \label{Results7.5e-5DFS}
+      \end{adjustwidth}
+   \end{table}
+   
+   \bibliographystyle{plain}
+   \bibliography{../../../../Bibtex/thesis} %We build with texi2pdf --tidy, so we're really in a build directory several levels away
+   
+   \fxfatal{TODO: Change I, we, our, my, etc to passive voice}
+
+\end{document}
    \begin{table}
       \footnotesize
       \begin{adjustwidth}{-1cm}{-1.2cm}
@@ -1364,9 +1489,5 @@
          \label{Results-1}
       \end{adjustwidth}
    \end{table}
-   \bibliographystyle{plain}
-   \bibliography{../../../../Bibtex/thesis} %We build with texi2pdf --tidy, so we're really in a build directory several levels away
-
-\end{document}
 
 %TODO: Tables so they don't split up paragraphs. Table captions at the top? Consistent page numbering? Fix up bibliography. Floats all on one page.
