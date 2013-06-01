@@ -72,7 +72,7 @@
 \collegeordept{School of Computer Science and Engineering}
 \university{The University of New South Wales}
 \degree{Bachelor of Engineering (Computer)}
-\degreedate{9th October, 2012}
+\degreedate{4th , 2012}
 \supervisor{Oliver Diessel}
 %\date{} % Activate to display a given date or no date (if empty),
 % otherwise the current date is printed
@@ -90,6 +90,7 @@
    \end{abstracts}
    \newpage
    \tableofcontents*
+   \listoffixmes
    \newpage
 
    \begin{acronym}[printonlyused,withpage]
@@ -462,11 +463,24 @@
       \caption{Fields in Signal object}
    \end{table}
 
-   Represents the circuit as a DFG. Contains a list of nodes, map of signal name $\to$ Signal*, and lists of primary inputs and outputs for the circuit.
-   Each node contains the names of its input and output signals, allowing the Signal* to be looked up, then the Signal* contains pointers to its source and sink nodes.
-   This allows the DFG to be traversed by going from node, to signal, to node, etc.
-   A BlifNode represents the information in a circuit element declaration within a \ac{BLIF} file, which includes only the name of its input and output signals. The actual Signal itself is a separate circuit specific construct designed to allow for ease of traversal of the circuit as a \ac{DFG}.
-   As such, we don't directly point to signals from a BlifNode*, as the Signal depends on the circuit context.
+   \subsection{\ac{DFG} Traversal}
+   BlifNodes represent nodes in the \ac{DFG} while Signals represent a collection of edges with common source. Traversing the network is thus achieved through traversing from node$\rightarrow$ signal$\rightarrow$ node. However, BlifNodes do not store a pointer to the Signal, just the name of the Signal. The actual Signal object, being specific to a partition while BlifNodes are not (nodes can be added to and removed from Models with no issue, and can even exist in multiple at once e.g. original circuit and subpartition). This means that signals must be looked up in the partition by name. To this end, Model contains a signal field which is a map from signal name to Signal.
+
+   Thus, an example which recursivelytraverses from a node to its children would be:
+   \begin{algorithm}
+      \caption{Example Traversal}\label{algExTrav}
+      \begin{algorithmic}[1]
+         \Procedure{ExampleTraversal}{$startNode$, $partition$}
+            \State $outputName \gets startNode->output$ \Comment{Get the name of our output signal}
+            \State $outputSignal \gets partition.signals[outputName]$ \Comment{From a Signal name, get the Signal object}
+            \ForAll{$childNode \in outputSignal.sinks$} \Comment{Retrieve the sinks of a signal, which are also the immediate childen of our start node}
+               \State Reached Child, recursively repeating from child.
+               \State ExampleTraversal$(childNode, partition)$ \Comment{Recursively visit the child}
+            \EndFor
+         \EndProcedure
+      \end{algorithmic}
+   \end{algorithm}
+
    \fixme{TODO: Image showing DFG traversal, and example of blif file and class contents}
 
    \newpage
