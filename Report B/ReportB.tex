@@ -10,7 +10,6 @@
 \usepackage{amsmath, amsthm}
 \usepackage{showkeys}
 %\usepackage[smaller]{acronym}
-\usepackage[marginclue]{fixme}
 %\usepackage{natbib}
 \usepackage{tabularx}
 \usepackage{chngpage}
@@ -32,11 +31,12 @@
 \usepackage{tameflts}
 \usepackage[bookmarks,hidelinks]{hyperref}
 \usepackage{glossaries}
+\usepackage[marginclue]{fixme}
 \makeglossaries
 \fxsetup{
    status=draft,
    author=,
-   layout=marginclue, % also try footnote or pdfnote
+   layout=footnote, % also try footnote or pdfnote
    theme=color
 }
 \definecolor{fxnote}{rgb}{0.8000,0.0000,0.0000}
@@ -116,10 +116,11 @@
       first=\textit{scrubbing}
       }
       \newglossaryentry{cut}{name=cut,
+         description={Cut a signal},
       first=\textit{cut}
       }
-      \fxerror{Latch vs Flip-Flop. Be consistent, probably prefer. Actual FPGA hardware seems to be a general purpose register than can behave as either. Probably FF that can be a LUT?}
 \begin{document}
+      \fxerror{Latch vs Flip-Flop. Be consistent, probably prefer. Actual FPGA hardware seems to be a general purpose register than can behave as either. Probably FF that can be a LUT?}
    \pagenumbering{roman}
    \maketitle
    \fxfatal{Need to fix title to match CSE requirements, and check other format restrictions}
@@ -484,8 +485,8 @@
       \caption{Fields in Signal object}
    \end{table}
 
-   \subsection{\ac{DFG} Traversal}
-   BlifNodes represent nodes in the \ac{DFG} while Signals represent a collection of edges with common source. Traversing the network is thus achieved through traversing from node$\rightarrow$ signal$\rightarrow$ node. However, BlifNodes do not store a pointer to the Signal, just the name of the Signal. The actual Signal object, being specific to a partition while BlifNodes are not (nodes can be added to and removed from Models with no issue, and can even exist in multiple at once e.g. original circuit and subpartition). This means that signals must be looked up in the partition by name. To this end, Model contains a signal field which is a map from signal name to Signal.
+   \subsection{\gls{DFG} Traversal}
+   BlifNodes represent nodes in the \gls{DFG} while Signals represent a collection of edges with common source. Traversing the network is thus achieved through traversing from node$\rightarrow$ signal$\rightarrow$ node. However, BlifNodes do not store a pointer to the Signal, just the name of the Signal. The actual Signal object, being specific to a partition while BlifNodes are not (nodes can be added to and removed from Models with no issue, and can even exist in multiple at once e.g. original circuit and subpartition). This means that signals must be looked up in the partition by name. To this end, Model contains a signal field which is a map from signal name to Signal.
 
    Thus, an example which recursivelytraverses from a node to its children would be:
    \begin{algorithm}
