@@ -116,3 +116,19 @@ Per partition values	Recovery Time	Number of Outputs	Number of Inputs	Number of 
 	
 	
 
+/home/dsmu186/ths/workflow/blifs/misex3.blif	1	1397	7.70377e-09	3	40	58	14	14	14	14	1397	4887	0	0	32.89	342.97	1.79812e-09	2.28491e-09	2.48175e-09	3.86571e-09	4.27987	6.15062	
+	6.69192e-05	100	506	0	0	640	1
+	6.69192e-05	501	194	0	0	640	1
+	2.25192e-05	95	63	0	0	117	1
+	
+	
+	
+
+/home/dsmu186/ths/workflow/blifs/ex5p.blif	1	1064	9.46505e-09	2	48	74	8	8	63	63	1064	3711	0	0	25.12	175.82	3.10535e-09	2.98091e-09	2.15301e-09	3.54387e-09	5.25836	6.52478	
+	6.63177e-05	189	338	0	0	640	1
+	5.15177e-05	330	151	0	0	424	1
+	
+	
+	
+
+{'error': ['../vpr', '--route_file', 'file.route', '--place_file', 'file.place', '--net_file', 'file.net', '--full_stats', '--seed', '17908', '../arch.xml', '/home/dsmu186/ths/workflow/blifs/adder.blif']}

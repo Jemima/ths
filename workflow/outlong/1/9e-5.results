@@ -1,0 +1,46 @@
+File	Unused	Number of Nodes	Estimated Latency	Partitions	Channel Width Base	Channel Width TMR	Number of Inputs Base	Number of Inputs TMR	Number of Outputs Base	Number of Outputs TMR	Number of LUTs Base	Number of LUTs TMR	Number of Latches Base	Number of Latches TMR	VPR Duration Base	VPR Duration TMR	NetDelay Base (s)	NetDelay TMR (s)	LogicDelay Base (s)	LogicDelay TMR (s)	Period Base (ns)	Period TMR (ns)
+Per partition values	Recovery Time	Number of Outputs	Number of Inputs	Number of cut loops	Number of latches	Number of LUTs	Critical Path Length
+{'error': {'message': 'Unable to partition for given parameters', 'par': ['./main.py', '-n', '1', '-r', '9e-05', '-t', '-l', '1.695645e-08', '/home/dsmu186/ths/workflow/blifs/clma.blif', '/tmp/dsmu186blifs/outlong/clma.blif']}}
+/home/dsmu186/ths/workflow/blifs/s38417.blif	1	7559	1.1006e-08	10	42	50	29	29	106	106	6042	20101	1463	4389	188.29	1274.76	1.95536e-09	2.98091e-09	4.15906e-09	6.2143e-09	6.11442	9.19521	
+	8.99947e-05	222	213	127	139	568	24
+	8.97966e-05	354	347	187	204	640	15
+	8.98406e-05	123	177	101	89	640	17
+	8.97966e-05	175	209	129	118	640	15
+	8.96865e-05	187	244	120	164	640	10
+	8.97085e-05	182	191	98	174	640	11
+	8.97305e-05	159	239	103	170	640	12
+	8.98846e-05	205	253	132	126	640	19
+	8.96645e-05	214	225	113	150	640	9
+	7.48205e-05	154	279	47	129	408	7
+	
+	
+	
+
+/home/dsmu186/ths/workflow/blifs/s38584.1.blif	1	7541	8.86955e-09	10	46	48	38	38	304	304	6177	20364	1260	3780	259.61	1023.19	1.66958e-09	2.57479e-09	3.21552e-09	5.6409e-09	4.92753	8.25812	
+	8.4017e-05	217	241	155	195	640	24
+	8.39461e-05	167	179	112	128	640	20
+	8.39815e-05	175	242	107	128	640	22
+	8.40525e-05	187	222	99	125	640	26
+	8.4088e-05	250	204	134	191	640	28
+	8.37154e-05	114	257	81	89	640	7
+	8.36977e-05	153	241	80	92	640	6
+	8.38751e-05	186	329	121	117	640	16
+	8.41057e-05	201	424	132	154	640	29
+	8.37332e-05	183	280	24	41	521	8
+	
+	
+	
+
+/home/dsmu186/ths/workflow/blifs/ex1010.blif	1	4598	1.15201e-08	8	58	80	10	10	10	10	4598	15199	0	0	237.13	1622.11	3.57574e-09	4.89117e-09	2.82429e-09	3.87951e-09	6.40003	8.77068	
+	8.51432e-05	447	18	0	0	640	1
+	8.51432e-05	388	127	0	0	640	1
+	8.51432e-05	278	432	0	0	640	1
+	8.51432e-05	158	651	0	0	640	1
+	8.51432e-05	89	815	0	0	640	1
+	8.51432e-05	36	863	0	0	640	1
+	8.51432e-05	6	877	0	0	640	1
+	4.07432e-05	3	250	0	0	118	1
+	
+	
+	
+

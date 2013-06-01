@@ -1,0 +1,20 @@
+File	Unused	Number of Nodes	Estimated Latency	Partitions	Channel Width Base	Channel Width TMR	Number of Inputs Base	Number of Inputs TMR	Number of Outputs Base	Number of Outputs TMR	Number of LUTs Base	Number of LUTs TMR	Number of Latches Base	Number of Latches TMR	VPR Duration Base	VPR Duration TMR	NetDelay Base (s)	NetDelay TMR (s)	LogicDelay Base (s)	LogicDelay TMR (s)	Period Base (ns)	Period TMR (ns)
+Per partition values	Recovery Time	Number of Outputs	Number of Inputs	Number of cut loops	Number of latches	Number of LUTs	Critical Path Length
+{'error': {'message': 'Unable to partition for given parameters', 'par': ['./main.py', '-n', '1', '-r', '7.5e-05', '-t', '-l', '1.6833384e-08', '/home/dsmu186/ths/workflow/blifs/clma.blif', '/tmp/dsmu186blifs/outlong/clma.blif']}}
+{'error': {'message': 'Unable to partition for given parameters', 'par': ['./main.py', '-n', '1', '-r', '7.5e-05', '-t', '-l', '1.1375154e-08', '/home/dsmu186/ths/workflow/blifs/s38417.blif', '/tmp/dsmu186blifs/outlong/s38417.blif']}}
+{'error': {'message': 'Unable to partition for given parameters', 'par': ['./main.py', '-n', '1', '-r', '7.5e-05', '-t', '-l', '8.868312e-09', '/home/dsmu186/ths/workflow/blifs/s38584.1.blif', '/tmp/dsmu186blifs/outlong/s38584.1.blif']}}
+/home/dsmu186/ths/workflow/blifs/ex1010.blif	1	4598	1.03278e-08	10	58	76	10	10	10	10	4598	15212	0	0	261.18	849.14	3.24209e-09	5.77178e-09	2.49555e-09	3.86571e-09	5.73764	9.63749	
+	7.2822e-05	336	13	0	0	480	1
+	7.2822e-05	334	43	0	0	480	1
+	7.2822e-05	233	265	0	0	480	1
+	7.2822e-05	208	397	0	0	480	1
+	7.2822e-05	131	489	0	0	480	1
+	7.2822e-05	82	640	0	0	480	1
+	7.2822e-05	50	698	0	0	480	1
+	7.2822e-05	24	738	0	0	480	1
+	7.2822e-05	9	739	0	0	480	1
+	5.8022e-05	11	542	0	0	278	1
+	
+	
+	
+
