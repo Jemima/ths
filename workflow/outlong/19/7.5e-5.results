@@ -1,0 +1,132 @@
+File	Unused	Number of Nodes	Estimated Latency	Partitions	Channel Width Base	Channel Width TMR	Number of Inputs Base	Number of Inputs TMR	Number of Outputs Base	Number of Outputs TMR	Number of LUTs Base	Number of LUTs TMR	Number of Latches Base	Number of Latches TMR	VPR Duration Base	VPR Duration TMR	NetDelay Base (s)	NetDelay TMR (s)	LogicDelay Base (s)	LogicDelay TMR (s)	Period Base (ns)	Period TMR (ns)
+Per partition values	Recovery Time	Number of Outputs	Number of Inputs	Number of cut loops	Number of latches	Number of LUTs	Critical Path Length
+{'error': {'message': 'Unable to partition for given parameters', 'par': ['./main.py', '-n', '1', '-r', '7.5e-05', '-t', '-l', '1.7940978e-08', '/home/dsmu186/ths/workflow/blifs/clma.blif', '/tmp/dsmu186blifs/outlong/clma.blif']}}
+{'error': {'message': 'Unable to partition for given parameters', 'par': ['./main.py', '-n', '1', '-r', '7.5e-05', '-t', '-l', '1.1315754000000001e-08', '/home/dsmu186/ths/workflow/blifs/s38417.blif', '/tmp/dsmu186blifs/outlong/s38417.blif']}}
+{'error': {'message': 'Unable to partition for given parameters', 'par': ['./main.py', '-n', '1', '-r', '7.5e-05', '-t', '-l', '9.221400000000002e-09', '/home/dsmu186/ths/workflow/blifs/s38584.1.blif', '/tmp/dsmu186blifs/outlong/s38584.1.blif']}}
+/home/dsmu186/ths/workflow/blifs/ex1010.blif	1	4598	1.10661e-08	10	56	74	10	10	10	10	4598	15212	0	0	244.31	907.4	3.65231e-09	4.68196e-09	2.49555e-09	4.21515e-09	6.14786	8.89711	
+	7.4854e-05	336	13	0	0	480	1
+	7.4854e-05	334	43	0	0	480	1
+	7.4854e-05	233	265	0	0	480	1
+	7.4854e-05	208	397	0	0	480	1
+	7.4854e-05	131	489	0	0	480	1
+	7.4854e-05	82	640	0	0	480	1
+	7.4854e-05	50	698	0	0	480	1
+	7.4854e-05	24	738	0	0	480	1
+	7.4854e-05	9	739	0	0	480	1
+	6.0054e-05	11	542	0	0	278	1
+	
+	
+	
+
+{'error': {'message': 'Unable to partition for given parameters', 'par': ['./main.py', '-n', '1', '-r', '7.5e-05', '-t', '-l', '1.1787228000000003e-08', '/home/dsmu186/ths/workflow/blifs/pdc.blif', '/tmp/dsmu186blifs/outlong/pdc.blif']}}
+{'error': {'message': 'Unable to partition for given parameters', 'par': ['./main.py', '-n', '1', '-r', '7.5e-05', '-t', '-l', '1.3924908e-08', '/home/dsmu186/ths/workflow/blifs/elliptic.blif', '/tmp/dsmu186blifs/outlong/elliptic.blif']}}
+{'error': {'message': 'Unable to partition for given parameters', 'par': ['./main.py', '-n', '1', '-r', '7.5e-05', '-t', '-l', '1.9921140000000002e-08', '/home/dsmu186/ths/workflow/blifs/frisc.blif', '/tmp/dsmu186blifs/outlong/frisc.blif']}}
+/home/dsmu186/ths/workflow/blifs/spla.blif	1	3690	1.16629e-08	8	54	72	16	16	46	46	3690	11784	0	0	189.54	640.49	3.64821e-09	5.30139e-09	2.83119e-09	3.53697e-09	6.4794	8.83836	
+	7.06649e-05	153	24	0	0	480	1
+	7.06649e-05	120	101	0	0	480	1
+	7.06649e-05	98	144	0	0	480	1
+	7.06649e-05	101	203	0	0	480	1
+	7.06649e-05	112	251	0	0	480	1
+	7.06649e-05	49	309	0	0	480	1
+	7.06649e-05	62	304	0	0	480	1
+	7.06649e-05	19	292	0	0	330	1
+	
+	
+	
+
+/home/dsmu186/ths/workflow/blifs/bigkey.blif	1	1931	4.07268e-09	3	44	40	229	229	197	197	1699	5457	224	672	53.14	219.22	9.6948e-10	1.11032e-09	1.33555e-09	2.37007e-09	2.2626	3.43796	
+	6.33053e-05	137	275	126	85	640	4
+	6.33053e-05	134	291	126	85	640	4
+	4.85053e-05	89	190	81	54	427	4
+	
+	
+	
+
+/home/dsmu186/ths/workflow/blifs/s298.blif	1	1938	1.48099e-08	5	30	40	4	4	6	6	1930	5896	8	24	55.18	208.76	2.7758e-09	3.95859e-09	5.49433e-09	8.64658e-09	8.2277	12.6052	
+	6.71479e-05	34	79	12	8	480	18
+	6.66444e-05	17	40	0	0	480	1
+	6.66444e-05	26	35	0	0	480	1
+	6.66444e-05	24	37	0	0	480	1
+	3.70444e-05	5	15	0	0	10	1
+	
+	
+	
+
+/home/dsmu186/ths/workflow/blifs/des.blif	1	1591	7.00373e-09	3	40	40	256	256	245	245	1591	5258	0	0	52	179.1	1.73795e-09	2.49412e-09	2.15301e-09	3.18753e-09	3.89096	5.68165	
+	6.62177e-05	263	163	0	0	640	1
+	6.62177e-05	151	431	0	0	640	1
+	3.66177e-05	71	238	0	0	311	1
+	
+	
+	
+
+/home/dsmu186/ths/workflow/blifs/dsip.blif	1	1594	3.98702e-09	3	40	44	229	229	197	197	1362	4417	224	672	39.87	146.27	1.11032e-09	1.11032e-09	1.10469e-09	2.02753e-09	2.21501	3.09542	
+	6.71182e-05	113	250	98	112	640	493
+	6.69029e-05	143	284	89	111	640	466
+	1.8803e-05	75	40	0	1	90	2
+	
+	
+	
+
+/home/dsmu186/ths/workflow/blifs/diffeq.blif	1	1871	1.19546e-08	3	38	40	64	64	39	39	1494	5043	377	1131	24	143.1	1.46857e-09	2.37378e-09	5.17288e-09	6.91318e-09	6.64145	9.28696	
+	7.13937e-05	270	281	187	188	640	10
+	7.14176e-05	209	281	168	165	640	11
+	4.16502e-05	82	157	23	24	214	4
+	
+	
+	
+
+/home/dsmu186/ths/workflow/blifs/apex2.blif	1	1878	9.22016e-09	3	48	62	38	38	3	3	1878	5872	0	0	40.48	276.64	2.62676e-09	2.90844e-09	2.49555e-09	3.53697e-09	5.12231	6.44541	
+	6.84386e-05	163	37	0	0	640	1
+	6.84386e-05	69	94	0	0	640	1
+	6.84386e-05	6	256	0	0	598	1
+	
+	
+	
+
+/home/dsmu186/ths/workflow/blifs/seq.blif	1	1750	8.19355e-09	3	46	62	41	41	35	35	1750	5621	0	0	63.21	557	2.7553e-09	3.17372e-09	1.79667e-09	2.83809e-09	4.55197	6.01181	
+	6.74099e-05	232	48	0	0	640	1
+	6.74099e-05	118	226	0	0	640	1
+	5.26099e-05	21	314	0	0	470	1
+	
+	
+	
+
+/home/dsmu186/ths/workflow/blifs/tseng.blif	1	1431	1.08062e-08	2	30	34	52	52	122	122	1046	3730	385	1155	23.64	159.96	1.18689e-09	2.02373e-09	4.81654e-09	6.89938e-09	6.00343	8.92311	
+	6.77369e-05	305	304	206	206	640	20
+	5.25911e-05	287	303	179	179	406	4
+	
+	
+	
+
+/home/dsmu186/ths/workflow/blifs/alu4.blif	1	1522	8.19479e-09	3	36	50	14	14	8	8	1522	4778	0	0	32.48	158.53	2.41345e-09	2.21654e-09	2.13921e-09	3.52317e-09	4.55266	5.73971	
+	6.74112e-05	164	18	0	0	640	1
+	6.74112e-05	39	162	0	0	640	1
+	3.78112e-05	9	138	0	0	242	1
+	
+	
+	
+
+/home/dsmu186/ths/workflow/blifs/apex4.blif	1	1262	9.54851e-09	2	46	72	9	9	19	19	1262	4115	0	0	46.58	137.02	3.16552e-09	4.1227e-09	2.13921e-09	2.13921e-09	5.30473	6.26191	
+	6.63805e-05	310	14	0	0	640	1
+	6.63805e-05	19	314	0	0	622	1
+	
+	
+	
+
+/home/dsmu186/ths/workflow/blifs/misex3.blif	1	1397	7.5807e-09	3	42	54	14	14	14	14	1397	4415	0	0	31.82	262.6	1.72975e-09	3.57984e-09	2.48175e-09	2.48865e-09	4.2115	6.06849	
+	6.67959e-05	161	17	0	0	640	1
+	6.67959e-05	57	172	0	0	640	1
+	2.23959e-05	6	101	0	0	117	1
+	
+	
+	
+
+/home/dsmu186/ths/workflow/blifs/ex5p.blif	1	1064	8.72665e-09	2	48	72	8	8	63	63	1064	3622	0	0	23.1	114.75	2.69513e-09	3.16962e-09	2.15301e-09	2.83119e-09	4.84814	6.00081	
+	6.57624e-05	393	14	0	0	640	1
+	5.09624e-05	37	382	0	0	424	1
+	
+	
+	
+
+{'error': ['../vpr', '--route_file', 'file.route', '--place_file', 'file.place', '--net_file', 'file.net', '--full_stats', '--seed', '18732', '../arch.xml', '/home/dsmu186/ths/workflow/blifs/adder.blif']}
