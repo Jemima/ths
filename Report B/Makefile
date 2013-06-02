@@ -11,6 +11,8 @@ pdf : ReportB.pdf
 
 ReportB.pdf : ReportB.tex $(IMDIR)/%.pdf
 	texi2pdf --tidy ReportB.tex
+	cd ReportB.t2d/pdf/build && makeglossaries ReportB
+	texi2pdf --tidy ReportB.tex
 
 clean :
 	rm -f *.ps *.dvi *.aux *.toc *.idx *.ind *.ilg *.log *.out *.brf *.blg *.bbl ReportB.pdf
