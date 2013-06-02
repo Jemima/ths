@@ -20,6 +20,8 @@ if __name__ == "__main__":
    parser = argparse.ArgumentParser(description="Collate multiple results files, and generate a summary")
    parser.add_argument("indir", type=str, help="Input directory")
 
+   import pprint
+   pp = pprint.PrettyPrinter(indent=2)
    params = parser.parse_args()
    dirs = [os.path.join(params.indir, f) for f in os.listdir(params.indir)]
    info = {}
@@ -36,24 +38,27 @@ if __name__ == "__main__":
    summary = {}
    for d in info:
       for run in info[d]:
-         summary[run] = {}
+         if run not in summary:
+            summary[run] = {}
          for f in info[d][run]:
-            summary[run][f] = [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0]]
+            summary[run][f] = [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], 0]
 
    for d in info:
       for run in info[d]:
          for f in info[d][run]:
+            summary[run][f][5] += 1
             for n in range(0, len(info[d][run][f])):
                try:
                   field = info[d][run][f][n]
                   summary[run][f][n][1] += float(field)
                   summary[run][f][n][0] += 1.0
-               except:
-                  pass
-
+               except Exception as e:
+                  print(summary[run][f])
+                  print("Error in "+run+", "+f+", "+str(n))
+                  raise
    for run in summary:
       for f in summary[run]:
-         for n in range(0, len(summary[run][f])):
+         for n in range(0, len(summary[run][f])-1):
             field = summary[run][f][n][1]/summary[run][f][n][0]
             summary[run][f][n] = field
          summary[run][f][2] = summary[run][f][2]/summary[run][f][1]
@@ -72,11 +77,10 @@ if __name__ == "__main__":
       
       for inner in info[outer]:
          results[inner][time] = info[outer][inner]
-
    times.sort()
    times = sorted(times, key=lambda x:-float(x))
    for time in times:
-      sys.stdout.write(time+",Number of Partitions, Number of BLEs (original), Increase in BLE Number, Clock Period (original) (ns), Clock Slowdown Factor,,")
+      sys.stdout.write(time+",Number of Partitions, Number of BLEs (original), Increase in BLE Number, Clock Period (original) (ns), Clock Slowdown Factor, Number of Successful Runs,,")
 
    sys.stdout.write("\n")
    for file in results:
@@ -89,7 +93,7 @@ if __name__ == "__main__":
                #sys.stdout.write(str(res)+",")
             sys.stdout.write(",,")
          else:
-            sys.stdout.write("N/A,N/A,N/A,N/A,N/A,,,")
+            sys.stdout.write("N/A,N/A,N/A,N/A,N/A,0,,")
       sys.stdout.write("\n")
 
 
