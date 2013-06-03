@@ -12,6 +12,7 @@
 %\usepackage[smaller]{acronym}
 %\usepackage{natbib}
 \usepackage{tabularx}
+\newcolumntype{R}{>{\raggedleft\arraybackslash}X}
 \usepackage{chngpage}
 \usepackage{booktabs}
 \usepackage{cite}
@@ -151,6 +152,7 @@
       technique.  \glsresetall 
    \end{abstracts}
    \newpage \tableofcontents*
+   \fxerror{Fix formatting on ToC}
    \listoffixmes \newpage \printglossaries 
    \chapter{Introduction}
 
@@ -166,7 +168,7 @@
    a fraction of the gate counts (and hence capability of implementing large or
    complex circuits) of non-hardened offerings prompting a search for a
    solution to the radiation susceptibility of \glspl{FPGA} using mainstream
-   hardware\cite{VFPGATMR}, one of the most popular of which is \gls{TMR}. In
+   hardware, one of the most popular of which is \gls{TMR}\cite{VFPGATMR}. In
    \gls{TMR}, vulnerable components are triplicated allowing for errors to be
    detected and mitigated. This thesis is based on the work
    of\cite{DiesselChange} which introduces an approach to \gls{TMR}, and aims
@@ -239,7 +241,7 @@
    loading the bitstream for only the section of interest while the rest of the
    \gls{FPGA} keeps running.
 
-   \fxnote{Check grammar in this next section.} There are four main
+   \fxnote{Check grammar in this next section.} There are three main
    technologies used to implement the configuration memory in \glspl{FPGA}:
 
    \begin{itemize}
@@ -247,8 +249,8 @@
       \item \gls{SRAM}, which gives the highest density devices and includes
          the Virtex-5 family this thesis focuses on. These are volatile and
          must be reprogrammed every power up from an external configuration
-         memory;
-      \item (anti)fuse, which are only one-time programmable;
+         memory
+      \item (anti)fuse, which are only one-time programmable
       \item flash, which is non-volatile (thus not does not require an external
          configuration memory) and reprogrammable. These have a lower
          density than \gls{SRAM} based \glspl{FPGA}\cite{FPGAArch}.
@@ -380,20 +382,20 @@
 
 
       \begin{tabularx}
-         {\textwidth}{X|XXXl} \toprule & Power ($\mu$W) & Speed
-         (ns) & HARDNESS (e/b-d) & AREA ($\mbox{mm}^2$)\\
+         {\textwidth}{X|RRRRR} \toprule & Power ($\mu$W) & Speed
+         (ns) & Hardness (errors per bit-day) & Node Failures Required for Device Failure & Area ($\mbox{$\mu$m}^2$)\\
          \midrule Standard
-         & Rise – 0.7 \newline Fall – 0.2 & Rise – 0.21\newline Fall – 0.27&
-         $10^{-8}$ \newline 1 node & 360\\
+         & Rise – 0.7\newline Fall – 0.2 & Rise – 0.21\newline Fall – 0.27&
+         $10^{-8}$ & 1 & 360\\
          \midrule Increased Drive Current
-         & Rise – 1.0 \newline Fall – 0.2 & Rise – 0.16\newline Fall – 0.15&
-         $2\times10^{-9}$ \newline 1 node & 460\\
+         & Rise – 1.0\newline Fall – 0.2 & Rise – 0.16\newline Fall – 0.15&
+         $2\times10^{-9}$ & 1 & 460\\
          \midrule \gls{TMR} & Rise
-         – 1.72 \newline Fall – 1.27 & Rise – 0.2\newline Fall – 0.27 &
-         $10^{-11}$ \newline 2 node & 1200\\
+         – 1.72\newline Fall – 1.27 & Rise – 0.2\newline Fall – 0.27 &
+         $10^{-11}$ & 2& 1200\\
          \midrule \gls{DICE} & Rise -
-         1.4 \newline Fall - 1.1 & Rise - 0.96\newline Fall - 0.97&
-         $1.6\times10^{-10}$ \newline 2 node & 520 \\
+         1.4\newline Fall - 1.1 & Rise - 0.96\newline Fall - 0.97&
+         $1.6\times10^{-10}$& 2 & 520 \\
          \bottomrule
 
       \end{tabularx}
@@ -401,7 +403,7 @@
          techniques\cite{HardeningTechniques}} \label{HardeningComparison}
 
    \end{table}
-   \fxwarning{Explain columns} Additionally, for \gls{SRAM}
+   Additionally, for \gls{SRAM}
    based \glspl{FPGA} the off-chip configuration memory must also be
    protected as \gls{SRAM} is volatile and loads the state from this memory
    at start up. This can be accomplished by incorporating error detection
@@ -421,7 +423,7 @@
    commonly used method for creating fault tolerant systems in which a given
    circuit is implemented three times with independent components, with the
    outputs feeding into a voter circuit to determine the majority value. As an
-   \gls{SEU} affects only a single component or bit of data (c.f. \gls{MBU}) it
+   \gls{SEU} affects only a single component or bit of data it
    will affect the output value of at most one version, so the majority vote is
    still correct. For transient errors that are not in a feedback loop correcting
    the output is enough to fix the error; however, \glspl{SEU} in feedback paths
@@ -465,7 +467,7 @@
    For our target device based on Virtex-5 we round the circuit's area usage up
    to an allocatable area of 20 \glspl{CLB} (representing one \gls{CLB} column
    in a reconfiguration row). Each \gls{CLB} consists of 8 \glspl{BLE} (each
-   \gls{BLE} having one \gls{LUT} and one latch) a giving us a target a
+   \gls{BLE} having one \gls{LUT} and one latch) giving us a target a
    reconfiguration area that consists of 160 \glspl{BLE} and requiring 36
    frames of 41 32-bit words each. The bitstream size for this area is 1476
    words which takes 14.8$\mu{}s$ to reconfigure at $100MHz$
@@ -484,19 +486,18 @@
    \begin{align}
       \mbox{Error Recovery Time} &=\mbox{Error Detection Time} +
       \mbox{Reconfiguration Time} + \mbox{Resynchronisation Time}\notag\\
-      \mbox{Error Detection Time} &<= T_{path} = \mbox{Clock
+      \mbox{Error Detection Time} &\le T_{path} = \mbox{Clock
          Period}\times\mbox{Register Stages}\notag\\
       \mbox{Communication Time}
-      &= 5\times \mbox{Cycles per hop}\times\mbox{Number of
-         flits}\times\mbox{Number of Hops}\times \mbox{Clock Period}\notag\\
-      \mbox{Communication Time} &= 50\times 5\times (\mbox{Number of
+      &\le 5\times \mbox{Cycles per hop}\times\mbox{Number of Hops}\times \mbox{Clock Period}\notag\\
+      &= 50\times 5\times (\mbox{Number of
          Partitions}+1)\times \mbox{Clock Period}\notag\\
       \mbox{Reconfiguration
-         Time} &= \times \frac{\mbox{Bitstream
+         Time} &= \frac{\mbox{Bitstream
             Size}}{\mbox{Reconfiguration Speed}}\notag\\
       &=\left\lceil \frac{\mbox{Number of
             \glspl{BLE}}}{160}\right\rceil\times 1.48\times10^{-5}\notag\\
-      \mbox{Resynchronisation Time} &<= T_{path} = \mbox{Clock
+      \mbox{Resynchronisation Time} &\le T_{path} = \mbox{Clock
          Period}\times\mbox{Register Stages}\notag\\
    \end{align}
    
@@ -527,7 +528,7 @@
    \glsunset{TMR} 
    \subsection{\gls{TMR}
       Implementations} This thesis builds on the
-   work of\cite{DiesselChange} which details a partitioning algorithm that
+   work of\cite{DiesselChange} which describes a partitioning algorithm that
    traverses a circuit represented as a \gls{DFG} in a breadth-first manner,
    creating partitions that stay within our constraints.  Our goal is to create an
    algorithm which stays within a user-specified error recovery time, doesn't
@@ -560,8 +561,7 @@
    techniques for cutting feedback loops, while we focus on partitioning circuits
    into smaller sub circuits. Cutting feedback loops is however a part of this
    thesis, and their work could be incorporated in, although for our current
-   implementation a simple depth first traversal described later in Section
-   \ref{?}\fxfatal{Reference} was chosen.
+   implementation a simple depth-first traversal described later in Chapter \ref{algorithm} was chosen.
 
 
    \subsection{Our Algorithm}
@@ -570,8 +570,8 @@
 
       \begin{center}
 
-         \includegraphics[height=0.2\textheight]{images/TMR-graph.pdf}
-         \includegraphics[height=0.2\textheight]{images/TMR-post.pdf}
+         \includegraphics[height=0.3\textheight]{images/TMR-graph.pdf}
+         \includegraphics[height=0.3\textheight]{images/TMR-post.pdf}
          \caption{\gls{DFG} before and after partitioning} \label{TMRFigure}
 
       \end{center}
@@ -603,7 +603,7 @@
    number of programs (collectively making up the \gls{CAD} flow or development
    toolchain) turn the source into a bitstream to program a target \gls{FPGA}.
    The design flow process can be split into a number of
-   subprocesses\fxnote{hyphenate?} as illustrated in Figure
+   subprocesses as illustrated in Figure
    \ref{CADFlow}\cite{VPRBook,VPRManual,FPGAArch}.  
    \begin{enumerate}
 
@@ -631,8 +631,7 @@
    \begin{figure}
 
       \begin{center}
-
-         \includegraphics[width=0.75\textwidth]{images/vpr-cad.png}
+         \includegraphics*[viewport=40 280 550 750]{images/VPRCAD.pdf}
          \caption{Cad Design Flow.\cite{VPRManual}} \label{CADFlow}
 
       \end{center}
@@ -700,10 +699,10 @@
    faster routes (2$\times$--10$\times$) with less CPU time; and
    directed\_search, which like breadth\_first is routability driven however
    uses A* to improve runtime. We will be using the default timing\_driven
-   algorithm.\fxnote{TODO: Reason?} There are a number of options setting
-   algorithm parameters, all of which we will leave at their defaults, though
-   we will be changing the route\_chan\_width parameter as we collect results.
-   route\_chan\_width specifies the width of the channels in the architecture.
+   algorithm. There are a number of other options setting
+   algorithm parameters, all of which we will leave at their defaults.
+   Additionally, we can set the width of the architecture's routing channels through the
+   route\_chan\_width parameter.
    If omitted \gls{VPR} will perform a binary search on channel capacity to
    determine the minimum channel width.
 
@@ -987,15 +986,15 @@
       Traversal} BlifNodes represent nodes in the \gls{DFG}
    while Signals represent a collection of edges with common source. Traversing
    the network is thus achieved through traversing from node$\rightarrow$
-   signal$\rightarrow$ node. However, BlifNodes do not store a pointer to the
+   signal$\rightarrow$ node. However, \mbox{BlifNodes} do not store a pointer to the
    Signal, just the name of the Signal. The actual Signal object, being
    specific to a partition while BlifNodes are not (nodes can be added to and
    removed from Models with no issue, and can even exist in multiple at once
    e.g. original circuit and subpartition). This means that signals must be
-   looked up in the partition by name. To this end, Model contains a signal
-   field which is a map from signal name to Signal.
+   looked up in the partition by name. To this end, Model contains a field \textit{signals}
+    which is a map from signal name to Signal.
 
-   Thus, an example which recursivelytraverses from a node to its children
+   Thus, an example which recursively traverses from a node to its children
    would be: 
    \begin{algorithm}
       \caption{Example Traversal}\label{algExTrav}
@@ -2015,13 +2014,15 @@
    \gls{BLIF} files for use by \gls{VPR}.
 
 
+
+
    \chapter{Results}
 
    \section{Benchmarking Procedure}
    These results were
    collected by running benchmark circuits through an automated test suite
    written in Python by the author. For each benchmark circuit, and each target
-   recovery time, 15 repetitions were performed to average out the variability
+   recovery time, a minimum of 15 repetitions were performed to average out the variability
    in results due to the stochastic nature of \gls{VPR}'s placement algorithm.
    The original circuit is run through VPR to collect base results, then the
    circuit is run through our partitioner to TMR it. The TMR'd version is then
@@ -2029,13 +2030,14 @@
    and then run through VPR to collect TMR'd results. Each run of VPR used a
    randomly generated seed for the placer.  The mean of the reported values
    across the 15 repetitions is reported.  The benchmarks used were the 20
-   largest \gls{MCNC} LGSynth93 circuits, as provided by the open source
-   \gls{VTR} project \footnote{v1.0: \url{http://code.google.com/p/vtr-verilog-to-routing/}} and described in table
-   \ref{benchmarkList}.  The set of target recovery times used were $10^{-3},
+   largest \gls{MCNC} LGSynth93 circuits technology mapped to flip-flops and 4-input \glspl{LUT}, as provided by the open source
+   \gls{VTR} project\footnote{v1.0: \url{http://code.google.com/p/vtr-verilog-to-routing/}} and described in table
+   \ref{benchmarkList}.
+   As the number of \glspl{LUT} is larger than the number of latches for all twenty \gls{MCNC} circuits we used, the number of \glspl{BLE} is equal to the number of \glspl{LUT}.
+    The set of target recovery times used were $10^{-3},
    2.5\times10^{-4}$, $1.2\times10^{-4}$ and $7.5\times10^{-5}$s.  The voter used is a simple
    3-input \gls{LUT}, which uses one \gls{BLE} per output signal from each
    partition.
-
 
    \begin{table}
 
@@ -2094,8 +2096,11 @@ tseng & 52 & 122 & 385 & 1046\\
    6-\gls{LUT} as ilustrated in Figure \ref{ArchFig}.  Table \ref{ArchTab}
    details the number of primitives (latches and \glspl{LUT} per \gls{CLB}.
    Primarily of interest is that each \gls{BLE} has 6 inputs and 1 output and
-   each \gls{CLB} has 33 inputs and 10 outputs.  \fxerror{Compare 6-LUT vs
-      4-LUT architecture, and how they compare to benchmark circuits}
+   each \gls{CLB} has 33 inputs and 10 outputs.
+   
+   Our architecture consists of 6-input \glspl{LUT} while our design has \glspl{LUT} with fewer inputs so there is potential for multiple \glspl{LUT} to be packed into one.
+   \gls{VPR} does not optimise in this way, instead relying on \gls{ABC} for optimisation.
+   To confirm this we compared our results to a small set conducted on a similar architecture with 4-input \glspl{LUT} and found that there while there were slight ($\approx1\%$) differences in running time and variations between the packed netlist, for the same seed the the final circuit area and clock period are identical.
 
 
    \ctable[ botcap, caption = Architecture Elements, label = ArchTab ]{llll}{
@@ -2210,8 +2215,49 @@ tseng & 52 & 122 & 385 & 1046\\
    between different runs, potentially extremely large such as the example in
    table \ref{tabStochastic} where one run had a $40\%$ slowdown, while another
    run with exactly the same set of parameters had a $140\%$ slowdown.
-   All results are the mean across a minimum of ten runs unless otherwise noted.
-   Where time permitted a significantly larger number of runs were performed, these are indicated with the results in the Appendix.
+   All results are the mean across a minimum of fifteen runs unless otherwise noted, and where time permitted a larger number of runs were performed.
+   The appendix contains the number of successful runs for each circuit and target recovery time.
+   Note that for some circuits the number of successful runs was actually below 15.
+   As the partitioner's estimate for final clock period depends on the quality of \gls{VPR}'s place and route on the original circuit,
+   if \gls{VPR} finds a poor placement then the estimated clock period may be so high that the partitioner is unable to find a valid partitioning.
+   See Table \ref{partitionSuccesses} for examples.
+   
+      \begin{table}
+      \footnotesize 
+      \begin{adjustwidth}
+         {-1cm}{-1.2cm}
+
+         \begin{tabular}{lr}
+            \toprule
+ Circuit &  Number of Successful Runs\\
+ \midrule
+clma  & 0\\
+s38584.1  & 0\\
+s38417  & 0\\
+ex1010  &  22\\
+pdc   &  7\\
+spla   &  25\\
+elliptic &  12\\
+frisc  & 0\\
+s298  &   25\\
+apex2  & 25\\
+seq  &   25\\
+bigkey  & 25\\
+des  &   25\\
+alu4  &   25\\
+diffeq  & 25\\
+misex3  & 25\\
+dsip  &   25\\
+apex4  & 25\\
+ex5p  &   25\\
+tseng  & 25\\
+            \bottomrule 
+
+         \end{tabular}
+         \caption{Target Recovery Time $7.5\times10^{-5}$s} \label{partitionSuccesses} 
+      \end{adjustwidth}
+
+   \end{table}
 
    \begin{table}
 
@@ -2240,16 +2286,27 @@ tseng & 52 & 122 & 385 & 1046\\
 
 
    \section{Operating Frequency}
+      \begin{figure}
+
+      \begin{center}
+
+         \includegraphics[width=\textwidth]{images/slowdown.png}
+         \caption{Slowdown Factors for each Benchmark at Different Recovery Times} \label{slowdownFig} 
+      \end{center}
+
+
+   \end{figure}
    In general, the more partitions the slower the
-   resulting circuit. This result is unsurprising, as increasing the number of
+   resulting circuit, as per Figure \ref{slowdownFig} where each line represents a different circuit. This result is unsurprising, as increasing the number of
    voters increases the number of signals to be routed pushing average wire
    length upwards. Average slowdown is around the \fxfatal{Value} mark, though
    it varies considerably from circuit to circuit.  For our recovery time
    calculations, as they required an estimate of the final circuit clock period
    we used an estimate of $1.8\times$ the original circuit's clock period. As
-   we can see from the results, in the general case this factor is sufficiently
+   we can see from the results, in the general case this factor is quite
    conservative, and we can likely get away with a lower value, say 1.5 for
    most cases.
+   
 
 
    \section{Running Time}\label{timing}
@@ -2284,12 +2341,73 @@ tseng & 52 & 122 & 385 & 1046\\
 
    \section{DFS vs BFS}\label{bfs}
    \begin{table}
-   \begin{tabular}{lrrrrrr}
-
+   \begin{tabularx}{\textwidth}{lRRRRRRRRRRR}
+   & \multicolumn{2}{r}{Channel Width}&\multicolumn{2}{r}{Network Delay (ns)}&\multicolumn{2}{r}{Logic Delay (ns)}&\multicolumn{2}{r}{Clock Period (ns)}\\
+  & Base & TMR & Base & TMR& Base & TMR& Base & TMR\\
+  \midrule
+BFS & 40 & 58  & 2.37 & 3.53 & 4.16 & 5.53 & 6.52 & 9.06\\
+DFS & 40 & 54 & 1.96 & 3.53 & 4.16 & 4.51 & 6.11 & 8.04\\
    	\bottomrule
-   \end{tabular}
-   \caption{Running times for clma with a target recovery time of 2.5e-4s}\label{runningtimes}
+   \end{tabularx}
+   \caption{DFS vs BFS for s38417 with a target recovery time of 2.5e-4s}\label{dvb}
    \end{table}
+   
+   \begin{table}
+   \begin{tabularx}{\textwidth}{RRRRRRRR}
+   Recovery Time ($\times10^{-4}$s)& Number of Outputs & Number of Inputs & Number of cut loops & Number of latches & Number of LUTs & Critical Path Length\\
+   \midrule
+ 2.5 & 723 & 859 & 430 & 714 & 2560 & 17\\
+ 2.5 & 1029 & 921 & 345 & 565 & 2560 & 9\\
+ 1.2 & 421 & 606 & 184 & 184 & 976 & 3\\
+   	\bottomrule
+   \end{tabularx}
+   \caption{BFS per partition values for s38417 with a target recovery time of 2.5e-4s}\label{dvbB}
+   \end{table}
+   
+   \begin{table}
+   \begin{tabularx}{\textwidth}{RRRRRRRR}
+   Recovery Time ($\times10^{-4}$s)& Number of Outputs & Number of Inputs & Number of cut loops & Number of latches & Number of LUTs & Critical Path Length\\
+   \midrule
+ 2.5 & 775 & 663 & 563 & 567 & 2560 & 30\\
+ 2.5 & 596 & 683 & 446 & 627 & 2560 & 19\\
+ 1.2 & 280 & 381 & 150 & 269 & 976 & 10\\
+   	\bottomrule
+   \end{tabularx}
+   \caption{DFS per partition values for s38417 with a target recovery time of 2.5e-4s}\label{dvbD}
+   \end{table}
+   
+   The values in Tables \ref{dvb}, \ref{dvbB} and \ref{dvbD} are representative samples from a single run. As the partitions generated depend on the estimated clock period which varies from run to run it makes little sense to average per-partition values across runs. Especially when the actual number of partitions may vary. As such, absolute values may change, however the general trends hold across all runs.
+   
+   Using a breadth-first traversal algorithm tends to lead to broader partitions, with correspondingly more inputs and outputs for each partition but shorter critical path lengths.
+   Using a depth-first traversal on the other hand leads to deeper but narrower partitions, with fewer inputs and outputs for each partition, but a longer critical path length.
+   As each value which is exported from a partition to be used in another needs to be voted on, this means every feedforward or feedback edge requires another \gls{LUT} in the final design.
+   As the pipeline depth increases the likelihood of having an internal cycle which needs to be cut increases, so we see more feedback edges, shown by the Cut Loops column in Tables \ref{dvbB} and \ref{dvbD} also leading to more voters. In general however, breadth-first will have more total \glspl{LUT} required. As outlined in Table \ref{dvb}, BFS had an extra 1.02ns of logic delay on the critical path from the extra \glspl{LUT}, and required slightly wider routing channels to route the design.
+   
+   The difference is minor for larger partition sizes, however as the number of partitions increases the effect becomes more pronounced, until with some circuits every almost every single circuit element is voted upon when using a breadth-first traversal, as in Table \ref{dvbbad}.
+   Tables \ref{Results1.2e-4DFS} and \ref{Results1.2e-4BFS} in the Appendix list measured slowdowns and area increases for depth- and breadth- first circuits at $1.2\times10^{-4}$.
+      \begin{table}
+   \begin{tabularx}{\textwidth}{RRRRRRRR}
+   Recovery Time ($\times10^{-5}$s)& Number of Outputs & Number of Inputs & Number of cut loops & Number of latches & Number of LUTs & Critical Path Length\\
+   \midrule
+ 7.45 & 20 & 1318 & 0 & 0 & 480 & 1 \\
+ 7.45 & 480 & 1314 & 0 & 0 & 480 & 1 \\
+ 7.45 & 480 & 986 & 0 & 0 & 480 & 1 \\ 
+ 7.45 & 480 & 949 & 0 & 0 & 480 & 1\\ 
+ 7.45 & 480 & 852 & 0 & 0 & 480 & 1\\ 
+ 7.45 & 480 & 633 & 0 & 0 & 480 & 1\\
+ 7.45 & 480 & 432 & 0 & 0 & 480 & 1 \\
+ 7.45 & 480 & 464 & 0 & 0 & 480 & 1 \\
+ 7.45& 480 & 592 & 0 & 0 & 480 & 1\\
+ 5.97 & 265 & 135 & 0 & 0 & 278 & 1 \\
+   	\bottomrule
+   \end{tabularx}
+   \caption{DFS per partition values for ex1010 with a target recovery time of 7.5e-5s}\label{dvbbad}
+   \end{table}
+													
+
+   
+   
+
     \fxerror{Compare per partition values, promote summary from appendix to this section}
 
 
@@ -2348,46 +2466,33 @@ tseng & 52 & 122 & 385 & 1046\\
          {-1cm}{-1.2cm}
 
          \begin{tabularx}
-            {1.1\textwidth}{XXXXXX} \toprule File & Number of
-            Partitions &  Number of BLEs (original) &  Increase in BLE
-            Number &  Clock Period (original) (ns) &  Clock Slowdown
-            Factor\\
-            \midrule clma.blif & 1 & 8365 & 3.01 & 9.33 & 1.18\\
+            {1.1\textwidth}{lRRRRRR}
+            \toprule
+ Circuit & Number of Partitions &  Number of BLEs (original) &  Increase in BLE Number &  Clock Period (original) (ns) &  Clock Slowdown Factor &  Number of Successful Runs\\
+ \midrule
+clma & 1 & 8365 & 3.01 & 9.21 & 1.21 & 25\\
+s38584.1 & 1 & 6177 & 3.21 & 4.97 & 1.41 & 25\\
+s38417 & 1 & 6042 & 3.21 & 6.27 & 1.26 & 25\\
+ex1010 & 1 & 4598 & 3.00 & 5.92 & 1.27 & 25\\
+pdc & 1 & 4575 & 3.01 & 6.47 & 1.21 & 24\\
+spla & 1 & 3690 & 3.01 & 6.01 & 1.18 & 24\\
+elliptic & 1 & 3602 & 3.35 & 7.72 & 1.19 & 24\\
+frisc & 1 & 3539 & 3.27 & 10.95 & 1.19 & 24\\
+s298 & 1 & 1930 & 3.01 & 8.59 & 1.35 & 24\\
+apex2 & 1 & 1878 & 3.00 & 5.07 & 1.23 & 24\\
+seq & 1 & 1750 & 3.02 & 4.55 & 1.20 & 24\\
+bigkey & 1 & 1699 & 3.21 & 2.28 & 1.24 & 24\\
+des & 1 & 1591 & 3.15 & 3.97 & 1.13 & 24\\
+alu4 & 1 & 1522 & 3.01 & 4.54 & 1.21 & 24\\
+diffeq & 1 & 1494 & 3.28 & 6.58 & 1.11 & 24\\
+misex3 & 1 & 1397 & 3.01 & 4.40 & 1.19 & 24\\
+dsip & 1 & 1362 & 3.17 & 2.24 & 1.23 & 24\\
+apex4 & 1 & 1262 & 3.02 & 4.57 & 1.20 & 24\\
+ex5p & 1 & 1064 & 3.06 & 4.51 & 1.24 & 24\\
+tseng & 1 & 1046 & 3.49 & 5.94 & 1.23 & 24\\
+Mean &  &  & 3.13  &  & 1.22 & \\
 
-            s38584.1.blif & 1 & 6177 & 3.21 & 4.92 & 1.45\\
-            s38417.blif & 1
-            & 6042 & 3.21 & 6.22 & 1.27\\
-            ex1010.blif & 1 & 4598 & 3 & 5.88
-            & 1.25\\
-            pdc.blif & 1 & 4575 & 3.01 & 6.7 & 1.16\\
-            spla.blif & 1
-            & 3690 & 3.01 & 5.95 & 1.18\\
-            elliptic.blif & 1 & 3602 & 3.35 &
-            7.56 & 1.23\\
-            frisc.blif & 1 & 3539 & 3.27 & 10.94 & 1.2\\
 
-            s298.blif & 1 & 1930 & 3.01 & 8.46 & 1.34\\
-            apex2.blif & 1 &
-            1878 & 3 & 5.26 & 1.19\\
-            seq.blif & 1 & 1750 & 3.02 & 4.47 &
-            1.2\\
-            bigkey.blif & 1 & 1699 & 3.21 & 2.29 & 1.25\\
-            des.blif & 1
-            & 1591 & 3.15 & 3.9 & 1.14\\
-            alu4.blif & 1 & 1522 & 3.01 & 4.47
-            & 1.19\\
-            diffeq.blif & 1 & 1494 & 3.28 & 6.55 & 1.12\\
-
-            misex3.blif & 1 & 1397 & 3.01 & 4.3 & 1.25\\
-            dsip.blif & 1 &
-            1362 & 3.17 & 2.22 & 1.26\\
-            apex4.blif & 1 & 1262 & 3.02 & 4.36
-            & 1.23\\
-            ex5p.blif & 1 & 1064 & 3.06 & 4.37 & 1.33\\
-            tseng.blif
-            & 1 & 1046 & 3.49 & 5.9 & 1.26\\
-            Mean &         &           &
-            &          & 1.23\\
             \bottomrule 
          \end{tabularx}
          \caption{Results
@@ -2405,46 +2510,33 @@ tseng & 52 & 122 & 385 & 1046\\
          {-1cm}{-1.2cm}
 
          \begin{tabularx}
-            {1.1\textwidth}{XXXXXX} \toprule File & Number of
-            Partitions &  Number of BLEs (original) &  Increase in BLE
-            Number &  Clock Period (original) (ns) &  Clock Slowdown
-            Factor\\
-            \midrule clma.blif & 4 & 8365 & 3.08 & 9.47 & 1.29\\
+            {1.1\textwidth}{lRRRRRR}
+            \toprule
+ Circuit & Number of Partitions &  Number of BLEs (original) &  Increase in BLE Number &  Clock Period (original) (ns) &  Clock Slowdown Factor &  Number of Successful Runs\\
+ \midrule
+clma & 4 & 8365 & 3.08 & 9.35 & 1.31 & 25\\
+s38584.1 & 3 & 6177 & 3.27 & 5.00 & 1.67 & 25\\
+s38417 & 3 & 6042 & 3.27 & 6.29 & 1.28 & 25\\
+ex1010 & 2 & 4598 & 3.27 & 5.94 & 1.53 & 25\\
+pdc & 2 & 4575 & 3.12 & 6.43 & 1.40 & 25\\
+spla & 2 & 3690 & 3.12 & 5.89 & 1.45 & 25\\
+elliptic & 2 & 3602 & 3.38 & 7.70 & 1.22 & 25\\
+frisc & 2 & 3539 & 3.35 & 10.93 & 1.29 & 25\\
+s298 & 1 & 1930 & 3.01 & 8.55 & 1.34 & 25\\
+apex2 & 1 & 1878 & 3.00 & 5.10 & 1.22 & 25\\
+seq & 1 & 1750 & 3.02 & 4.38 & 1.23 & 25\\
+bigkey & 1 & 1699 & 3.21 & 2.27 & 1.24 & 25\\
+des & 1 & 1591 & 3.15 & 4.02 & 1.13 & 25\\
+alu4 & 1 & 1522 & 3.01 & 4.49 & 1.21 & 25\\
+diffeq & 1 & 1494 & 3.28 & 6.59 & 1.11 & 25\\
+misex3 & 1 & 1397 & 3.01 & 4.50 & 1.19 & 25\\
+dsip & 1 & 1362 & 3.17 & 2.23 & 1.24 & 25\\
+apex4 & 1 & 1262 & 3.02 & 4.63 & 1.19 & 25\\
+ex5p & 1 & 1064 & 3.06 & 4.66 & 1.22 & 25\\
+tseng & 1 & 1046 & 3.49 & 5.94 & 1.23 & 25\\
+Mean &  &  & 3.16  &  & 1.29 & \\
 
-            s38584.1.blif & 3 & 6177 & 3.27 & 4.92 & 1.74\\
-            s38417.blif & 3
-            & 6042 & 3.27 & 6.36 & 1.26\\
-            ex1010.blif & 2 & 4598 & 3.27 &
-            6.69 & 1.44\\
-            pdc.blif & 2 & 4575 & 3.12 & 6.33 & 1.38\\
 
-            spla.blif & 2 & 3690 & 3.12 & 5.83 & 1.47\\
-            elliptic.blif & 2 &
-            3602 & 3.38 & 7.6 & 1.21\\
-            frisc.blif & 2 & 3539 & 3.35 & 10.91
-            & 1.31\\
-            s298.blif & 1 & 1930 & 3.01 & 8.5 & 1.36\\
-            apex2.blif &
-            1 & 1878 & 3 & 4.91 & 1.24\\
-            seq.blif & 1 & 1750 & 3.02 & 4.36 &
-            1.23\\
-            bigkey.blif & 1 & 1699 & 3.21 & 2.3 & 1.19\\
-            des.blif & 1
-            & 1591 & 3.15 & 4.15 & 1.05\\
-            alu4.blif & 1 & 1522 & 3.01 & 4.32
-            & 1.26\\
-            diffeq.blif & 1 & 1494 & 3.28 & 6.4 & 1.17\\
-
-            misex3.blif & 1 & 1397 & 3.01 & 4.72 & 1.14\\
-            dsip.blif & 1 &
-            1362 & 3.17 & 2.19 & 1.29\\
-            apex4.blif & 1 & 1262 & 3.02 & 4.56
-            & 1.28\\
-            ex5p.blif & 1 & 1064 & 3.06 & 4.63 & 1.24\\
-            tseng.blif
-            & 1 & 1046 & 3.49 & 5.82 & 1.23\\
-            Mean &         &           &
-            &          & 1.29\\
             \bottomrule 
          \end{tabularx}
          \caption{Results
@@ -2454,90 +2546,29 @@ tseng & 52 & 122 & 385 & 1046\\
 
    \end{table}
 
-
-
    \begin{table}
       \footnotesize 
       \begin{adjustwidth}
          {-1cm}{-1.2cm}
 
          \begin{tabularx}
-            {1.1\textwidth}{XXXXXX} \toprule File & Number of
-            Partitions &  Number of BLEs (original) &  Increase in BLE
-            Number &  Clock Period (original) (ns) &  Clock Slowdown
-            Factor\\
-            \midrule clma.blif      &  \multicolumn{5}{c}{Could not
-               partition for such a small recovery time}\\
-            s38584.1.blif  &
-            \multicolumn{5}{c}{Could not partition for such a small recovery
-               time}\\
-            s38417.blif    &   \multicolumn{5}{c}{Could not
-               partition for such a small recovery time}\\
-            ex1010.blif    &
-            10 & 4598 & 3.31 & 5.76 & 1.55\\
-            pdc.blif       & 15 & 4575 &
-            3.23 & 6.23 & 1.55\\
-            spla.blif      & 8 & 3690 & 3.19 & 6.38 &
-            1.51\\
-            elliptic.blif  &  \multicolumn{5}{c}{Could not partition
-               for such a small recovery time}\\
-            frisc.blif &
-            \multicolumn{5}{c}{Could not partition for such a small recovery
-               time}\\
-            s298.blif      & 5 & 1930 & 3.05 & 8.44 & 1.47\\
-
-            apex2.blif     & 3 & 1878 & 3.13 & 4.82 & 1.41\\
-            seq.blif
-            & 3 & 1750 & 3.21 & 4.51 & 1.33\\
-            bigkey.blif    & 3 & 1699 &
-            3.21 & 2.33 & 1.53\\
-            des.blif       & 3 & 1591 & 3.3 & 3.95 &
-            1.45\\
-            alu4.blif      & 3 & 1522 & 3.14 & 5.34 & 1.17\\
-
-            diffeq.blif    & 3 & 1494 & 3.38 & 6.54 & 1.48\\
-            misex3.blif
-            & 3 & 1397 & 3.16 & 4.59 & 1.2\\
-            dsip.blif      & 3 & 1362 &
-            3.24 & 2.2 & 1.44\\
-            apex4.blif     & 2 & 1262 & 3.26 & 4.63 &
-            1.38\\
-            ex5p.blif      & 2 & 1064 & 3.4 & 4.5 & 1.43\\
-            tseng.blif
-            & 2 & 1046 & 3.57 & 5.99 & 1.51\\
-            Mean &         &           &
-            &          & 1.42\\
-
-
-            \bottomrule 
-         \end{tabularx}
-         \caption{Results for target recovery time
-            $7.5\times10^{-5}$s} \label{Results7.5e-5} 
-      \end{adjustwidth}
-
-   \end{table}
-
-   \begin{table}
-      \footnotesize 
-      \begin{adjustwidth}
-         {-1cm}{-1.2cm}
-
-         \begin{tabularx}
-            {1.1\textwidth}{XXXXXXX} \toprule
-            File & Number of Partitions &  Number of BLEs (original) &  Increase in BLE Number &  Clock Period (original) (ns) &  Clock Slowdown Factor &  Number of Successful Runs\\
+            {1.1\textwidth}{lRRRRRR}
+            \toprule
+ Circuit & Number of Partitions &  Number of BLEs (original) &  Increase in BLE Number &  Clock Period (original) (ns) &  Clock Slowdown Factor &  Number of Successful Runs\\
+            \midrule
 clma & 14 & 8365 & 3.18 & 8.85 & 1.51 & 3\\
-s38584.1 & 6.15 & 6177 & 3.29 & 5 & 1.66 & 26\\
+s38584.1 & 6.15 & 6177 & 3.29 & 5.00 & 1.66 & 26\\
 s38417 & 7 & 6042 & 3.3 & 6.35 & 1.44 & 26\\
-ex1010 & 5 & 4598 & 3.3 & 5.83 & 1.6 & 26\\
+ex1010 & 5 & 4598 & 3.3 & 5.83 & 1.60 & 26\\
 pdc & 5 & 4575 & 3.19 & 6.54 & 1.45 & 25\\
-spla & 4 & 3690 & 3.17 & 6.01 & 1.4 & 25\\
+spla & 4 & 3690 & 3.17 & 6.01 & 1.40 & 25\\
 elliptic & 4 & 3602 & 3.4 & 7.78 & 1.65 & 25\\
 frisc & 4 & 3539 & 3.36 & 10.99 & 1.43 & 25\\
 s298 & 2 & 1930 & 3.04 & 8.56 & 1.45 & 25\\
 apex2 & 2 & 1878 & 3.13 & 5.12 & 1.32 & 25\\
 seq & 2 & 1750 & 3.18 & 4.42 & 1.37 & 25\\
 bigkey & 2 & 1699 & 3.21 & 2.29 & 1.38 & 25\\
-des & 2 & 1591 & 3.23 & 4 & 1.23 & 25\\
+des & 2 & 1591 & 3.23 & 4.00 & 1.23 & 25\\
 alu4 & 2 & 1522 & 3.11 & 4.61 & 1.31 & 25\\
 diffeq & 2 & 1494 & 3.36 & 6.57 & 1.19 & 25\\
 misex3 & 2 & 1397 & 3.12 & 4.47 & 1.32 & 25\\
@@ -2545,11 +2576,52 @@ dsip & 2 & 1362 & 3.31 & 2.25 & 1.57 & 25\\
 apex4 & 2 & 1262 & 3.17 & 4.65 & 1.33 & 25\\
 ex5p & 1 & 1064 & 3.06 & 4.45 & 1.28 & 25\\
 tseng & 1 & 1046 & 3.49 & 5.96 & 1.23 & 25\\
-Mean &  &  &  &  & 1.41 & \\
+Mean &  &  & 3.23  &  & 1.41 & \\
             \bottomrule 
          \end{tabularx}
          \caption{Results for target recovery time
-            $1.2\times10^{-4}$s} \label{Results1.2e-4} 
+            $1.2\times10^{-4}$s} \label{Results1.2e-4DFS} 
+      \end{adjustwidth}
+
+   \end{table}
+
+   \begin{table}
+      \footnotesize 
+      \begin{adjustwidth}
+         {-1cm}{-1.2cm}
+
+         \begin{tabularx}
+            {1.1\textwidth}{lRRRRRR}
+            \toprule
+ Circuit & Number of Partitions &  Number of BLEs (original) &  Increase in BLE Number &  Clock Period (original) (ns) &  Clock Slowdown Factor &  Number of Successful Runs\\
+ \midrule
+clma & \multicolumn{5}{c}{Could not partition for such a small recovery time}&0\\
+s38584.1 & \multicolumn{5}{c}{Could not partition for such a small recovery time}&0\\
+s38417 & \multicolumn{5}{c}{Could not partition for such a small recovery time}&0\\
+ex1010 & 10.23 & 4598 & 3.31 & 5.84 & 1.57 & 22\\
+pdc & 12.14 & 4575 & 3.22 & 6.21 & 1.57 & 7\\
+spla & 8 & 3690 & 3.19 & 5.97 & 1.49 & 25\\
+elliptic & 10.33 & 3602 & 3.42 & 7.54 & 1.66 & 12\\
+frisc & \multicolumn{5}{c}{Could not partition for such a small recovery time}&0\\
+s298 & 5 & 1930 & 3.05 & 8.43 & 1.50 & 25\\
+apex2 & 3 & 1878 & 3.13 & 5.10 & 1.34 & 25\\
+seq & 3 & 1750 & 3.21 & 4.44 & 1.40 & 25\\
+bigkey & 3 & 1699 & 3.21 & 2.29 & 1.58 & 25\\
+des & 3 & 1591 & 3.30 & 3.95 & 1.41 & 25\\
+alu4 & 3 & 1522 & 3.14 & 4.53 & 1.32 & 25\\
+diffeq & 3 & 1494 & 3.38 & 6.57 & 1.44 & 25\\
+misex3 & 3 & 1397 & 3.16 & 4.48 & 1.32 & 25\\
+dsip & 3 & 1362 & 3.24 & 2.22 & 1.42 & 25\\
+apex4 & 2 & 1262 & 3.26 & 4.63 & 1.40 & 25\\
+ex5p & 2 & 1064 & 3.40 & 4.44 & 1.44 & 25\\
+tseng & 2 & 1046 & 3.57 & 5.97 & 1.49 & 25\\
+Mean &  &  & 3.26  &  & 1.46 & \\
+
+            \bottomrule 
+
+         \end{tabularx}
+         \caption{Results for target recovery time
+            $7.5\times10^{-5}$s} \label{Results7.5e-5} 
       \end{adjustwidth}
 
    \end{table}
@@ -2561,33 +2633,37 @@ Mean &  &  &  &  & 1.41 & \\
          {-1cm}{-1.2cm}
 
          \begin{tabularx}
-            {1.1\textwidth}{XXXXXXX} \toprule
-            File    & Number of Partitions &  Number of BLEs (original) &  Increase in BLE Number &  Clock Period (original) (ns) &  Clock Slowdown Factor &  Number of Successful Runs\\
+            {1.1\textwidth}{lRRRRRR}
+            \toprule
+ Circuit & Number of Partitions &  Number of BLEs (original) &  Increase in BLE Number &  Clock Period (original) (ns) &  Clock Slowdown Factor &  Number of Successful Runs\\
+            \midrule
 clma & 14 & 8365 & 3.85 & 8.87 & 1.81 & 1\\
-s38584.1 & 6 & 6177 & 3.67 & 5.02 & 1.6 & 5\\
-s38417 & 7 & 6042 & 3.59 & 6.27 & 1.64 & 5\\
-ex1010 & 5 & 4598 & 3.78 & 5.83 & 1.66 & 5\\
-pdc & 5 & 4575 & 3.82 & 6.35 & 1.7 & 5\\
-spla & 4 & 3690 & 3.71 & 5.83 & 1.64 & 5\\
-elliptic & 4 & 3602 & 3.61 & 7.82 & 1.32 & 5\\
-frisc & 4 & 3539 & 3.68 & 10.87 & 1.56 & 5\\
-s298 & 2 & 1930 & 3.08 & 8.47 & 1.4 & 5\\
-apex2 & 2 & 1878 & 3.39 & 4.84 & 1.46 & 5\\
-seq & 2 & 1750 & 3.39 & 4.49 & 1.45 & 5\\
-bigkey & 2 & 1699 & 3.35 & 2.29 & 1.65 & 5\\
-des & 2 & 1591 & 3.42 & 4.15 & 1.29 & 5\\
-alu4 & 2 & 1522 & 3.31 & 4.58 & 1.44 & 5\\
-diffeq & 2 & 1494 & 3.38 & 6.48 & 1.39 & 5\\
-misex3 & 2 & 1397 & 3.25 & 4.35 & 1.46 & 5\\
-dsip & 2 & 1362 & 3.2 & 2.23 & 1.78 & 5\\
-apex4 & 2 & 1262 & 3.14 & 4.55 & 1.32 & 5\\
-ex5p & 1 & 1064 & 3.06 & 4.61 & 1.18 & 5\\
-tseng & 1 & 1046 & 3.49 & 5.95 & 1.22 & 5\\
-Mean &  &  &  &  & 1.51 & \\
+s38584.1 & 6 & 6177 & 3.67 & 4.97 & 1.61 & 15\\
+s38417 & 7 & 6042 & 3.59 & 6.29 & 1.62 & 15\\
+ex1010 & 5 & 4598 & 3.78 & 5.90 & 1.65 & 15\\
+pdc & 5 & 4575 & 3.82 & 6.56 & 1.64 & 15\\
+spla & 4 & 3690 & 3.71 & 5.89 & 1.60 & 15\\
+elliptic & 4 & 3602 & 3.61 & 7.73 & 1.33 & 15\\
+frisc & 4 & 3539 & 3.68 & 10.93 & 1.55 & 15\\
+s298 & 2 & 1930 & 3.08 & 8.60 & 1.39 & 15\\
+apex2 & 2 & 1878 & 3.39 & 5.09 & 1.43 & 15\\
+seq & 2 & 1750 & 3.39 & 4.42 & 1.45 & 15\\
+bigkey & 2 & 1699 & 3.35 & 2.28 & 1.63 & 15\\
+des & 2 & 1591 & 3.42 & 4.06 & 1.32 & 15\\
+alu4 & 2 & 1522 & 3.31 & 4.58 & 1.41 & 15\\
+diffeq & 2 & 1494 & 3.38 & 6.50 & 1.39 & 15\\
+misex3 & 2 & 1397 & 3.25 & 4.41 & 1.41 & 15\\
+dsip & 2 & 1362 & 3.20 & 2.26 & 1.76 & 15\\
+apex4 & 2 & 1262 & 3.14 & 4.55 & 1.33 & 15\\
+ex5p & 1 & 1064 & 3.06 & 4.61 & 1.21 & 15\\
+tseng & 1 & 1046 & 3.49 & 5.92 & 1.22 & 15\\
+Mean &  &  & 3.46  &  & 1.49 & \\
+\bottomrule
+
          \end{tabularx}
          \caption{Results for target recovery time
-            $1.2\times10^{-4}$s using Breadth instead of Depth First Traversal}
-         \label{Results1.2e-4DFS} 
+            $1.2\times10^{-4}$s using Breadth- instead of Depth-First Traversal}
+         \label{Results1.2e-4BFS} 
       \end{adjustwidth}
 
    \end{table}
