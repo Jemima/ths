@@ -941,12 +941,10 @@
          signal \\
          clock & \textbf{String} & Name of clock signal \\
          inputs &
-         \textbf{List(string)} & List of input signal names \\
-         cost & \textbf{
-            Integer} & How many clock cycles this node contributes to the
+         \textbf{List(String)} & List of input signal names \\
+         cost & \textbf{Integer} & How many clock cycles this node contributes to the
          critical path. 0 for \glspl{LUT} and 1 for latches. \\
-         type & \textbf{
-            String} & Type of node, ``latch'' or ``names'' (\gls{LUT}) \\
+         type & \textbf{String} & Type of node, ``latch'' or ``names'' (\gls{LUT}) \\
 
          contents & \textbf{String} & Parameters describing node which are not
          used by partitioner but required to recreate \gls{BLIF} file e.g.
@@ -1114,44 +1112,41 @@
          \begin{tabularx}
             {\linewidth}{llX} \toprule Variable & Type &
             Description\\
-            \midrule $file$ &\textbf{ File  } &  input file\\
-            $targetRecoveryTime$ &\textbf{ Float } &  maximum per partition
+            \midrule $file$ &\textbf{File  } &  input file\\
+            $targetRecoveryTime$ &\textbf{Float } &  maximum per partition
             recovery time (in seconds)\\
             $estimatedClockPeriod$ &\textbf{Float} & An estimate for the final clock period of the partitioned circuit\\
-            $blif$ &\textbf{  Blif* } &  In-memory
+            $blif$ &\textbf{Blif } &  In-memory
             representation of input blif file\\
-            $circuit$ &\textbf{   Model* }
+            $circuit$ &\textbf{Model }
             &  Main circuit from input file, represented as DFG\\
             targetPartitions & \textbf{Integer} & An estimate for the number of partitions \\
             $partition$
-            &\textbf{   Model* } &  Circuit, which we are adding nodes to, to
+            &\textbf{Model } &  Circuit, which we are adding nodes to, to
             make our partition\\
-            $queue$ &\textbf{  Queue } &  FIFO queue of
+            $queue$ &\textbf{Queue } &  FIFO queue of
             nodes to visit\\
-            $visited$ &\textbf{   Map(BlifNode*$\to$ Boolean)}
+            $visited$ &\textbf{Map(BlifNode$\to$ Boolean)}
             &  Map of whether a BlifNode is visited\\
-            $signal$ &\textbf{
-               Signal* } &  \\
-            $circuit.outputs$ &\textbf{  List(Signal*) } &
-            List of output Signal* of a circuit\\
-            $signal.source$ &\textbf{
-               BlifNode* } &  Node which drives this Signal*\\
+            $signal$ &\textbf{Signal } &  \\
+            $circuit.outputs$ &\textbf{List(Signal) } &
+            List of output Signal of a circuit\\
+            $signal.source$ &\textbf{BlifNode } &  Node which drives this Signal\\
             $queue.size$
-            &\textbf{ Integer } &  Number of nodes in queue\\
-            $node$ &\textbf{
-               BlifNode* } &  \\
-            $file$ &\textbf{  File } &  \\
+            &\textbf{Integer } &  Number of nodes in queue\\
+            $node$ &\textbf{BlifNode } &  \\
+            $file$ &\textbf{File } &  \\
             $files$
-            &\textbf{  List(File) } &  \\
-            $numPartitions$ &\textbf{ Integer } &
+            &\textbf{List(File) } &  \\
+            $numPartitions$ &\textbf{Integer } &
             Counter of number of partitions\\
-            $signalName$ &\textbf{ String } &
-            Name of a Signal*\\
-            $node.inputs$ &\textbf{  List(String) } &  List
+            $signalName$ &\textbf{String } &
+            Name of a Signal\\
+            $node.inputs$ &\textbf{List(String) } &  List
             of names of signals which are inputs to this node\\
             $model.signals$
-            &\textbf{  Map(string $\to$ Signal*) } &  Map from signal name to
-            Signal* representing it in that Model*\\
+            &\textbf{Map(string $\to$ Signal) } &  Map from signal name to
+            Signal representing it in that Model\\
             \bottomrule 
          \end{tabularx}
 
@@ -1266,24 +1261,22 @@
          \begin{tabularx}
             {\linewidth}{llX} \toprule
             Variable & Type & Description\\
-            \midrule $partition$ &\textbf{
-               Model* } &  Partition to create list of primary inputs and
+            \midrule $partition$ &\textbf{Model } &  Partition to create list of primary inputs and
             outputs for\\
-            $originalCircuit$ &\textbf{  Model* } &  Original
+            $originalCircuit$ &\textbf{Model } &  Original
             model \\
-            $signal$ &\textbf{  Signal* } &  \\
+            $signal$ &\textbf{Signal } &  \\
             $signal.source$
-            &\textbf{  BlifNode* } &  The driver for the signal \\
+            &\textbf{BlifNode } &  The driver for the signal \\
 
-            $partition.inputs$ &\textbf{  List(BlifNode*) } &  List of primary
+            $partition.inputs$ &\textbf{List(BlifNode) } &  List of primary
             inputs for the circuit \\
-            $partition.signals$ &\textbf{  Map(String
-               $\to$ Signal*) } &  Map from signal name to Signal* \\
+            $partition.signals$ &\textbf{Map(String
+               $\to$ Signal) } &  Map from signal name to Signal \\
 
-            $originalCircuit.signals$ &\textbf{  Map(String $\to$ Signal*) } &
-            Map from signal name to Signal* \\
-            $signal.sinks$ &\textbf{
-               List(BlifNode*) } &  List of sinks for the signal \\
+            $originalCircuit.signals$ &\textbf{Map(String $\to$ Signal) } &
+            Map from signal name to Signal \\
+            $signal.sinks$ &\textbf{List(BlifNode) } &  List of sinks for the signal \\
 
 
             \bottomrule 
@@ -1343,31 +1336,29 @@
          \begin{tabularx}
             {\linewidth}{llX} \toprule Variable & Type &
             Description\\
-            \midrule $latency$ &\textbf{ Float } &  Circuit
+            \midrule $latency$ &\textbf{Float } &  Circuit
             latency (i.e. time for input to completely propagate to output) in
             seconds\\
-            $clockPeriod$ &\textbf{ Integer } & Estimated period of
+            $clockPeriod$ &\textbf{Integer } & Estimated period of
             the final circuit, in seconds. This is estimated as $1.8\times$ the
             clock period of the original circuit\\
-            $criticalPath$ &\textbf{
-               Integer } &  Maximum number of steps between an input and an
+            $criticalPath$ &\textbf{Integer } &  Maximum number of steps between an input and an
             output\\
-            $numFF$ &\textbf{ Integer } &  Number of Latches in
+            $numFF$ &\textbf{Integer } &  Number of Latches in
             circuit\\
-            $numLUT$ &\textbf{ Integer } &  Number of look up tables
+            $numLUT$ &\textbf{Integer } &  Number of look up tables
             in circuit\\
-            $resynchronisationTime$ &\textbf{ Float } &  Time, in
+            $resynchronisationTime$ &\textbf{Float } &  Time, in
             seconds, that it takes to resynchronise circuit\\
             $detectionTime$
-            &\textbf{ Float } &  Time, in seconds, that it takes to detect an
+            &\textbf{Float } &  Time, in seconds, that it takes to detect an
             error\\
-            $reconfigurationTime$ &\textbf{ Float } &  Time, in
+            $reconfigurationTime$ &\textbf{Float } &  Time, in
             seconds, that it takes to reconfigure circuit\\
             $communicationTime$
-            &\textbf{ Float } &  Time, in seconds, that it takes to transmit
+            &\textbf{Float } &  Time, in seconds, that it takes to transmit
             reconfiguration request to controller\\
-            $numPartitions$ &\textbf{
-               Integer } &  Estimated final number of partitions \\
+            $numPartitions$ &\textbf{Integer } &  Estimated final number of partitions \\
             \bottomrule
 
          \end{tabularx}
@@ -1421,27 +1412,27 @@
          \begin{tabularx}
             {\linewidth}{llX} \toprule Variable & Type
             & Description\\
-            \midrule $partition$ &\textbf{  Model* } &  Model*
+            \midrule $partition$ &\textbf{Model } &  Model
             containing DFG representing partition to add node to\\
             $node$
-            &\textbf{  BlifNode* } &  Node to add\\
-            $signal$ &\textbf{  Signal*
+            &\textbf{BlifNode } &  Node to add\\
+            $signal$ &\textbf{Signal
             } &  \\
-            $signalName$ &\textbf{ String } &  Name of a Signal*\\
+            $signalName$ &\textbf{String } &  Name of a Signal\\
 
-            $newName$ &\textbf{ String } &  The new name of a Signal* if and
+            $newName$ &\textbf{String } &  The new name of a Signal if and
             after it's been cut\\
-            $partition.signals$ &\textbf{  Map(String
-               $\to$ Signal*) } &  Map of signal name to Signal* \\
+            $partition.signals$ &\textbf{Map(String
+               $\to$ Signal) } &  Map of signal name to Signal \\
 
-            $signal.sinks$ &\textbf{  List(BlifNode*) } &  List of sinks for a
-            Signal* \\
-            $signal.source$ &\textbf{  BlifNode* } &  Source, or
-            driver, for a Signal* \\
-            $inCost$ &\textbf{ Integer } &  Maximum
+            $signal.sinks$ &\textbf{List(BlifNode) } &  List of sinks for a
+            Signal \\
+            $signal.source$ &\textbf{BlifNode } &  Source, or
+            driver, for a Signal \\
+            $inCost$ &\textbf{Integer } &  Maximum
             number of critical path steps to reach node, not counting the node
             itself \\
-            $explored$ &\textbf{  Map(BlifNode* $\to$ Boolean) } &
+            $explored$ &\textbf{Map(BlifNode $\to$ Boolean) } &
             Whether a node has been reached yet in the current iteration \\
 
             \bottomrule 
@@ -1512,36 +1503,34 @@
          \begin{tabularx}
             {\linewidth}{llX} \toprule
             Variable & Type & Description\\
-            \midrule $partition$ &\textbf{
-               Model* } &  Model* containing DFG representing partition to add
+            \midrule $partition$ &\textbf{Model } &  Model containing DFG representing partition to add
             node to\\
-            $root$ &\textbf{  BlifNode* } &  Newly added node\\
+            $root$ &\textbf{BlifNode } &  Newly added node\\
 
-            $parent$ &\textbf{  BlifNode* } &  Node we just came from\\
+            $parent$ &\textbf{BlifNode } &  Node we just came from\\
 
-            $costToReach$ &\textbf{ Integer } &  Maximum number of critical
+            $costToReach$ &\textbf{Integer } &  Maximum number of critical
             path steps to reach node, not counting the node itself \\
 
-            $explored$ &\textbf{  Map(BlifNode* $\to$ Boolean) } &  Whether a
+            $explored$ &\textbf{Map(BlifNode $\to$ Boolean) } &  Whether a
             node has been reached yet in the current iteration \\
 
-            $partition.signals$ &\textbf{  Map(String $\to$ Signal*) } &  Map
-            of signal name to Signal* \\
-            $parent.output$ &\textbf{ String } &
+            $partition.signals$ &\textbf{Map(String $\to$ Signal) } &  Map
+            of signal name to Signal \\
+            $parent.output$ &\textbf{String } &
             Name of the signal the parent nodes drives i.e. the signal we
             reached this node from\\
-            $signal$ & \textbf{ Signal* } &  Signal we
+            $signal$ & \textbf{Signal } &  Signal we
             reached this node from\\
-            $node.cost$ &\textbf{ Integer } &  1 for
+            $node.cost$ &\textbf{Integer } &  1 for
             latches, 0 for LUTs \\
-            $costs$ &\textbf{  Map(BlifNode* $\to$
+            $costs$ &\textbf{Map(BlifNode $\to$
                Integer) } &  Map of the cost to reach each node \\
             $node$
-            &\textbf{  BlifNode* } &  \\
-            $signal.sinks$ &\textbf{
-               List(BlifNode*) } &  List of sinks for a Signal* \\
+            &\textbf{BlifNode } &  \\
+            $signal.sinks$ &\textbf{List(BlifNode) } &  List of sinks for a Signal \\
             $cost$
-            &\textbf{ Integer } &  Number of critical path steps to reach node,
+            &\textbf{Integer } &  Number of critical path steps to reach node,
             including the node itself \\
             \bottomrule 
          \end{tabularx}
@@ -1805,7 +1794,7 @@
          \begin{tabularx}
             {\linewidth}{llX} \toprule Variable & Type &
             Description\\
-            \midrule $file$ &\textbf{  File } &  File to
+            \midrule $file$ &\textbf{File } &  File to
             flatten\\
             \bottomrule 
          \end{tabularx}
@@ -2076,8 +2065,7 @@ tseng & 52 & 122 & 385 & 1046\\
       \end{center}
 
 
-   \end{table}
-   \fxfatal{Correct to use actual results} \subsection{Target
+   \end{table}\subsection{Target
       Architecture} 
    \begin{figure}
 
@@ -2299,7 +2287,7 @@ tseng  & 25\\
    In general, the more partitions the slower the
    resulting circuit, as per Figure \ref{slowdownFig} where each line represents a different circuit. This result is unsurprising, as increasing the number of
    voters increases the number of signals to be routed pushing average wire
-   length upwards. Average slowdown is around the \fxfatal{Value} mark, though
+   length upwards. Mean slowdown is around $1.2\times$--$1.5\times$ depending on target recovery time, though
    it varies considerably from circuit to circuit.  For our recovery time
    calculations, as they required an estimate of the final circuit clock period
    we used an estimate of $1.8\times$ the original circuit's clock period. As
@@ -2334,9 +2322,53 @@ tseng  & 25\\
 
 
    \section{Recovery Time}
-    For the benchmark circuits typical recovery times ranged from $1.2\times10^{-4}$s to $10^{-3}$s. Anything larger is redundant, as the recovery time for the entire circuit is under, and anything smaller has the circuits unable to be partitioned. Smaller circuits are able to have smaller target recovery times as the number of partitions is a contributing factor.
+    For the benchmark circuits typical recovery times ranged from $1.2\times10^{-4}$s to $10^{-3}$s. Anything larger is redundant, as the entire circuit fits within one partition, and anything smaller has the circuits unable to be partitioned. The number of partitions and the size of each partition are the two main contributing factors to the recovery time of a partition, therefore the smaller the circuit, the smaller a recovery time its partitions are able to achieve. As the circuit size increases (as measured by the number of \glspl{BLE}) either the size of each partition, or the total number of partitions must increase, driving up the recovery time.
+    Table \ref{minrec} details the experimentally determined minimum achievable recovery time for each of the twenty largest \gls{MCNC} benchmark circuits. The estimated final clock period was taken as the mean original clock period for that circuit $\times 1.8$. This value was passed to the partitioner with progressively smaller target recovery times until the partitioner was unable to partition meeting the target recovery time.
+    Figure \ref{minrecFig} shows the same information as a graph, making the correlation between circuit size and minimum recovery time more visible.
+    
+    This process was conducted for both depth- and breadth- first traversals
     The theoretical minimum recovery time is $1.48\times10^{-5}+ClockPeriod\times(500+RegisterStages) \approx 1.5\times10^{-5}$s.
-    \fxwarning{Expand. Table of minimum recovery times}
+    
+   \begin{table}
+   \begin{center}
+   \begin{tabularx}{0.8\textwidth}{lRRR}
+    Name &  Number of BLEs (original) &  Clock Period (original) (ns) & Minimum Recovery Time ($\times10^{-5}$s)\\
+  \midrule
+clma & 8365 & 9.21 & 12.2\\
+s38584.1 & 6177 & 4.97 & 7.80\\
+s38417 & 6042 & 6.27 & 8.50\\
+ex1010 & 4598 & 5.92 & 7.30\\
+pdc & 4575 & 6.47 & 7.70\\
+spla & 3690 & 6.01 & 6.50\\
+elliptic & 3602 & 7.72 & 7.60\\
+frisc & 3539 & 10.95 & 9.00\\
+s298 & 1930 & 8.59 & 6.10\\
+apex2 & 1878 & 5.07 & 4.50\\
+seq & 1750 & 4.55 & 4.00\\
+bigkey & 1699 & 2.28 & 2.80\\
+des & 1591 & 3.97 & 3.50\\
+alu4 & 1522 & 4.54 & 3.80\\
+diffeq & 1494 & 6.58 & 4.80\\
+misex3 & 1397 & 4.40 & 3.50\\
+dsip & 1362 & 2.24 & 2.60\\
+apex4 & 1262 & 4.57 & 3.40\\
+ex5p & 1064 & 4.51 & 3.20\\
+tseng & 1046 & 5.94 & 3.70\\
+   	\bottomrule
+   \end{tabularx}
+   \caption{Minimum recovery time for circuits}\label{minrec}
+   \end{center}
+   \end{table}
+      \begin{figure}
+
+      \begin{center}
+
+         \includegraphics[width=\textwidth]{images/minrec.pdf}
+         \caption{Minimum Achievable Recovery Time vs Circuit Size} \label{minrecFig} 
+      \end{center}
+
+
+   \end{figure}
 
 
    \section{DFS vs BFS}\label{bfs}
@@ -2403,14 +2435,6 @@ DFS & 40 & 54 & 1.96 & 3.53 & 4.16 & 4.51 & 6.11 & 8.04\\
    \end{tabularx}
    \caption{DFS per partition values for ex1010 with a target recovery time of 7.5e-5s}\label{dvbbad}
    \end{table}
-													
-
-   
-   
-
-    \fxerror{Compare per partition values, promote summary from appendix to this section}
-
-
 
    \chapter{Limitations and Future Work}
    Our algorithm implementation is still
