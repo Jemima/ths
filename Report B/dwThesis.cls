@@ -7,6 +7,7 @@
 %\NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{dwThesis}[2012/10/08 dsmu Thesis Class]
 \LoadClass[12pt,draft,oneside]{memoir}
+\usepackage{graphicx}
 %Bibliography
 %uncomment next line to change bibliography name to references for Book document class
 \renewcommand{\bibname}{References}
@@ -30,6 +31,10 @@
 \def\university#1{\gdef\@university{#1}}
 % The name of your supervisor
 \def\supervisor#1{\gdef\@supervisor{#1}}
+% The name of your assessor
+\def\assessor#1{\gdef\@assessor{#1}}
+% Student number
+\def\studentnumber#1{\gdef\@studentnumber{#1}}
 
 %define title page layout
 \renewcommand{\maketitle}{%
@@ -38,12 +43,13 @@
     \thispagestyle{empty}
   \null\vfill
   \begin{center}
-    { \Huge {\bfseries {\@title}} \par}
-    {{\Large \vspace*{3ex}\@author} \par}
 {\large \vspace*{1ex}
-    {{\@collegeordept} \par}
+    {{\@university} \par}}
 \vspace*{1ex}
-    {{\@university} \par}
+    {{\@collegeordept} \par}
+    { \Huge {\bfseries {\@title}} \par}
+    {{\Large \vspace*{3ex}\@author} \par\@studentnumber\par}
+{\large \vspace*{1ex}
 \vspace*{25mm}
     {{\submittedtext} \par}
 \vspace*{1ex}
@@ -51,7 +57,9 @@
 \vspace*{2ex}
     {Submitted: \@degreedate \par}
 \vspace*{2ex}
-    {Supervisor: \@supervisor}}
+    {Supervisor: \@supervisor \par}
+\vspace*{2ex}
+    {Assessor: \@assessor}}
   \end{center}
   \null\vfill
 }
