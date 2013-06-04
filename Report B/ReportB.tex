@@ -25,6 +25,7 @@
 \usepackage{placeins}
 \usepackage{tameflts}
 \usepackage{algpseudocode}
+\usepackage{cite}
 \usepackage{algorithm}
 \usepackage{eqparbox,array}
 \renewcommand\algorithmiccomment[1]{%
@@ -77,11 +78,13 @@
 \setlength\overfullrule{0pt}
 \title{VPR Assessment of a Novel Partitioning Algorithm}
 \author{David Munro}
+\studentnumber{z3218420}
 \collegeordept{School of Computer Science and Engineering}
 \university{The University of New South Wales}
 \degree{Bachelor of Engineering (Computer)}
-\degreedate{4th , 2012}
+\degreedate{June, 2013}
 \supervisor{Oliver Diessel}
+\assessor{Sri Parameswaran}
 %\date{} % Activate to display a given date or no date (if empty),
 % otherwise the current date is printed
 
@@ -95,7 +98,6 @@
 \newacronym{LUT}{LUT}{Lookup Table}
 \newacronym{VTR}{VTR}{Verilog To Routing Project}
 \newacronym{ABC}{ABC}{A System for Sequential Synthesis and Verification}
-\newacronym{STL}{STL}{Standard Template Library}
 \newacronym{FPGA}{FPGA}{Field-Programmable Gate Array}
 \newacronym{TMR}{TMR}{Triple Modular Redundancy}
 \newacronym{BLIF}{BLIF}{Berkeley Logic Interchange Format}
@@ -124,15 +126,14 @@
 
 \begin{document}
 
-   \fxerror{Latch vs Flip-Flop. Be consistent, probably prefer. Actual FPGA hardware seems to be a general purpose register than can behave as either. Probably FF that can be a LUT?}
-   \pagenumbering{roman}
+ \pagenumbering{roman}
    \maketitle
    \fxfatal{Need to fix title to match CSE requirements, and check other format restrictions}
 
    \begin{acknowledgements}
       I would like to thank my supervisor Oliver Diessel
       for his assistance and advice throughout the entire process. I also wish
-      to thank Patricia Munro and Salima Yeung for their proofreading.
+      to thank Patricia Munro, Salima Yeung, Michelle Kopack and  for their proofreading.
 
 
    \end{acknowledgements}
@@ -141,16 +142,30 @@
       \gls{FPGA} systems would be well
       suited to space-based applications except for their vulnerability to
       space-based radiation. Various techniques for dealing with their
-      susceptibility have been discussed in the literature. This thesis aims to
-      develop and assess a key part of a theoretical technique to protect
-      against radiation-induced \glspl{SEU} and to assess the overheads of the
-      technique.  \glsresetall 
+      susceptibility have been discussed in the literature.
+      A key part of a theoretical technique to protect against radiation-induced \glspl{SEU}
+      was developed and the implementation assessed using open-source tools.
+      Results indicate that the developed algorithm exhibited respectable performance compared
+      to existing alternatives while providing theoretically greater fault tolerance, although further work is required to implement 
+      the algorithm for current commercial devices.
+      
+      
+      %This thesis aims to
+      %develop and assess a key part of a theoretical technique to protect
+      %against radiation-induced \glspl{SEU} and to assess the overheads of the
+      %technique.  \glsresetall 
    \end{abstracts}
    \newpage \tableofcontents*
+   \listoftables
+   \listoffigures
    \fxerror{Fix formatting on ToC}
    \listoffixmes \newpage \printglossaries 
-   \chapter{Introduction}
 
+   \glsresetall
+   \glsunset{VHDL} 
+   \glsunset{ABC} 
+   \glsunset{CPU}
+   \chapter{Introduction}
    \pagenumbering{arabic} 
    \section{Overview}
    Space plays an increasingly
@@ -177,13 +192,11 @@
    in the implementation,
    Chapter 4 presents our results and
    Chapter 5 briefly discusses some limitations and possible directions of future work.
-   \glsresetall
-   \glsunset{VHDL} 
    \subsection{\glspl{FPGA}
    } \glspl{FPGA} are popular devices
    capable of implementing a wide variety of circuits. Unlike \glspl{ASIC}
    which must be specially designed and manufactured for an application---a
-   lengthy and expensive process---\glspl{FPGA} are a generic off the shelf
+   lengthy and expensive process---\glspl{FPGA} are a generic off-the-shelf
    device which can be mass produced by manufacturers and then adapted for an
    individual user's needs. Their flexibility, low cost, and faster development
    time make them the most economic for a range of applications.
@@ -238,7 +251,7 @@
    loading the bitstream for only the section of interest while the rest of the
    \gls{FPGA} keeps running.
 
-   \fxnote{Check grammar in this next section.} There are three main
+   There are three main
    technologies used to implement the configuration memory in \glspl{FPGA}:
 
    \begin{itemize}
@@ -246,19 +259,19 @@
       \item \gls{SRAM}, which gives the highest density devices and includes
          the Virtex-5 family this thesis focuses on. These are volatile and
          must be reprogrammed every power up from an external configuration
-         memory
-      \item (anti)fuse, which are only one-time programmable
-      \item flash, which is non-volatile (thus not does not require an external
+         memory.
+      \item (Anti)fuse, which are only one-time programmable.
+      \item Flash, which is non-volatile (thus not does not require an external
          configuration memory) and reprogrammable. These have a lower
          density than \gls{SRAM} based \glspl{FPGA}\cite{FPGAArch}.
 
    \end{itemize}
-   \subsubsection{Latch vs Flip-Flip}
-   Typically the register can implement either a latch or a flip-flop,
+   \subsubsection{Latch vs Flip-Flop}
+   Typically, the register can implement either a latch or a flip-flop,
    as such future references to either latches or flip-flops both refer to a sequential logic element 
    implemented by a register.
    Generally the term latch is used for consistency with the language used by
-   the \gls{BLIF} specification, and by \gls{VPR} and \gls{ABC} although when discussing or referring to sources
+   the \gls{BLIF} specification, and by \gls{VPR} and \gls{ABC}, although when discussing or referring to sources
    which use the term flip-flop the term flip-flop is also used.
    
    \subsubsection{Partial Reconfiguration} Partial
@@ -310,10 +323,9 @@
          \caption{SEU Rate
             Predictions for a Virtex-4 XC4VLX200 device at various
             orbits\cite{DiesselChange}} \label{SEURate} 
-      \end{center}
 
 
-   \end{table}
+   \end{center}\end{table}
    Of the potential effects, which range from unnoticeable to
    device destruction, this thesis is concerned with mitigating \glspl{SEU},
    where an incorrect signal is triggered but the underlying circuitry is not
@@ -339,7 +351,7 @@
    and all three are susceptible to transient \glspl{SEU}\cite{HFPP}.
 
 
-   \subsection{How We Deal With \glspl{FPGA}
+   \subsection{How We Deal With \gls{FPGA}
       Downsides} Clearly, in order for
    \glspl{FPGA} to be viable in space-based systems the effects of \glspl{SEU}
    must be mitigated. A number of technologies and techniques are available,
@@ -385,6 +397,7 @@
    the techniques listing within the table. As can be seen, \gls{TMR} provides the greatest hardness
    (measured as the greatest average time between errors) at the cost of the highest overhead in power and area usage.
    \begin{table}
+      \begin{center}
 
 
       \begin{tabularx}
@@ -408,7 +421,7 @@
       \caption{Comparison of hardening
          techniques\cite{HardeningTechniques}} \label{HardeningComparison}
 
-   \end{table}
+   \end{center}\end{table}
    Additionally, for \gls{SRAM}
    based \glspl{FPGA} the off-chip configuration memory must also be
    protected as \gls{SRAM} is volatile and loads the state from this memory
@@ -525,7 +538,7 @@
    value necessitating a complete reload of the configuration memory
    (\gls{scrubbing}). Therefore, we require the error detection and recovery
    time to be sufficiently small that the likelihood of multiple events
-   occurring within that time period are sufficiently small.
+   occurring within that time period is minimised.
 
    Additionally, as mentioned earlier, it is also desirable to minimise the
    number of voters to reduce the overhead of this approach. To that end,
@@ -552,7 +565,7 @@
    package), are often prohibitively expensive, and prevent us from using our
    existing boards.  Many \glspl{FPGA} marketed specifically at space-based
    applications are, in addition to featuring specialised hardware, only
-   latchup\fxnote{explain?} immune or only include inbuilt \gls{TMR} on registers,
+   latchup immune or only include inbuilt \gls{TMR} on registers,
    leaving them still vulnerable to \glspl{SEU} \cite{FPGAReview}.  Non-hardware
    solutions are typically implemented pre-synthesis, such as \cite{ftmr} (which
    introduces a \gls{VHDL} library featuring triplicated components), and require
@@ -699,7 +712,7 @@
    variation in results due to the stochastic nature of the placement
    algorithm.
    \subsubsection{Router} \gls{VPR}'s router supports three
-   different algorithms:\fxnote{Awkward phrasing, fix} breadth\_first, which
+   different algorithms: breadth\_first, which
    focuses solely on routing a design; timing\_driven, the default, which tends
    to use slightly more tracks (~5\%) than breadth\_first while providing much
    faster routes (2$\times$--10$\times$) with less CPU time; and
@@ -814,6 +827,7 @@
    There is generally, but not always, a direct
    relationship to a C++ primitive.  
    \begin{table}
+      \begin{center}
 
 
       \begin{tabularx}
@@ -840,10 +854,11 @@
       \end{tabularx}
 
       \caption{Basic Data Types} \label{basicTypes}
-   \end{table}
+   \end{center}\end{table}
    Table \ref{complexTypes} contains an overview of the custom complex
    types, which are further explained below.
    \begin{table}
+      \begin{center}
 
       \begin{tabularx}
          {\linewidth}{lX} \toprule Name &
@@ -863,7 +878,7 @@
       \end{tabularx}
       \caption{Complex Data Types}\label{complexTypes}
 
-   \end{table}
+   \end{center}\end{table}
 \fxnote{Bold types in text?}
 
 
@@ -873,6 +888,7 @@
    represent it as a \gls{DFG}.  The circuit itself is represented as a Model
    within Blif.  
    \begin{table}
+      \begin{center}
 
       \begin{tabularx}
          {\linewidth}{llX} \toprule Field
@@ -888,7 +904,7 @@
       \end{tabularx}
       \caption{Fields in Blif object}
 
-   \end{table}
+   \end{center}\end{table}
 
 
 
@@ -898,6 +914,7 @@
    of the circuit.  Also contains a mapping from Signal name to Signal.
 
    \begin{table}
+      \begin{center}
 
       \begin{tabularx}
          {\linewidth}{lXX} \toprule Field Name & Type &
@@ -920,7 +937,7 @@
       \end{tabularx}
       \caption{Fields in
          Model object} 
-   \end{table}
+   \end{center}\end{table}
 
 
 
@@ -929,6 +946,7 @@
    well as the properties of the node (type, etc).  Does not contain direct
    references to Signals, merely their names.  
    \begin{table}
+      \begin{center}
 
 
       \begin{tabularx}
@@ -950,7 +968,7 @@
       \end{tabularx}
       \caption{Fields in
          BlifNode object} 
-   \end{table}
+   \end{center}\end{table}
 
 
 
@@ -958,6 +976,7 @@
    Contains references to the signal source, and a list of
    its sinks. Also stores the signal name.  
    \begin{table}
+   \begin{center}
 
 
       \begin{tabularx}
@@ -973,7 +992,7 @@
       \end{tabularx}
       \caption{Fields in Signal
          object} 
-   \end{table}
+   \end{center}\end{table}
 
 
 
@@ -1159,10 +1178,9 @@
          \end{tabularx}
 
          \caption{Variables for Partition} \label{varPart} 
-      \end{center}
 
 
-   \end{table}
+   \end{center}\end{table}
 
    \begin{algorithm}
       \caption{Partition}\label{partition}
@@ -1692,17 +1710,19 @@
    \label{algTriplicate} Given a file containing a
    partition, read it in as a black box, triplicate it, add voter logic and
    write it back out to file.
-   \fxfatal{fix this}
 
    This method operates on the \gls{BLIF} in a low level way, dealing with
    manipulating the actual file contents, rather than operating on an abstract
-   circuit representation, as we transform a flat circuit, into a heirarchical
+   circuit representation, as we transform a flat circuit into a heirarchical
    circuit, in which our original flat circuit remains untouched but we insert
-   voting and similar logic around it.  We read in our partition circuit and
-   voter circuit. We then create three partition subcircuit and one voter
-   subcircuit definitions. We match up the signal names between them
-   appropriately, and then write out our subcircuit definitions, followed by
-   our partition and voter subcircuits.
+   voting and similar logic around it.
+   
+   This is done through reading in the circuit, instantiating three copies of it,
+   and inserting these copies into a template which includes a voter circuit.
+   We then generate the appropriate signals to connect the circuit inputs to each of the three identical partitions, the partition outputs to the voter,
+   and the voter output to the circuit output.
+   This new circuit is then written back out to file.
+   Figure \ref{imTriplicate} represents this process graphically.
 
 
    \begin{figure}
@@ -1717,19 +1737,34 @@
 
    \newpage 
    \subsection{Join}
-   \fxfatal{fix this}
    \label{algJoin} Given a list of blif files,
-   concatenates them all together, creates subcircuit definitions to connect
-   them all together, and writes them to a file 
+   joins them all together into one circuit.
+   Figure \ref{imMerge} represents the transformation graphically.
+   
+   This is accomplished through reading in each circuit from the input files, and instantiating each of these circuits as a black box subcircuit in a heirarchical design.
+   The top level circuit is created with the same inputs and outputs as the original circuit, and contains a reference to each subcircuit.
+   The inputs and outputs from each circuit are promoted up to the top circuit level, and all signals with same same name are tied together.
+   As signal names are required to be globally unique, and are preserved through the partitioning process (recall that while cutting signals renames them, these renamed signals are internal to a set of triplicated partition and voter and thus not visible to the top level circuit) this then joins all the subcircuits up correctly, and to the appropriate circuit primary inputs and outputs.
+   This process is representing graphically in Figure \ref{imJoin}.
    \begin{figure}
 
       \begin{center}
 
-         \includegraphics[width=\linewidth]{images/Join.pdf} \caption{Join}
-         \label{imJoin} 
+         \includegraphics[width=\linewidth]{images/merge.pdf} \caption{Join high level overview}
+         \label{imMerge} 
       \end{center}
 
    \end{figure}
+   \begin{figure}
+
+      \begin{center}
+
+         \includegraphics*[viewport=500 230 1200 800,width=\linewidth]{images/Join.pdf}
+         \caption{Joining Signals} \label{imJoin} 
+      \end{center}
+
+   \end{figure}
+
 
    \newpage 
    \subsection{Flatten}
@@ -1898,6 +1933,7 @@
    A sample \gls{BLIF} file is included in Listing \ref{SampleBlif} and 
    Table \ref{BLIFCommands} lists the supported commands and their meanings.
 \begin{table}
+      \begin{center}
    \begin{lstlisting}[caption=BLIF file layout, label=SampleBlif]
    .model voter
       .inputs in1 in2 in3
@@ -1913,10 +1949,11 @@
       ...  
       .end
    \end{lstlisting}
-\end{table}
+\end{center}\end{table}
 
 
 \begin{table}
+      \begin{center}
    \begin{tabular}
       {lll} Model name: & .model $\langle$Name$\rangle$ & The name
       of the model.\\
@@ -1936,7 +1973,7 @@
       .end 
    \end{tabular}
    \caption{\gls{BLIF} commands}\label{BLIFCommands}
-\end{table}
+\end{center}\end{table}
 
 
    \{Name\} indicates 1 or more of Name. $\langle$Name$\rangle$ indicates a
@@ -2013,10 +2050,9 @@ tseng & 52 & 122 & 385 & 1046\\
          \end{tabular}
          \caption{Benchmark
             circuits used} \label{benchmarkList} 
-      \end{center}
 
 
-   \end{table}\subsection{Target
+   \end{center}\end{table}\subsection{Target
       Architecture} 
    \begin{figure}
 
@@ -2081,15 +2117,15 @@ tseng & 52 & 122 & 385 & 1046\\
    $PartitionOutputs$ is the number of voted-on outputs from each partition and is equal to the number of feedforward edges (edges into another partition, or primary outputs from the circuit) and the number of feedback edges, or edges reused within the partition. $CutLoops$ is the number of cut loops on a per-partition basis and is the same as the number of feedback edges. Where a signal is used part of a voted-on cycle (feedback) and in another partition (feedforward) it is only counted once, not twice.
    $ClockPeriod$ is the estimated clock period and $NumPartitions$ is the number of partitions.
    
-   \fxerror{Clarify table} In Table \ref{tabSanityPartitions}
+    In Table \ref{tabSanityPartitions}
    Outputs is the number of feedforward edges (signals going to other
-   partitions) $+$ the number of feedback edges (cut cycles).  \fxerror{Explain
-      estimating clock period and number of partitions} Some other observations
+   partitions) $+$ the number of feedback edges (cut cycles). Some other observations
    from this data: Our estimated clock period was conservative. We estimated
    10.9ns when the circuit actually came in at 8.9ns.  \gls{VPR} takes much
    longer on triplicated circuits than on the original. 6 times longer in this
    example.  
    \begin{table}
+      \begin{center}
 
       \begin{tabular}
          {lr} \toprule File & tseng.blif\\
@@ -2125,11 +2161,12 @@ tseng & 52 & 122 & 385 & 1046\\
       \end{tabular}
       \caption{Detail from one run of tseng.blif, recovery time
          $7.5\times10^{-5}$}\label{tabSanity} 
-   \end{table}
+   \end{center}\end{table}
 
 
 
    \begin{table}
+      \begin{center}
 
       \begin{tabular}
          {lrrrrrr} \toprule Recovery Time (s) &
@@ -2144,7 +2181,7 @@ tseng & 52 & 122 & 385 & 1046\\
       \caption{Partition detail from one run of tseng.blif,
          recovery time $7.5\times10^{-5}$}\label{tabSanityPartitions}
 
-   \end{table}
+   \end{center}\end{table}
 
 
 
@@ -2191,10 +2228,9 @@ tseng  & 25\\
 
          \end{tabular}
          \caption{Target Recovery Time $7.5\times10^{-5}$s} \label{partitionSuccesses}
-\end{center}
-   \end{table}
-\fxerror{Centre all tables}
+   \end{center}\end{table}
    \begin{table}
+      \begin{center}
 
       \begin{tabular}
          {lrrrr} \toprule Name & NumPartitions &
@@ -2208,7 +2244,7 @@ tseng  & 25\\
       \caption{Comparison of
          slowdown factors between runs with same input
          parameters}\label{tabStochastic} 
-   \end{table}
+   \end{center}\end{table}
 
 
 
@@ -2250,6 +2286,7 @@ tseng  & 25\\
    \section{Running Time}\label{timing}
    
    \begin{table}
+      \begin{center}
    \begin{tabular}{lr}
 	\toprule
    	Step & Time (s) \\
@@ -2264,7 +2301,7 @@ tseng  & 25\\
    	\bottomrule
    \end{tabular}
    \caption{Running times for clma with a target recovery time of 2.5e-4s}\label{runningtimes}
-   \end{table}
+   \end{center}\end{table}
    As shown in table \ref{runningtimes}, the largest contributor to the running time in our toolflow is \gls{VPR}, taking several orders of magnitude longer than any other step. Of the time \gls{VPR} took, routing is generally the largest contributor, followed by placement, followed by packing.
    Routing for standard \gls{FPGA} architectures is NP-Complete \cite{npcomplete} with the specific routing algorithm used by \gls{VPR} being $O(k^2\log{k})$ per net on average,
    where k is the number of terminals for the net \ref{VPRBook}.
@@ -2275,7 +2312,6 @@ tseng  & 25\\
     For the benchmark circuits typical recovery times ranged from $1.2\times10^{-4}$s to $10^{-3}$s. Anything larger is redundant, as the entire circuit fits within one partition, and anything smaller has the circuits unable to be partitioned. The number of partitions and the size of each partition are the two main contributing factors to the recovery time of a partition, therefore the smaller the circuit, the smaller a recovery time its partitions are able to achieve. As the circuit size increases (as measured by the number of \glspl{BLE}) either the size of each partition, or the total number of partitions must increase, driving up the recovery time.
     Table \ref{minrec} details the experimentally determined minimum achievable recovery time for each of the twenty largest \gls{MCNC} benchmark circuits. The estimated final clock period was taken as the mean original clock period for that circuit $\times 1.8$. This value was passed to the partitioner with progressively smaller target recovery times until the partitioner was unable to partition whilst meeting the target recovery time.
     Figure \ref{minrecFig} shows the same information as a scatter plot, making the correlation between circuit size and minimum recovery time more visible.
-    \fxfatal{DFS/BFS change to traversal}
     
    \begin{table}
    \begin{center}
@@ -2305,8 +2341,7 @@ tseng & 1046 & 5.94 & 3.70\\
    	\bottomrule
    \end{tabularx}
    \caption{Minimum recovery time for circuits}\label{minrec}
-   \end{center}
-   \end{table}
+   \end{center}\end{table}
       \begin{figure}
 
       \begin{center}
@@ -2319,20 +2354,22 @@ tseng & 1046 & 5.94 & 3.70\\
    \end{figure}
 
 
-   \section{DFS vs BFS}\label{bfs}
+   \section{Depth- vs Breadth-First Traversal}\label{bfs}
    \begin{table}
+      \begin{center}
    \begin{tabularx}{\textwidth}{lRRRRRRRRRRR}
    & \multicolumn{2}{r}{Channel Width}&\multicolumn{2}{r}{Network Delay (ns)}&\multicolumn{2}{r}{Logic Delay (ns)}&\multicolumn{2}{r}{Clock Period (ns)}\\
   & Base & TMR & Base & TMR& Base & TMR& Base & TMR\\
   \midrule
-BFS & 40 & 58  & 2.37 & 3.53 & 4.16 & 5.53 & 6.52 & 9.06\\
-DFS & 40 & 54 & 1.96 & 3.53 & 4.16 & 4.51 & 6.11 & 8.04\\
+Breadth-First & 40 & 58  & 2.37 & 3.53 & 4.16 & 5.53 & 6.52 & 9.06\\
+Depth-First & 40 & 54 & 1.96 & 3.53 & 4.16 & 4.51 & 6.11 & 8.04\\
    	\bottomrule
    \end{tabularx}
-   \caption{DFS vs BFS for s38417 with a target recovery time of 2.5e-4s}\label{dvb}
-   \end{table}
+   \caption{Breadth- vs Depth-first traversals for s38417 with a target recovery time of 2.5e-4s}\label{dvb}
+   \end{center}\end{table}
    
    \begin{table}
+      \begin{center}
    \begin{tabularx}{\textwidth}{RRRRRRRR}
    Recovery Time ($\times10^{-4}$s)& Number of Outputs & Number of Inputs & Number of cut loops & Number of latches & Number of LUTs & Critical Path Length\\
    \midrule
@@ -2341,10 +2378,11 @@ DFS & 40 & 54 & 1.96 & 3.53 & 4.16 & 4.51 & 6.11 & 8.04\\
  1.2 & 421 & 606 & 184 & 184 & 976 & 3\\
    	\bottomrule
    \end{tabularx}
-   \caption{BFS per partition values for s38417 with a target recovery time of 2.5e-4s}\label{dvbB}
-   \end{table}
+   \caption{Breadth-first traversal per partition values for s38417 with a target recovery time of 2.5e-4s}\label{dvbB}
+   \end{center}\end{table}
    
    \begin{table}
+      \begin{center}
    \begin{tabularx}{\textwidth}{RRRRRRRR}
    Recovery Time ($\times10^{-4}$s)& Number of Outputs & Number of Inputs & Number of cut loops & Number of latches & Number of LUTs & Critical Path Length\\
    \midrule
@@ -2353,19 +2391,20 @@ DFS & 40 & 54 & 1.96 & 3.53 & 4.16 & 4.51 & 6.11 & 8.04\\
  1.2 & 280 & 381 & 150 & 269 & 976 & 10\\
    	\bottomrule
    \end{tabularx}
-   \caption{DFS per partition values for s38417 with a target recovery time of 2.5e-4s}\label{dvbD}
-   \end{table}
+   \caption{Depth-first traversal per partition values for s38417 with a target recovery time of 2.5e-4s}\label{dvbD}
+   \end{center}\end{table}
    
    The values in Tables \ref{dvb}, \ref{dvbB} and \ref{dvbD} are representative samples from a single run. As the partitions generated depend on the estimated clock period which varies from run to run it makes little sense to average per-partition values across runs, especially when the actual number of partitions may vary. As such, while absolute values may change  the general trends hold across all runs.
    
    Using a breadth-first traversal algorithm tends to lead to broader partitions, with correspondingly more inputs and outputs for each partition but shorter critical path lengths.
    Using a depth-first traversal on the other hand leads to deeper but narrower partitions, with fewer inputs and outputs for each partition, but a longer critical path length.
    As each value which is exported from a partition to be used in another needs to be voted on, this means every feedforward or feedback edge requires another \gls{LUT} in the final design.
-   As the pipeline depth increases the likelihood of having an internal cycle which needs to be cut increases, so we see more feedback edges, shown by the Cut Loops column in Tables \ref{dvbB} and \ref{dvbD} also leading to more voters. In general however, breadth-first will have more total \glspl{LUT} required. As outlined in Table \ref{dvb}, BFS had an extra 1.02ns of logic delay on the critical path from the extra \glspl{LUT}, and required slightly wider routing channels to route the design.
+   As the pipeline depth increases the likelihood of having an internal cycle which needs to be cut increases, so we see more feedback edges, shown by the Cut Loops column in Tables \ref{dvbB} and \ref{dvbD} also leading to more voters. In general however, breadth-first will have more total \glspl{LUT} required. As outlined in Table \ref{dvb}, breadth-first traversal had an extra 1.02ns of logic delay on the critical path from the extra \glspl{LUT}, and required slightly wider routing channels to route the design.
    
    The difference is minor for larger partition sizes, however as the number of partitions increases the effect becomes more pronounced, until with some circuits every almost every single circuit element is voted upon when using a breadth-first traversal, as in Table \ref{dvbbad}.
    Tables \ref{Results1.2e-4DFS} and \ref{Results1.2e-4BFS} in the Appendix list measured slowdowns and area increases for depth- and breadth- first circuits at $1.2\times10^{-4}$.
       \begin{table}
+      \begin{center}
    \begin{tabularx}{\textwidth}{RRRRRRRR}
    Recovery Time ($\times10^{-5}$s)& Number of Outputs & Number of Inputs & Number of cut loops & Number of latches & Number of LUTs & Critical Path Length\\
    \midrule
@@ -2381,8 +2420,8 @@ DFS & 40 & 54 & 1.96 & 3.53 & 4.16 & 4.51 & 6.11 & 8.04\\
  5.97 & 265 & 135 & 0 & 0 & 278 & 1 \\
    	\bottomrule
    \end{tabularx}
-   \caption{DFS per partition values for ex1010 with a target recovery time of 7.5e-5s}\label{dvbbad}
-   \end{table}
+   \caption{Depth-first traversal per partition values for ex1010 with a target recovery time of 7.5e-5s}\label{dvbbad}
+   \end{center}\end{table}
 
    \chapter{Limitations and Future Work}
    Our algorithm implementation is still
@@ -2426,8 +2465,8 @@ DFS & 40 & 54 & 1.96 & 3.53 & 4.16 & 4.51 & 6.11 & 8.04\\
    thesis is capable of providing more effective fault tolerance with overhead
    not too much greater than typical \gls{TMR} solutions as commonly
    implemented today. Additionally, integrating the algorithm into an existing \gls{CAD} tool flow 
-   should be achievable with negligible design time cost, as it requires to modification to existing code and
-   the running time is insignificant to that of other steps such as routing.
+   should be achievable with negligible design time cost, as it requires no to modification to existing code and
+   the running time is insignificant compared to that of other steps such as routing.
 
 
    \appendix 
@@ -2437,6 +2476,7 @@ DFS & 40 & 54 & 1.96 & 3.53 & 4.16 & 4.51 & 6.11 & 8.04\\
 
 
    \begin{table}
+      \begin{center}
       \footnotesize 
       \begin{adjustwidth}
          {-1cm}{-1.2cm}
@@ -2476,11 +2516,12 @@ Mean &  &  & 3.13  &  & 1.22 & \\
 
       \end{adjustwidth}
 
-   \end{table}
+   \end{center}\end{table}
 
 
 
    \begin{table}
+      \begin{center}
       \footnotesize 
       \begin{adjustwidth}
          {-1cm}{-1.2cm}
@@ -2520,9 +2561,10 @@ Mean &  &  & 3.16  &  & 1.29 & \\
          \label{Results2.5e-4} 
       \end{adjustwidth}
 
-   \end{table}
+   \end{center}\end{table}
 
    \begin{table}
+      \begin{center}
       \footnotesize 
       \begin{adjustwidth}
          {-1cm}{-1.2cm}
@@ -2559,9 +2601,10 @@ Mean &  &  & 3.23  &  & 1.41 & \\
             $1.2\times10^{-4}$s} \label{Results1.2e-4DFS} 
       \end{adjustwidth}
 
-   \end{table}
+   \end{center}\end{table}
 
    \begin{table}
+      \begin{center}
       \footnotesize 
       \begin{adjustwidth}
          {-1cm}{-1.2cm}
@@ -2600,10 +2643,11 @@ Mean &  &  & 3.26  &  & 1.46 & \\
             $7.5\times10^{-5}$s} \label{Results7.5e-5} 
       \end{adjustwidth}
 
-   \end{table}
+   \end{center}\end{table}
 
 
    \begin{table}
+      \begin{center}
       \footnotesize 
       \begin{adjustwidth}
          {-1cm}{-1.2cm}
@@ -2642,7 +2686,7 @@ Mean &  &  & 3.46  &  & 1.49 & \\
          \label{Results1.2e-4BFS} 
       \end{adjustwidth}
 
-   \end{table}
+   \end{center}\end{table}
 
 
    \bibliographystyle{plain} \bibliography{../../../../Bibtex/thesis} %We build
@@ -2650,8 +2694,6 @@ Mean &  &  & 3.46  &  & 1.49 & \\
    %away
 
    \fxfatal{TODO: Change I, we, our, my, etc to passive voice}
-   \fxfatal{TODO: Consistency between flip-flop vs latch, when using BLE}
-   \fxfatal{Consistent capitalisation. Section, Chapter, etc always capitalised. Always refer to sections as they're numbered, not subsections}
 
 
 \end{document}
