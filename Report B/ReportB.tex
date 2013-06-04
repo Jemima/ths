@@ -30,12 +30,13 @@
 \renewcommand\algorithmiccomment[1]{%
   \hfill$\triangleright$\ \parbox[t]{.25\linewidth}{#1}%
 }
+\algrenewcommand\Return{\State \algorithmicreturn{} }%
 \usepackage{tikz-timing}
 \usepackage[lofdepth,lotdepth]{subfig}
 \usepackage{multirow}
 \usepackage{tameflts}
 \usepackage[bookmarks,hidelinks]{hyperref}
-\usepackage{glossaries}
+\usepackage[nonumberlist]{glossaries}
 \usepackage[inline,index]{fixme}
 \makeglossaries
 \fxsetup{
@@ -92,7 +93,8 @@
 \newacronym{DAG}{DAG}{Directed Acyclic Graph}
 \newacronym{SEU}{SEU}{Single Event Upset}
 \newacronym{LUT}{LUT}{Lookup Table}
-\newacronym{VTR}{VTR}{Verilog To Routing}
+\newacronym{VTR}{VTR}{Verilog To Routing Project}
+\newacronym{ABC}{ABC}{A System for Sequential Synthesis and Verification}
 \newacronym{STL}{STL}{Standard Template Library}
 \newacronym{FPGA}{FPGA}{Field-Programmable Gate Array}
 \newacronym{TMR}{TMR}{Triple Modular Redundancy}
@@ -119,13 +121,6 @@
    description={Refreshing an \gls{FPGA}'s configuration memory to purge accumulated erorrs },
    first=\textit{scrubbing}
 }
-\newglossaryentry{cut}{name=cut,
-   description={Cut a signal},
-   first=\textit{cut}
-}
-\newglossaryentry{ABC}{name=ABC,
-  description={\url{https://bitbucket.org/alanmi/abc/overview}}
-  }
 
 \begin{document}
 
@@ -213,7 +208,7 @@
    \glspl{CLB} containing all the logic elements or \glspl{primitive}; and the
    routing between all the components.  Most \glspl{FPGA} also contain other
    structures embedded in the \gls{CLB} array to provide commonly used
-   resources such as multipliers. While they can be implemented using latches
+   resources such as multipliers. While they can be implemented using registers
    and \glspl{LUT}, embedding them as discrete components allows for denser
    designs.  The routing between components consists of channels running
    horizontally and vertically with a number of wires and programmable switches
@@ -226,13 +221,15 @@
    area making up some 80\%-90\% of the \gls{FPGA}'s area\cite{FPGAArch}.  Each
    \gls{CLB} is a cluster of smaller blocks, called \glspl{BLE}, with each
    \gls{BLE} containing the logic primitives, typically a programmable
-   \gls{LUT} to implement combinational logic, a latch for register operations
+   \gls{LUT} to implement combinational logic, a register for register operations
    and implementing sequential logic, and a \gls{mux} to switch between the
-   two. The values for the \gls{LUT}, whether the \gls{mux} is selecting the
-   latch or \gls{LUT} output, and other component states are all stored in
+   two.
+   
+   The values for the \gls{LUT}, whether the \gls{mux} is selecting the
+   register or \gls{LUT} output, and other component states are all stored in
    configuration memory like the routing switches and are typically implemented
    in \gls{SRAM}.
-
+   
    Programming an \gls{FPGA} involves loading in a bitstream which describes
    all the component values (i.e. contents of the configuration memory for each
    cell) for a circuit, accomplished through writing the bitstream to a special
@@ -256,6 +253,14 @@
          density than \gls{SRAM} based \glspl{FPGA}\cite{FPGAArch}.
 
    \end{itemize}
+   \subsubsection{Latch vs Flip-Flip}
+   Typically the register can implement either a latch or a flip-flop,
+   as such future references to either latches or flip-flops both refer to a sequential logic element 
+   implemented by a register.
+   Generally the term latch is used for consistency with the language used by
+   the \gls{BLIF} specification, and by \gls{VPR} and \gls{ABC} although when discussing or referring to sources
+   which use the term flip-flop the term flip-flop is also used.
+   
    \subsubsection{Partial Reconfiguration} Partial
    reconfiguration involves loading configuration information for part of a
    circuit during operation. Much like the complete configuration described
@@ -377,7 +382,8 @@
    cost of more than tripling area and greatly increasing power usage.
    Table \ref{HardeningComparison} details power usage, operating speed,
    hardness, and required area for flip flops which have been hardened using
-   the techniques listing within the table.  
+   the techniques listing within the table. As can be seen, \gls{TMR} provides the greatest hardness
+   (measured as the greatest average time between errors) at the cost of the highest overhead in power and area usage.
    \begin{table}
 
 
@@ -436,10 +442,11 @@
    to the same state as the other two. We use the approach presented by
    \cite{DiesselChange} which involves running the circuit until the state
    converges, which is guaranteed (for acyclic circuits) to occur within a
-   timeframe given by the number of register stages and the clock frequency. In
+   timeframe given by the number of register stages (also referred to as critical path length)
+    and the clock period. In
    order for this approach to always resynchronise correctly the circuit must have
    no feedback loops which could carry incorrect data. To solve this we simply
-   ensure that all feedback loops are \gls{cut}, that is, the value is voted on
+   ensure that all feedback loops are \textit{cut}, that is, the value is voted on
    before being passed back into the circuit. This has the additional benefit of
    correcting transient errors which would otherwise be caught in a feedback cycle
    by ensuring the cycle data is correct.
@@ -463,14 +470,14 @@
    Benchmarks of a sample voter indicate 50 clock cycles per hop is a good
    estimate.
 
-   \textit{Reconfiguration time} $= T_R$ is dependent upon the circuit size.
+   Reconfiguration time is dependent upon the circuit size.
    For our target device based on Virtex-5 we round the circuit's area usage up
-   to an allocatable area of 20 \glspl{CLB} (representing one \gls{CLB} column
+   to an allocatable area of 20 \glspl{CLB} (representing one column of \glspl{CLB} 
    in a reconfiguration row). Each \gls{CLB} consists of 8 \glspl{BLE} (each
-   \gls{BLE} having one \gls{LUT} and one latch) giving us a target a
+   \gls{BLE} having one \gls{LUT} and one latch) giving us a target 
    reconfiguration area that consists of 160 \glspl{BLE} and requiring 36
    frames of 41 32-bit words each. The bitstream size for this area is 1476
-   words which takes 14.8$\mu{}s$ to reconfigure at $100MHz$
+   words which takes 14.8$\mu{}s$ to reconfigure at 100MHz
    \cite{XilinxConfigurationUG}.  Once the error has been detected and the
    circuit reconfigured it must then be resynchronised with the other
    partitions, which takes up to $T_{path}$ using the previously described
@@ -479,13 +486,13 @@
    The error recovery time consists of the time to detect the error, send a
    request to the configuration controller, and then reconfigure and
    resynchronise the circuit, thus is a function of the circuit area, clock
-   frequency, and number of register stages. Therefore it is required that the
-   number of register stages and area are small enough, and frequency large
-   enough, that our error recovery time is within a user specified limit.
+   period, and number of register stages. Therefore it is required that the
+   number of register stages and area are small enough,
+   that our error recovery time is within a user specified limit.
 
    \begin{align}
-      \mbox{Error Recovery Time} &=\mbox{Error Detection Time} +
-      \mbox{Reconfiguration Time} + \mbox{Resynchronisation Time}\notag\\
+      \mbox{Error Recovery Time} &=\mbox{Error Detection Time} +\mbox{Communication Time} \notag\\
+      &+\mbox{Reconfiguration Time} + \mbox{Resynchronisation Time}\notag\\
       \mbox{Error Detection Time} &\le T_{path} = \mbox{Clock
          Period}\times\mbox{Register Stages}\notag\\
       \mbox{Communication Time}
@@ -507,7 +514,7 @@
 
 
    Additionally, as each voter circuit adds some constant overhead in terms of
-   area, power usage and clock frequency slowdown it is desirable to have each
+   area, power usage and clock period slowdown it is desirable to have each
    partition as large as possible. This thesis is concerned with implementing
    and assessing this \gls{TMR} design; a discussion of other \gls{TMR} methods
    and our reasons for not using them is included below.
@@ -538,7 +545,7 @@
    \glspl{SEU} with as close to no downtime as achievable.  Additionally, it is
    desirable to limit the overhead of implementing \gls{TMR} through minimising
    the number of voters required.  There are a number of existing \gls{TMR}
-   solutions, however none quite meet our requirements.  Our first requirement is
+   solutions, but none quite meet our requirements.  Our first requirement is
    that standard \gls{FPGA} hardware can be used, with our implementation
    specifically targeting Virtex-5 chips. Options with custom hardware such as
    \cite{VFPGATMR} (with three \glspl{FPGA} and an \gls{ASIC} voter in a single
@@ -546,11 +553,11 @@
    existing boards.  Many \glspl{FPGA} marketed specifically at space-based
    applications are, in addition to featuring specialised hardware, only
    latchup\fxnote{explain?} immune or only include inbuilt \gls{TMR} on registers,
-   leaving them still vulnerable to \glspl{SEU} \cite{FPGAReview}.  Non hardware
+   leaving them still vulnerable to \glspl{SEU} \cite{FPGAReview}.  Non-hardware
    solutions are typically implemented pre-synthesis, such as \cite{ftmr} (which
    introduces a \gls{VHDL} library featuring triplicated components), and require
    existing code to be rewritten, or during synthesis such as \cite{synplify} and
-   \cite{tmrtool} which support neither specifying an error recovery limit, nor
+   \cite{tmrtool}, neither of which supports specifying an error recovery limit, nor
    for adding reconfiguration logic.  Other options look at using partial
    \gls{TMR} (such as \cite{partialTMR}) which, while it does reduce the overhead
    of \gls{TMR}, means the entire circuit is no longer protected, or have
@@ -584,10 +591,10 @@
    subgraph having independent components and an error recovery time within our
    threshold. We can then proceed to implement our graph, made up of our new
    subgraphs, as normal.  To do so we traverse the \gls{DFG} in a depth-first
-   manner, keeping track of the number of register stages, area, and maximum
-   frequency, extending our partition area as we do so, until our recovery time
+   manner, keeping track of the number of register stages and area,
+   extending our partition area as we do so, until our recovery time
    constraint would be violated.  As we extend our partition area we must
-   detect any cycles and cut them, joining them back up after the output has
+   detect any cycles within our current partition and cut them, joining them back up after the output has
    been voted on. We thereby ensure that each partition is acyclic and
    guarantee that the circuit will resynchronise and not get incorrect data
    trapped in a feedback loop.  At that point we cleave off our partition and
@@ -640,8 +647,7 @@
    \glsunset{VPR} 
    \subsection{How \gls{VPR} Works}
    \label{VPRSection} For this thesis we will be assessing the results
-   of our algorithm implementation after processing by \gls{VPR}, an open
-   source packer, placer and router. \gls{VPR} was chosen as the algorithms
+   of our algorithm implementation after processing by \gls{VPR}, an open-source packer, placer and router. \gls{VPR} was chosen as the algorithms
    used are public and well documented, it is open source allowing
    modifications to be made if necessary, and it is well documented and popular
    in research, making it much easier for us to determine what's happening and
@@ -681,7 +687,7 @@
    note, as relates to our results, is that as much as possible AAPack will
    never leave blocks partially packed while there is still a primitive
    which will fit. Even when optimising timing exclusively, it will still
-   attempt to maximally pack each cluster.
+   attempt to maximally pack each cluster even if it negatively impacts circuit performance.
 
    \subsubsection{Placer} \gls{VPR}'s placer uses a simulated annealing
    algorithm where the options allow us to specify annealing schedule
@@ -709,7 +715,7 @@
 
    \chapter{Project Outline}
 
-   \subsection{Project Objectives}
+   \section{Project Objectives}
    \label{secObjectives}
    The objective of this thesis is to create an implementation of the algorithm
    outlined by \cite{DiesselChange} and assess the overheads of this method.  As
@@ -728,57 +734,63 @@
    evaluate the overhead of this algorithm in terms of algorithm running
    time, and how it affects the performance of the final circuit.
 
-   \subsection{Design of Partitioning Algorithm} \label{DesignEstimates}
-    Chapter \ref{algorithm} describes the partitioning algorithm fully, however, in brief our design is to:
+   \section{Design of Partitioning Algorithm} \label{DesignEstimates}
+    Chapter \ref{algorithm} describes the partitioning algorithm fully; in brief our design is to:
     \begin{enumerate}
     	\item Split a larger input circuit into smaller partitions
     	\item Triplicate each partition
-    	\item Join them back together
+    	\item Join them back together.
 \end{enumerate}
     While splitting our design into smaller partitions we need to cut any cycles internal to a partition such that they pass through
     the voter circuit and then the corrected output is fed back into the partition.
     
     The size of each partition is set such that each partition has an error recovery time less than a user specified target.
-    The error recovery time is calculated as per Section \ref{secTMR} with estimates for the number of partitions and final circuit clock period as follows.
+    The error recovery time is calculated as per Section \ref{secTMR} with estimates for the number of partitions and final circuit clock period as follows:
     An initial guess for the final number of partitions is set at 1, and the partitioner is run to completion.
     The guess is then updated to the actual number of generated partitions and the partitioner is rerun. This repeats until the guess is the same or greater than the actual generated number of partitions, or partitions within the target recovery time were unable to be created.
-    In practice, it generally only takes two or three runs to converge to the actual number of partitions for the twenty largest \gls{MCNC} benchmarks however some tested corner cases took up to ten repetitions on increasing estimates before the target recovery time was unable to be met.
-    As all target benchmark circuits completed partitioning relatively quickly and it is impossible for the partitioner to be stuck in an infinite loop of revising its estimate optimising this estimation was not considered necessary, but it is still desirable for a real-world implementation.
+    In practice, it generally only takes two or three runs to converge to the actual number of partitions for the twenty largest \gls{MCNC} benchmarks although some tested corner cases took up to ten repetitions on increasing estimates before the partitioner determined that the target recovery time was unable to be met.
+    As all target benchmark circuits completed partitioning relatively quickly and it is impossible for the partitioner to be stuck in an infinite loop of revising its estimate optimising this estimation was not considered necessary.
     
-    In addition to an estimate for the number of partitions, to calculate the recovery time the partitioner requires an estimate for the final clock period. This is derived as $1.8\times$ the original circuit's clock period, as reported by \gls{VPR} upon processing the original circuit. 1.8 was experimentally chosen, as the majority of circuits were well under a $1.8\times$ slowdown, and the worst case was not much larger.
+    In addition to an estimate for the number of partitions, to calculate the recovery time the partitioner requires an estimate for the final clock period. This is derived as $1.8\times$ the original circuit's clock period, as reported by \gls{VPR} upon processing the original circuit. 1.8 was experimentally chosen, as the all the circuits were under an average $1.8\times$ slowdown, and the average case was well under.
     
-   
-   \subsection{Assessment of
+   \glsunset{CPU}
+   \section{Assessment of
       Partitioning Algorithm} Assessment is based on the fulfillment of
-   the criteria outlined earlier in this section, in Subsection
+   the criteria outlined earlier in this chapter, in Section
    \ref{secObjectives} as they relate to a set of benchmark circuits, the
    twenty largest MCNC circuits from LGSYNTH'93.  Generated circuits were
    verified against and compared with the original circuits to confirm
    that the algorithm operated correctly, as described further in Section
-   \ref{secTesting} Subsection \ref{secTesting}.  The \gls{CPU} time of
+   \ref{secTesting}.  The \gls{CPU} time of
    the algorithm as it runs against the benchmarks was recorded and
    compared with the running time of \gls{VPR} as detailed in Section
-   \ref{secTiming} Subsection \ref{secTiming}.  And lastly, the
+   \ref{timing}. And lastly, the
    performance of the generated circuits was compared to the original
-   untriplicated circuits in Section \ref{secResults}.
-
-   Project Objectives, Design of Partitioning Algorithm, Assessment of
-   Partitioning Algorithm, etc
+   untriplicated circuits in Chapter \ref{results}.
 
 
 
    \chapter{Algorithm}\label{algorithm}
    For our partitioner, we operate on a netlist in
-   \gls{BLIF} format (described in subsection \ref{secBlif}) after optimisation
+   \gls{BLIF} format (described in Section \ref{secBlif}) after optimisation
    and technology mapping, but before packing. Our goal is to take an input
    netlist and transform it into a netlist in the same format, with the same
    set of outputs for each set of inputs, but with redundant components.
 
+   \begin{figure}
 
+      \begin{center}
+
+         \includegraphics[width=\linewidth]{images/CadFlowWPartitioner.pdf}
+         \caption{Custom Tool Flow} \label{algToolflow} 
+      \end{center}
+
+
+   \end{figure}
    Figure \ref{algToolflow} illustrates a typical \gls{CAD} toolchain with our
    custom partitioner added and the substeps expanded (c.f. Figure
    \ref{CADFlow} for an example without). The steps below are explained in more
-   detail in Subsection \ref{secAlgorithm} of this Section.  
+   detail in Section \ref{secAlgorithm}.
    \begin{itemize}
 
       \item Partition - Take an input circuit and split it into multiple
@@ -793,28 +805,13 @@
          the generated circuit is equivalent to the original.  
    \end{itemize}
 
-
-
-   \begin{figure}
-
-      \begin{center}
-
-         \includegraphics[width=\linewidth]{images/CadFlowWPartitioner.pdf}
-         \caption{Custom Tool Flow} \label{algToolflow} 
-      \end{center}
-
-
-   \end{figure}
-
-
-
-
+\FloatBarrier
    \section{Data Structures}
    \label{secDatastructures} 
    \subsection{Basic Types}
 
-   The following are the basic types, out of which others are built, and which
-   will be referred to. There is generally, but not always, a direct
+   Table \ref{basicTypes} lists the basic types, out of which others are built.
+   There is generally, but not always, a direct
    relationship to a C++ primitive.  
    \begin{table}
 
@@ -822,52 +819,52 @@
       \begin{tabularx}
          {\linewidth}{XXX} \toprule Name & Closest C++ Equivalent
          & Description\\
-         \midrule Integer &  int & Whole number \\
-         Boolean &
+         \midrule \textbf{Integer} &  int & Whole number \\
+         \textbf{Boolean} &
          bool & True or False \\
-         Float & float & Floating point number \\
-         Queue
+         \textbf{Float} & float & Floating point number \\
+         \textbf{Queue}
          & std::list & FIFO queue \\
-         List(type) &
+         \textbf{List(type)} &
          std::list$\langle$type$\rangle$ & \\
-         String & std::string & String
+         \textbf{String} & std::string & String
          object that provides operations to manipulate itself \\
-         File &
+         \textbf{File} &
          std::iostream & Abstract type to represent simple I/O operations \\
 
-         Map(KeyType $\to$ ValueType, DEFAULT:  DefaultValue) &
+         \textbf{Map(KeyType $\to$ ValueType, DEFAULT:  DefaultValue)} &
          std::unordered\_map$\langle$KeyType, ValueType$\rangle$ &  A map to
          translate values of type KeyType to values of type ValueType. If the
          key isn't present, returns DefaultValue \\
          \bottomrule 
       \end{tabularx}
 
-      \caption{Basic Data Types} 
+      \caption{Basic Data Types} \label{basicTypes}
    \end{table}
-   The following are custom complex
-   types, which are further defined below. This is merely a quick description
-   of each.  
+   Table \ref{complexTypes} contains an overview of the custom complex
+   types, which are further explained below.
    \begin{table}
 
       \begin{tabularx}
          {\linewidth}{lX} \toprule Name &
          Description\\
-         \midrule Blif & Parent object, contains all information
+         \midrule
+         \textbf{Blif} & Parent object, contains all information
          about a \gls{BLIF} file and provides useful operations \\
-         Model &
+         \textbf{Model} &
          Represents a circuit within a \gls{BLIF} file, and provides methods to
          manipulate said circuit \\
-         BlifNode & A circuit element, or node in
+         \textbf{BlifNode} & A circuit element, or node in
          the \gls{DFG} representing the circuit \\
-         Signal & A signal within a
+         \textbf{Signa}l & A signal within a
          specific circuit, or Model, representing a set of edges with common
          source \\
          \bottomrule 
       \end{tabularx}
-      \caption{Complex Data Types}
+      \caption{Complex Data Types}\label{complexTypes}
 
    \end{table}
-
+\fxnote{Bold types in text?}
 
 
 
@@ -994,33 +991,44 @@
 
    Thus, an example which recursively traverses from a node to its children
    would be: 
+\renewcommand\algorithmiccomment[1]{%
+  \hfill$\triangleright$\ \parbox[t]{.40\linewidth}{#1}%
+}
    \begin{algorithm}
       \caption{Example Traversal}\label{algExTrav}
 
       \begin{algorithmic}[1]
       \Procedure{ExampleTraversal}{$startNode$,
             $partition$} 
-         \State $outputName \gets startNode->output$
-         \Comment{Get the name of our output signal} 
-         \State $outputSignal \gets
-         partition.signals[outputName]$ \Comment{From a Signal name, get the
-            Signal object} \ForAll{$childNode \in outputSignal.sinks$}
-         \Comment{Retrieve the sinks of a signal, which are also the immediate
-            childen of our start node} 
-         \State Reached Child, recursively
-         repeating from child.  
+            \State $\triangleright$ Get the name of our output signal
+         \State $outputName \gets startNode.output$
+         \State
+            \State $\triangleright$ From a Signal name, get the
+            Signal object
+         \State $outputSignal \gets         partition.signals[outputName]$
+         \State
+            \State $\triangleright$ Retrieve the sinks of a signal, which are also the immediate
+            childen of our start node
+            \ForAll{$childNode \in outputSignal.sinks$}
+         \State Print(``Reached childNode from startNode'')
+         \State
+            \State $\triangleright$ Recursively visit the child
          \State ExampleTraversal$(childNode, partition)$
-         \Comment{Recursively visit the child} \EndFor \EndProcedure
+          \EndFor
+           \EndProcedure
 
       \end{algorithmic}
 
    \end{algorithm}
 
 
-   Represents the circuit as a DFG. Contains a list of nodes, map of signal
-   name $\to$ Signal, and lists of primary inputs and outputs for the circuit.
-   Each node contains the names of its input and output signals, allowing the
-   Signal to be looked up, then the Signal contains pointers to its source and
+\renewcommand\algorithmiccomment[1]{%
+  \hfill$\triangleright$\ \parbox[t]{.25\linewidth}{#1}%
+}
+   Given a Model which represents the circuit as a DFG and contains a list of nodes, map of signal
+   name $\to$ Signal, and lists of primary inputs and outputs for the circuit,
+   each node contains the names of its input and output signals, allowing the
+   Signal to be looked up, and the Signal contains pointers to its source and
    sink nodes.  This allows the DFG to be traversed by going from node, to
    signal, to node, etc.  A BlifNode represents the information in a circuit
    element declaration within a \gls{BLIF} file, which includes only the name
@@ -1088,7 +1096,7 @@
    In line 3 we partition the input circuit into a number of sub circuits, each in a separate file, as
    further expanded in Algorithm \ref{partition}, passing it our target recovery time, and an estimate of the final circuit's clock period.
    Then in lines 4-5 for each
-   partition file, we read it in as a black box, triplicate it, insert voting
+   partition file we read it in as a black box, triplicate it, insert voting
    logic, and write it back out.  Next in line 7 we extract the original
    header, which provides the name, inputs and outputs of the original circuit.
    We then, in line 8, join all the partitions together with the original name,
@@ -1215,31 +1223,32 @@
 	         \State $files \gets files\cup file$
 	         \EndIf
 	\Until{$numPartitions \le targetPartitions$}
-         \State return $files$ \EndProcedure 
+         \Return $files$ \EndProcedure 
       \end{algorithmic}
 
 
    \end{algorithm}
    \FloatBarrier
    Line 2 reads a \gls{BLIF} into memory, representing it as a \gls{DFG}.
-   Lines 12-15 ensure that we visit each node only once, and thus that each node is
+   Lines 14-18 ensure that we visit each node only once, and thus that each node is
    in exactly one partition, by checking if a node has been visited before and
    if so, skipping it, otherwise marking it as visited and continuing.  Lines
-   16/24 insert the current node into the open partition, cutting any created
-   cycles and updating values such as critical path length as outlined in
-   Algorithm \ref{addnode}.  Line 17 tests if the current partition recovery
+   20/28 insert the current node into the open partition, cutting any created
+   cycles and updating values such as critical path length (also known as the number of register stages)
+   as outlined in
+   Algorithm \ref{addnode}.  Line 21 tests if the current partition recovery
    time is greater than our specified limit, with the algorithm used to
    calculate the recovery time given in Algorithm \ref{recoverytime}.  If the
-   partition's recovery time exceeds our target we execute lines 18-24, where
+   partition's recovery time exceeds our target we execute lines 22-28, where
    we remove the just added node to bring our recovery time back under the
-   limit, and then write the partition to a file.  Line 18 calculates which
+   limit, and then write the partition to a file.  Line 23 calculates which
    signals are primary inputs or outputs for the partition, and promotes them
    accordingly, with more detail given in Algorithm \ref{makeiolist}.  Writing
    the partition to a file simply involves outputting the name, inputs,
    outputs, and a list of every node in the partition in \gls{BLIF} format.
-   RemoveNode, on line 19, merely removes the node from the partition's list of
+   RemoveNode, on line 22, merely removes the node from the partition's list of
    nodes rather than fully reversing everything AddNode does. WriteToFile
-   simply serialises the inputs, outputs and node list.  Lines 31-34 write out
+   simply serialises the inputs, outputs and node list.  Lines 35-39 write out
    the final partially full partition, if there is one. Again, WriteToFile
    simply outputs the circuit name, list of inputs, outputs and clocks, and
    list of nodes, with no further processing required.
@@ -1250,7 +1259,7 @@
 
    \newpage 
    \subsection{MakeIOList}
-   Given an original partition and a
+   Given the original circuit and a
    subpartition, promote any signals which are sourced or sunk outside of the
    subpartition to a primary input or output of the subpartition.
 
@@ -1315,7 +1324,7 @@
    \end{figure}
    We
    iterate through every signal in our partition. For each one we check if we
-   have a source (line 4), if not it must be a primary input. Similarly, on
+   have a source (line 3), if not it must be a primary input. Similarly, on
    line 7 we check if we have a sink which is not represented within our
    partition. If so, promote it to a primary output of the partition.
 
@@ -1336,7 +1345,10 @@
          \begin{tabularx}
             {\linewidth}{llX} \toprule Variable & Type &
             Description\\
-            \midrule $latency$ &\textbf{Float } &  Circuit
+            \midrule
+            $partition$ & \textbf{Model} & The partition to calculate the recovery time for\\
+            $numPartitions$ &\textbf{Integer } &  Estimated final number of partitions \\
+            $clockPeriod$ & \textbf{Float} & Estimated clock period of final circuit\\$latency$ &\textbf{Float } &  Circuit
             latency (i.e. time for input to completely propagate to output) in
             seconds\\
             $clockPeriod$ &\textbf{Integer } & Estimated period of
@@ -1358,7 +1370,6 @@
             $communicationTime$
             &\textbf{Float } &  Time, in seconds, that it takes to transmit
             reconfiguration request to controller\\
-            $numPartitions$ &\textbf{Integer } &  Estimated final number of partitions \\
             \bottomrule
 
          \end{tabularx}
@@ -1367,7 +1378,7 @@
       \caption{RecoveryTime}\label{recoverytime}
 
       \begin{algorithmic}[1]
-         \Procedure{RecoveryTime}{$partition$} 
+         \Procedure{RecoveryTime}{$partition, numPartitions, clockPeriod$} 
          \State
          $latency \gets clockPeriod\times{}(criticalpath+1)$ 
          \State
@@ -1382,7 +1393,7 @@
          \gets
          detectionTime+resynchronisationTime+reconfigurationTime+communicationTime$
 
-         \State return $recoveryTime$ \EndProcedure 
+         \Return $recoveryTime$ \EndProcedure 
       \end{algorithmic}
 
 
@@ -1391,9 +1402,7 @@
    fully discussed in Section \ref{secTMR}. The criticalpath is a measure of
    the maximum number of latches on a path from input to output. The +1 is to
    account for the contribution of combinational logic, which may be up to one
-   additional clock cycle of latency.  Not shown is the calculation of
-   $clockPeriod$ and $numPartitions$.
-
+   additional clock cycle of latency. $numPartitions$ and $clockPeriod$ as passed to this function are calculated as per Section \ref{DesignEstimates}.
 
 
    \newpage 
@@ -1476,13 +1485,12 @@
 
    \end{algorithm}
 
-   Lines 3-11 update the appropriate signals, adding the node as a source or
-   sink the node's inputs and outputs so that this node is reachable within the
-   \gls{DFG}.
+   Lines 3-13 update the appropriate signals, adding the node as a source or
+   sink to the relevant signals if they exist within the partition, or creating them implicitly if they don't already exist.
    Line 4 checks if the input signal referred to has been renamed by CutSignal in Algorithm \ref{cutsignal}.
-   If it has, retrieve the new name for the signal and rename it appropriately.
+   If it has, retrieve the new name for the signal and rename the input signal accordingly.
    CutSignal only renames inputs, not outputs, thus this check only needs to be performed for circuit inputs.
-   Lines 12-19 then update the maximum path length (or latency in
+   Lines 14-22 then update the maximum path length (or latency in
    clock cycles) while detecting and cutting any newly created cycles.
 
 
@@ -1492,8 +1500,20 @@
    network to update maximum path lengths to account for our new node and
    additional paths. While traversing the network, detect and break any cycles
    we encounter.  This turns a possibly cyclic \gls{DFG} with partially
-   computed path lengths, into an acyclic \gls{DFG} with fully computed path
+   computed path lengths, into an acyclic \gls{DFG}---or \gls{DAG}---with fully computed path
    lengths.
+
+
+   \begin{figure}
+
+      \begin{center}
+
+         \includegraphics[width=\linewidth]{images/UpdateCostsAndBreakCycles.pdf}
+         \caption{AddNode} \label{imAddnode} 
+      \end{center}
+
+   \end{figure}
+
 
 
    \begin{algorithm}
@@ -1542,19 +1562,16 @@
       \begin{algorithmic}[1]
          \Procedure{UpdateCostsAndBreakCycles}{$partition,
             root, parent, node, costToReach, explored$} \If{$explored[node] =
-            true $ and $costs[node] \ge costToReach$} \Comment{Already expanded
-            this path, and we haven't found a more expensive route to it. No
-            point continuing down it} 
-         \State return \EndIf \If{$parent \neq
-            NULL $ and $ node = root$} \Comment{We have a cycle, as all newly
-            created cycles must go through the new node, and the new node
-            should only ever be reached once at the start without cycles}
+            true $ and $costs[node] \ge costToReach$} \Comment{No need to contnue down this path} 
+        \Return \EndIf \If{$parent \neq
+            NULL $ and $ node = root$} \Comment{We have a cycle}
 
          \State $signal \gets partition.signals[parent.output]$ \Comment{The
             signal edge we came in on} 
          \State CutSignal$(partition, signal)$
 
-         \State return \EndIf 
+        \Return
+        \EndIf 
          \State $cost \gets costToReach+node.cost$
          \If{$cost > costs[node]$} 
          \State $costs[node] = cost$ \Else 
@@ -1588,7 +1605,7 @@
    \ref{imAddnode} where every node is a latch with cost to reach indicated.
    Our new node (filled in) is added to an existing \gls{DAG}. Our new node
    should now be the root of a subtree which includes all nodes reachable
-   from our new node i.e. all nodes except those crosshatched and
+   from our new node i.e. all nodes except those crosshatched which are
    unreachable from our new node.  We now traverse our \gls{DFG}
    recursively, updating the maximum cost to reach each node as we travel.
    Eventually, in our example we reach our newly added node again indicating
@@ -1596,36 +1613,35 @@
    \ref{cutsignal}, recurse back a step,
    and continue until the entire \gls{DFG} has been traversed, at which
    point all cycles have been cut, and all nodes have the maximum path
-   length to them updated.  Using this information we develop our traversal
+   length to them updated.
+   
+   Using this information we develop our traversal
    algorithm.  Line 2 demonstrates an optimisation, in that once a path has
    been checked we need not recheck it unless we have found a more expensive
-   path to it as otherwise nothing will change.  Lines 5-8 check if we have
+   path to it as otherwise nothing will change.  Lines 5-9 check if we have
    detected a cycle. If so, cut it through cutting the signal, which splits
-   the signal into two. A primary output with the same source, and a primary
+   the signal into two: A primary output with the same source, and a primary
    input with the same sinks, as detailed further in Algorithm
    \ref{cutsignal}.
 
+   \newpage 
+   \subsection{CutSignal}
+   \label{cutsignal}
+   Given a signal, cut it by
+   splitting it into two signals, of which one is a newly named primary input
+   with the same sinks as the cut signal had, and the other of which is a
+   primary output with the same source and name as the original signal.
+   Figure \ref{imCutSignal} demonstrates this transformation in action.
 
    \begin{figure}
 
       \begin{center}
 
-         \includegraphics[width=\linewidth]{images/UpdateCostsAndBreakCycles.pdf}
-         \caption{AddNode} \label{imAddnode} 
+         \includegraphics[width=\linewidth]{images/CutSignal.pdf}
+         \caption{CutSignal} \label{imCutSignal} 
       \end{center}
 
    \end{figure}
-
-
-   \newpage 
-   \subsection{CutSignal}
-   \label{cutsignal}
-   Given a signal, cut it, by
-   splitting it into two signals, of which one is a newly named primary input
-   with the same sinks as the cit signal had, and the other of which is a
-   primary output having as source of the cut signal's and using the cut
-   signal's name. Update the partition's signal list appropriately.
-
    \begin{algorithm}
 
       \begin{center}
@@ -1669,15 +1685,6 @@
       Lines 6-9 create a new primary output. It has no sinks and the source of the original signal. This signal retains the same name as the original signal.
       Lines 10-14 update all references to the old signal to refer to the appropriate new signal.
 
-   \begin{figure}
-
-      \begin{center}
-
-         \includegraphics[width=\linewidth]{images/CutSignal.pdf}
-         \caption{CutSignal} \label{imCutSignal} 
-      \end{center}
-
-   \end{figure}
 
 \newpage
 
@@ -1685,6 +1692,7 @@
    \label{algTriplicate} Given a file containing a
    partition, read it in as a black box, triplicate it, add voter logic and
    write it back out to file.
+   \fxfatal{fix this}
 
    This method operates on the \gls{BLIF} in a low level way, dealing with
    manipulating the actual file contents, rather than operating on an abstract
@@ -1707,35 +1715,9 @@
 
    \end{figure}
 
-   This transforms a file from format: 
-   \begin{lstlisting}
-      .name partition
-      .inputs ... 
-      ... 
-   \end{lstlisting}
-   Into one in format:
-
-   \begin{lstlisting}
-      .name TMRPartition
-      .inputs ... 
-      .subckt partition
-      .subckt partition
-      .subckt partition
-      .subckt voter
-      .end
-
-      .name voter
-       ... 
-      .end
-       
-      .name partition
-       ... 
-      .end 
-   \end{lstlisting}
-
-
    \newpage 
    \subsection{Join}
+   \fxfatal{fix this}
    \label{algJoin} Given a list of blif files,
    concatenates them all together, creates subcircuit definitions to connect
    them all together, and writes them to a file 
@@ -1749,37 +1731,6 @@
 
    \end{figure}
 
-
-   This transforms a set of files in format: 
-   \begin{lstlisting}
-      .name partitionN
-      .inputs ...
-      ...
-   \end{lstlisting}
-
-   as output by triplicate
-   into one file with format: 
-   \begin{lstlisting}
-      .name TMR
-      .inputs ... 
-      .subckt partition1 
-      .subckt partition2 
-      ...  
-      .end
-
-      .name partitionN
-      .inputs ...
-      ...
-      .end
-      
-      .name partition2 
-      .inputs ...
-      ...  
-      .end 
-      
-      ...
-
-   \end{lstlisting}
    \newpage 
    \subsection{Flatten}
    \label{algFlatten} Given a
@@ -1796,6 +1747,7 @@
             Description\\
             \midrule $file$ &\textbf{File } &  File to
             flatten\\
+            $clockInfo$ & \textbf{List(String)} & List of latch parameters, including clock name, etc\\
             \bottomrule 
          \end{tabularx}
 
@@ -1804,30 +1756,23 @@
       \caption{Flatten}\label{Flatten} 
       \begin{algorithmic}
          [1]
-         \Procedure{Flatten}{$file$} \Comment{Flattening is currently performed
-            by \gls{ABC}, called with parameters:} 
-         \State ./abc -o output -c
-         echo file \Comment{Due to bug in \gls{ABC}, clock information is
-            stripped from latches, so we then call grep and sed to fix the
-            output file} 
-         \State $latch \gets $split(grep -m 1 '\.latch' file)
-         \If{$latch$} 
-         \State sed -ri
-         's/(\textbackslash.latch.+)(2)/\textbackslash1 '+latch[3] + ' ' +
-         latch[4] + ' 2/' output \EndIf \EndProcedure 
+         \Procedure{Flatten}{$file$}
+         \State \texttt{./abc -o output -c echo file}
+         \State $clockInfo \gets $split(\texttt{grep -m 1 `.latch' file})
+         \If{$clockInfo$} 
+         \State $\texttt{sed -ri `s/(\textbackslash.latch.+)(2)/\textbackslash1 '} + clockInfo[3] + \texttt{` '} +
+         clockInfo[4] + \texttt{` 2/' output} $\EndIf \EndProcedure 
       \end{algorithmic}
 
 
    \end{algorithm}
 
-
-   \gls{ABC} is provided an input file, given the command to echo the current
-   file, and told to output everything to output.  grep is called to search for
-   latches, and return the latch information if there is one. If there is,
-   replace the faulty latch information with the correct information.  This
-   assumes that there is only one global clock, all latches are triggered on
-   the same signal (e.g. rising edge, falling etc), and all latches have
-   initial state don't care, which holds true for all provided benchmarks.
+   By default \gls{ABC} flattens input files but performs no other optimisations, therefore we can call
+   \texttt{./abc -o output -c echo input} to read in \texttt{input}, flatten it, and write it to \texttt{output}.
+   Unfortunately, there exists a bug in \gls{ABC} where clock information is stripped from latches.
+   To circumvent this we require that all latches have the same clock information (clock name, trigger, initial state),
+   which holds for all of the twenty largest \gls{MCNC} benchmarks,
+   and then use grep and sed to extract the clock information from the original circuit and edit it back into the flattened circuit.
 
 
    \subsection{Test}
@@ -1838,8 +1783,8 @@
    then OR'd to produce the single output. For any given input, the miter
    circuit output is 0 if both circuits produce the same set of outputs for the
    input set, and 1 if the outputs differ, which turns verification into a
-   \gls{SAT}.  The circuits are then simplified by merging equivalent nodes and
-   removing redundant logic while being regularly tested for various inputs.
+   \gls{SAT}.  The circuits are then simplified by merging equivalent nodes,
+   removing redundant logic and testing inputs.
    This proceeds until a counter example is found, or the circuit is shown to
    have constant output 0 for all possible inputs \ref{abcSEC, abcCEC}.  While
    solving a \gls{SAT} is NP-complete, in practice the large amount of
@@ -1853,7 +1798,7 @@
    Additionally, for each node added to a partition, in the worst case every
    other node already in the partition must be visited to detect cycles and
    update costs, making AddNode worst case linear in the number of nodes in the
-   partition.  Constructing the list of inputs and outputs is takes time
+   partition.  Constructing the list of inputs and outputs takes time
    proportional to the number of signals in the partition. In practice, the
    number of signals will be approximately equal to the number of nodes (each
    node drives one signal, plus the number of inputs to the circuit).  This
@@ -1873,7 +1818,7 @@
    benchmark circuits, as outlined in Section \ref{timing}.
 
 
-   \section{Correctness}
+   \section{Correctness}\label{secTesting}
    A threefold approach to verifying the correctness of
    the implementation was taken.  Firstly, small sample circuits were
    partitioned and the resulting circuits were examined manually to verify
@@ -1900,7 +1845,7 @@
    From initial steps in this thesis we wrote Python scripts capable of
    performing basic operations on \gls{BLIF} files which were used as the basis
    for Triplicating and Joining. Given time the functionality of each step
-   (partition, triplicate, etc) could all be combined in one program, however
+   (partition, triplicate, etc) could all be combined in one program; however
    it was considered a much lower priority than creating a working reference
    implementation.
 
@@ -1911,10 +1856,11 @@
    register stages but reducing the number of inputs and outputs for each
    partition, whereas a breadth-first traversal lends itself to fewer register
    stages for the same number of nodes but more inputs and outputs (and hence
-   voters) for each partition. A possible future improvement is implementing a
-   more advanced traversal algorithm, for example A* with an appropriate
-   heuristic could allow for more elements per partition. Benchmark results
+   voters) for each partition. Benchmark results
    comparing the two options can be found in Section \ref{bfs}.
+    A possible future improvement is implementing a
+   more advanced traversal algorithm, for example A* with an appropriate
+   heuristic could allow for more elements per partition.
 
    Additionally, we are faced with a choice as to when in the \gls{CAD} process
    to partition. The closer to the end of the process the more control we have,
@@ -1949,7 +1895,9 @@
    network of logic functions\cite{BLIF}.  Our partitioner only supports a
    subset of the \gls{BLIF} specification, specifically only those elements
    supported by \gls{VPR} and used in our benchmark files.
-
+   A sample \gls{BLIF} file is included in Listing \ref{SampleBlif} and 
+   Table \ref{BLIFCommands} lists the supported commands and their meanings.
+\begin{table}
    \begin{lstlisting}[caption=BLIF file layout, label=SampleBlif]
    .model voter
       .inputs in1 in2 in3
@@ -1965,38 +1913,39 @@
       ...  
       .end
    \end{lstlisting}
+\end{table}
 
 
-
-
+\begin{table}
    \begin{tabular}
       {lll} Model name: & .model $\langle$Name$\rangle$ & The name
       of the model.\\
-      Input List: & .inputs \{Signal\} & The model inputs.\\
+      Input List: & .inputs \{SignalName\} & The model inputs.\\
 
-      Output List:& .outputs \{Signal\} & The model outputs.\\
+      Output List:& .outputs \{SignalName\} & The model outputs.\\
       Clock List: &
-      .clock \{Signal\} & The model clocks.\\
-      \multicolumn{3}{c}{Commands}\\
+      .clock \{SignalName\} & The model clocks.\\
 
       \multicolumn{2}{l}{\gls{LUT}:} & .names \{InputSignals\}
       $\langle$OutputSignal$\rangle$\\
       &&\{Line\}\\
       \multicolumn{2}{l}{Latch:}
       & .latch $\langle$InputSignal$\rangle$ $\langle$OutputSignal$\rangle$
-      [Field ClockSignal] [Field]\\
+      [Trigger ClockSignal] [InitialState]\\
       \multicolumn{2}{l}{Optional End Marker:} &
       .end 
    \end{tabular}
+   \caption{\gls{BLIF} commands}\label{BLIFCommands}
+\end{table}
 
 
    \{Name\} indicates 1 or more of Name. $\langle$Name$\rangle$ indicates a
    compulsory field. [Name] indicates an optional field.  A combinational logic
    element (.name) is followed by one or more lines describing the logic
    function it implements. However, our partitioner only cares about node type
-   and the signals (named with Signal above) as it builds and traverses the
+   and the signal names (named with SignalName above) as it builds and traverses the
    \gls{DFG}. All other element information is stored and written back out when
-   the node is written. Likewise for \textit{Field}s.
+   the node is written.
 
    \gls{VPR} only supports flat \gls{BLIF} files, so only one module
    declaration is allowed per \gls{BLIF} file. \gls{ABC} can be used to flatten
@@ -2005,7 +1954,7 @@
 
 
 
-   \chapter{Results}
+   \chapter{Results}\label{results}
 
    \section{Benchmarking Procedure}
    These results were
@@ -2013,13 +1962,13 @@
    written in Python by the author. For each benchmark circuit, and each target
    recovery time, a minimum of 15 repetitions were performed to average out the variability
    in results due to the stochastic nature of \gls{VPR}'s placement algorithm.
-   The original circuit is run through VPR to collect base results, then the
-   circuit is run through our partitioner to TMR it. The TMR'd version is then
+   The original circuit was run through \gls{VPR} to collect base results, then the
+   circuit run through our partitioner to \gls{TMR} it. The \gls{TMR}'d version was then
    verified by \gls{ABC} to check its functional equivalence to the original,
-   and then run through VPR to collect TMR'd results. Each run of VPR used a
+   and then run through \gls{VPR} to collect \gls{TMR}'d results. Each run of \gls{VPR} used a
    randomly generated seed for the placer.  The mean of the reported values
-   across the 15 repetitions is reported.  The benchmarks used were the 20
-   largest \gls{MCNC} LGSynth93 circuits technology mapped to flip-flops and 4-input \glspl{LUT}, as provided by the open source
+   across all successful runs was recorded.  The benchmarks used were the 20
+   largest \gls{MCNC} LGSynth93 circuits technology mapped to flip-flops and 4-input \glspl{LUT}, as provided by the open-source
    \gls{VTR} project\footnote{v1.0: \url{http://code.google.com/p/vtr-verilog-to-routing/}} and described in table
    \ref{benchmarkList}.
    As the number of \glspl{LUT} is larger than the number of latches for all twenty \gls{MCNC} circuits we used, the number of \glspl{BLE} is equal to the number of \glspl{LUT}.
@@ -2027,6 +1976,8 @@
    2.5\times10^{-4}$, $1.2\times10^{-4}$ and $7.5\times10^{-5}$s.  The voter used is a simple
    3-input \gls{LUT}, which uses one \gls{BLE} per output signal from each
    partition.
+   Table \ref{Results1E-3} in the Appendix, where each circuit had only one partition, contains equivalent values for area overhead and clock slowdown as if a 
+   more traditional \gls{TMR} approach were used, which simply triplicated the entire circuit allowing our approach the be compared.
 
    \begin{table}
 
@@ -2100,7 +2051,7 @@ tseng & 52 & 122 & 385 & 1046\\
 
    \section{Sanity Check}
    \label{resSanity} The following results are for the
-   tseng.blif circuit at a target recovery time of $7.5^{-5}$s. The reported
+   tseng.blif circuit at a target recovery time of $7.5\times10^{-5}$s. The reported
    values can be compared to each other as a manual sanity check allowing for
    additional confirmation of the correct operation of the partitioner.
 
@@ -2211,10 +2162,7 @@ tseng & 52 & 122 & 385 & 1046\\
    See Table \ref{partitionSuccesses} for examples.
    
       \begin{table}
-      \footnotesize 
-      \begin{adjustwidth}
-         {-1cm}{-1.2cm}
-
+	\begin{center}
          \begin{tabular}{lr}
             \toprule
  Circuit &  Number of Successful Runs\\
@@ -2242,16 +2190,15 @@ tseng  & 25\\
             \bottomrule 
 
          \end{tabular}
-         \caption{Target Recovery Time $7.5\times10^{-5}$s} \label{partitionSuccesses} 
-      \end{adjustwidth}
-
+         \caption{Target Recovery Time $7.5\times10^{-5}$s} \label{partitionSuccesses}
+\end{center}
    \end{table}
-
+\fxerror{Centre all tables}
    \begin{table}
 
       \begin{tabular}
          {lrrrr} \toprule Name & NumPartitions &
-         Frequency Base (ns) & Frequency TMR (ns) & Slowdown Factor\\
+         Clock Period Original (ns) & Clock Period TMR (ns) & Slowdown Factor\\
          \midrule
          s38584.1.blif &	1 & 3.22 & 4.61 & 1.43\\
          s38584.1.blif &	1 & 2.06 &
@@ -2271,7 +2218,8 @@ tseng  & 25\\
    number of \glspl{BLE} used is equal to three times the original, plus the
    total voter area. The larger the number of partitions, the greater the area
    usage due to the additional voters required.
-
+   Area increase depends on the circuit and number of partitions, but typical overheads for our approach are around a $3.1\times$--$3.5\times$ with a mean across our benchmark circuits of $3.13\times$ increase while
+   running \gls{TMR} on the circuit as a whole had a typical overhead of around $3\times$--$3.3\times$ with a worst case mean (out of measured result sets) of $3.26\times$.
 
    \section{Operating Frequency}
       \begin{figure}
@@ -2286,9 +2234,11 @@ tseng  & 25\\
    \end{figure}
    In general, the more partitions the slower the
    resulting circuit, as per Figure \ref{slowdownFig} where each line represents a different circuit. This result is unsurprising, as increasing the number of
-   voters increases the number of signals to be routed pushing average wire
-   length upwards. Mean slowdown is around $1.2\times$--$1.5\times$ depending on target recovery time, though
-   it varies considerably from circuit to circuit.  For our recovery time
+   voters increases the number of signals to be routed increasing congestion.
+   Mean slowdown is around $1.2\times$--$1.65\times$ depending on target recovery time, though
+   it varies considerably from circuit to circuit.
+   This compares favourably with \gls{TMR}'ing the entire circuit as a whole, which saw typical slowdowns between $1.1\times$--$1.4\times$
+     For our recovery time
    calculations, as they required an estimate of the final circuit clock period
    we used an estimate of $1.8\times$ the original circuit's clock period. As
    we can see from the results, in the general case this factor is quite
@@ -2323,11 +2273,9 @@ tseng  & 25\\
 
    \section{Recovery Time}
     For the benchmark circuits typical recovery times ranged from $1.2\times10^{-4}$s to $10^{-3}$s. Anything larger is redundant, as the entire circuit fits within one partition, and anything smaller has the circuits unable to be partitioned. The number of partitions and the size of each partition are the two main contributing factors to the recovery time of a partition, therefore the smaller the circuit, the smaller a recovery time its partitions are able to achieve. As the circuit size increases (as measured by the number of \glspl{BLE}) either the size of each partition, or the total number of partitions must increase, driving up the recovery time.
-    Table \ref{minrec} details the experimentally determined minimum achievable recovery time for each of the twenty largest \gls{MCNC} benchmark circuits. The estimated final clock period was taken as the mean original clock period for that circuit $\times 1.8$. This value was passed to the partitioner with progressively smaller target recovery times until the partitioner was unable to partition meeting the target recovery time.
-    Figure \ref{minrecFig} shows the same information as a graph, making the correlation between circuit size and minimum recovery time more visible.
-    
-    This process was conducted for both depth- and breadth- first traversals
-    The theoretical minimum recovery time is $1.48\times10^{-5}+ClockPeriod\times(500+RegisterStages) \approx 1.5\times10^{-5}$s.
+    Table \ref{minrec} details the experimentally determined minimum achievable recovery time for each of the twenty largest \gls{MCNC} benchmark circuits. The estimated final clock period was taken as the mean original clock period for that circuit $\times 1.8$. This value was passed to the partitioner with progressively smaller target recovery times until the partitioner was unable to partition whilst meeting the target recovery time.
+    Figure \ref{minrecFig} shows the same information as a scatter plot, making the correlation between circuit size and minimum recovery time more visible.
+    \fxfatal{DFS/BFS change to traversal}
     
    \begin{table}
    \begin{center}
@@ -2408,7 +2356,7 @@ DFS & 40 & 54 & 1.96 & 3.53 & 4.16 & 4.51 & 6.11 & 8.04\\
    \caption{DFS per partition values for s38417 with a target recovery time of 2.5e-4s}\label{dvbD}
    \end{table}
    
-   The values in Tables \ref{dvb}, \ref{dvbB} and \ref{dvbD} are representative samples from a single run. As the partitions generated depend on the estimated clock period which varies from run to run it makes little sense to average per-partition values across runs. Especially when the actual number of partitions may vary. As such, absolute values may change, however the general trends hold across all runs.
+   The values in Tables \ref{dvb}, \ref{dvbB} and \ref{dvbD} are representative samples from a single run. As the partitions generated depend on the estimated clock period which varies from run to run it makes little sense to average per-partition values across runs, especially when the actual number of partitions may vary. As such, while absolute values may change  the general trends hold across all runs.
    
    Using a breadth-first traversal algorithm tends to lead to broader partitions, with correspondingly more inputs and outputs for each partition but shorter critical path lengths.
    Using a depth-first traversal on the other hand leads to deeper but narrower partitions, with fewer inputs and outputs for each partition, but a longer critical path length.
@@ -2445,29 +2393,33 @@ DFS & 40 & 54 & 1.96 & 3.53 & 4.16 & 4.51 & 6.11 & 8.04\\
    files and targets a theoretical simplified architecture. In practice, it
    would be ideal to use and target industry standard tools, formats and
    architectures.  There are a number of assumptions and approximations made as
-   part of the implementation, especially in the calculation of recovery time.
-   Improving the accuracy of approximations allows the partitioner to find
+   part of the implementation, especially in the calculation of recovery time;
+   improving the accuracy of approximations allows the partitioner to find
    better solutions. Additionally, the partitioner itself makes no attempt to
-   find an optimal solution. Partitions may be closed off before they're full,
+   find an optimal solution; partitions may be closed off before they're full,
    or partitions may be unbalanced with some having many more voters or a much
-   longer path length than others.  The traversal algorithm can be updated with
-   a heuristic and the capability of backtracking to find denser partitions.
-   However, the limiting factor tends to be the partition size, and when (as in
+   longer path length than others.
+   There are some straightforward techniques which can be implemented to improve the partitioner, but the limiting factor tends to be the partition size, and when (as in
    the benchmark circuits), there are many more \glspl{LUT} than latches, the
    ability to reduce the number of partitions through clever partitioning is
-   extremely limited.
+   extremely limited with most partitions being maximally packed already.
    
    In addition to improving the quality of results, the performance of the algorithm can be easily improved in a few areas.
    The algorithm has a theoretical $O(n^3)$ worst case due to a naive brute force estimation function for the target number of partitions.
    Improving this to not require repartitioning over and over by using more intelligent estimates can reduce the number of passes needed.
    There are a few other sections in the implementation where less than optimal approaches were used though they are likely to provide less dramatic gains.
    Regardless, \gls{VPR} remains the limiting factor, so optimising the partitioner for speed is not especially helpful as it is already significantly faster than \gls{VPR}.
+   
+   An additional limitation is restrictions on input files.
+   The implementation makes some assumptions about the format of input files which, while they hold for all \gls{MCNC} we used, do not necessarily hold for all valid circuits.
+   For example, that all latches have the same clock.
+   These assumptions will need to be replaced with more robust implementations.
 
 
    \chapter{Conclusion}
    This thesis was focussed on developing a new TMR
    partitioning algorithm and assessing the effect of the new \gls{TMR}
-   technique on the performance of benchmark circuits. From a performance
+   technique on the performance of the twenty largest \gls{MCNC} benchmark circuits. From a performance
    standpoint the algorithm shows promise. While there is still much work to be
    done the initial results collected in this thesis indicate that the
    partitioning method described in Chapter \ref{algorithm} and implemented by this
@@ -2479,7 +2431,7 @@ DFS & 40 & 54 & 1.96 & 3.53 & 4.16 & 4.51 & 6.11 & 8.04\\
 
 
    \appendix 
-   \chapter{Results}
+   \chapter{Data}
    This appendix tabulates the data used to
    calculate the relationships discussed in this thesis.
 
@@ -2694,8 +2646,8 @@ Mean &  &  & 3.46  &  & 1.49 & \\
 
 
    \bibliographystyle{plain} \bibliography{../../../../Bibtex/thesis} %We build
-   with texi2pdf --tidy, so we're really in a build directory several levels
-   away
+   %with texi2pdf --tidy, so we're really in a build directory several levels
+   %away
 
    \fxfatal{TODO: Change I, we, our, my, etc to passive voice}
    \fxfatal{TODO: Consistency between flip-flop vs latch, when using BLE}
@@ -2703,287 +2655,3 @@ Mean &  &  & 3.46  &  & 1.49 & \\
 
 
 \end{document}
-
-\begin{table}
-   \footnotesize 
-   \begin{adjustwidth}
-      {-1cm}{-1.2cm}
-
-      \begin{tabularx}
-         {1.1\textwidth}{llllp{1.5cm}p{2.2cm}p{1.5cm}X} \toprule
-         Name & Num. Latches & Num. LUTs & FPGA Width & Channel Width & Av. No.
-         Wire\newline Segments & Frequency (MHz) & CPU Time (s)\\
-         \midrule alu4
-         & 0 & 1522 & 15 & 200 & 4.76391 &225 & 34.566\\
-         alu4TMR & 0 & 4574 &
-         25 & 200 & 5.29148 &188 & 132.41\\
-         \midrule apex2 & 0 & 1878 & 16 & 200
-         & 5.5124 &216 & 47.45\\
-         apex2TMR & 0 & 5637 & 29 & 200 & 6.21459 &172
-         & 197.825\\
-         \midrule apex4 & 0 & 1262 & 14 & 200 & 5.0436 &249 &
-         31.272\\
-         apex4TMR & 0 & 3805 & 23 & 200 & 5.33318 &204 &
-         119.002\\
-         \midrule bigkey & 224 & 1699 & 16 & 200 & 3.70506 &427 &
-         56.61\\
-         bigkeyTMR & 672 & 5294 & 27 & 200 & 4.93838 &377 &
-         193.388\\
-         \midrule clma & 33 & 8365 & 34 & 200 & 5.62286 &115 &
-         379.801\\
-         clmaTMR & 99 & 25177 & 59 & 200 & 6.2762 &103 &
-         2146.4\\
-         \midrule des & 0 & 1591 & 16 & 200 & 4.07107 &262 & 98.709\\
-
-         desTMR & 0 & 5018 & 27 & 200 & 3.9862 &229 & 263.883\\
-         \midrule diffeq
-         & 377 & 1494 & 15 & 200 & 3.0611 &157 & 60.103\\
-         diffeqTMR & 1131 &
-         4521 & 25 & 200 & 3.44041 &156 & 204.691\\
-         \midrule dsip & 224 & 1362 &
-         14 & 200 & 3.823 &433 & 60.372\\
-         dsipTMR & 672 & 4283 & 24 & 200 &
-         4.74885 &377 & 177.405\\
-         \midrule elliptic & 1122 & 3602 & 23 & 200 &
-         4.2743 &134 & 123.967\\
-         ellipticTMR & 3366 & 10920 & 39 & 200 &
-         5.15534 &130 & 513.637\\
-         \midrule ex1010 & 0 & 4598 & 25 & 200 &
-         5.31938 &176 & 146.81\\
-         ex1010TMR & 0 & 13804 & 44 & 200 & 5.4995 &134
-         & 655.814\\
-         \midrule ex5p & 0 & 1064 & 13 & 200 & 4.95796 &240 &
-         30.659\\
-         ex5pTMR & 0 & 3255 & 22 & 200 & 5.2736 &187 &
-         112.023\\
-         \midrule frisc & 886 & 3539 & 23 & 200 & 5.52549 &94.3 &
-         144.196\\
-         friscTMR & 2658 & 10733 & 39 & 200 & 5.82234 &90.1 &
-         525.145\\
-         \midrule misex3 & 0 & 1397 & 14 & 200 & 4.93 &244 & 35.739\\
-
-         misex3TMR & 0 & 4205 & 24 & 200 & 5.46202 &198 & 136.961\\
-         \midrule pdc
-         & 0 & 4575 & 25 & 200 & 7.21792 &175 & 167.232\\
-         pdcTMR & 0 & 13765 &
-         44 & 200 & 7.51339 &131 & 711.155\\
-         \midrule s298 & 8 & 1930 & 17 & 200
-         & 4.76794 &124 & 47.789\\
-         s298TMR & 24 & 5796 & 29 & 200 & 4.83777
-         &116 & 185.169\\
-         \midrule s38417 & 1463 & 6042 & 30 & 200 & 3.53974
-         &158 & 241.471\\
-         s38417TMR & 4389 & 18232 & 51 & 200 & 3.78557 &149 &
-         942.7\\
-         \midrule s38584.1 & 1260 & 6177 & 30 & 200 & 3.67662 &206 &
-         263.313\\
-         s38584.1TMR & 3780 & 18835 & 52 & 200 & 4.36338 &157 &
-         1199.39\\
-         \midrule seq & 0 & 1750 & 16 & 200 & 5.31333 &253 & 50.624\\
-
-         seqTMR & 0 & 5285 & 27 & 200 & 6.23725 &193 & 184.467\\
-         \midrule spla &
-         0 & 3690 & 23 & 200 & 6.44786 &190 & 122.311\\
-         splaTMR & 0 & 11116 &
-         39 & 200 & 6.75377 &152 & 496.416\\
-         \midrule tseng & 385 & 1046 & 13 &
-         200 & 3.04212 &161 & 30.561\\
-         tsengTMR & 1155 & 3260 & 22 & 200 &
-         3.82465 &164 & 118.583\\
-         \bottomrule 
-      \end{tabularx}
-      \caption{Results
-         for 200 width channels} \label{Results200} 
-   \end{adjustwidth}
-
-
-\end{table}
-
-\begin{table}
-   \footnotesize 
-   \begin{adjustwidth}
-      {-1cm}{-1.2cm}
-
-      \begin{tabularx}
-         {1.1\textwidth}{llllp{1.5cm}p{2.2cm}p{1.5cm}X} \toprule
-         Name & Num. Latches & Num. LUTs & FPGA Width & Channel Width & Av. No.
-         Wire\newline Segments & Frequency (MHz) & CPU Time (s)\\
-         \midrule alu4
-         & 0 & 1522 & 15 & 60 & 4.79098 & 241 & 22.625\\
-         alu4TMR & 0 & 4574 &
-         25 & 60 & 5.38017 & 193 & 101.828\\
-         \midrule apex2 & 0 & 1878 & 16 & 60
-         & 5.53926 & 212 & 34.256\\
-         apex2TMR & 0 & 5637 & 29 & 60 & 6.34397 &
-         164 & 153.485\\
-         \midrule apex4 & 0 & 1262 & 14 & 60 & 5.13079 & 241 &
-         20.928\\
-         apex4TMR & 0 & 3805 & 23 & 60 & 5.66967 & 198 &
-         90.166\\
-         \midrule bigkey & 224 & 1699 & 16 & 60 & 3.79333 & 421 &
-         43.024\\
-         bigkeyTMR & 672 & 5294 & 27 & 60 & 5.12677 & 363 &
-         154.662\\
-         \midrule clma & \multicolumn{7}{c}{Could Not Route}\\
-         clmaTMR
-         & \multicolumn{7}{c}{Could Not Route}\\
-         \midrule des & 0 & 1591 & 16 &
-         60 & 4.15635 & 257 & 50.68\\
-         desTMR & 0 & 5018 & 27 & 60 & 4.07778 &
-         230 & 141.366\\
-         \midrule diffeq & 377 & 1494 & 15 & 60 & 3.20978 & 151
-         & 28.392\\
-         diffeqTMR & 1131 & 4521 & 25 & 60 & 3.60614 & 148 &
-         115.085\\
-         \midrule dsip & 224 & 1362 & 14 & 60 & 3.84115 & 434 &
-         36.32\\
-         dsipTMR & 672 & 4283 & 24 & 60 & 4.87989 & 368 &
-         118.515\\
-         \midrule elliptic & 1122 & 3602 & 23 & 60 & 4.76756 & 137 &
-         101.398\\
-         ellipticTMR & 3366 & 10920 & 39 & 60 & 5.74891 & 133 &
-         475.005\\
-         \midrule ex1010 & \multicolumn{7}{c}{Could Not Route}\\
-
-         ex1010TMR & \multicolumn{7}{c}{Could Not Route}\\
-         \midrule ex5p & 0 &
-         1064 & 13 & 60 & 5.29429 & 241 & 18.899\\
-         ex5pTMR &
-         \multicolumn{7}{c}{Could Not Route}\\
-         \midrule frisc & 886 & 3539 & 23
-         & 60 & 6.17131 & 94.7 & 107.33\\
-         friscTMR & \multicolumn{7}{c}{Could
-            Not Route} \\
-         \midrule misex3 & 0 & 1397 & 14 & 60 & 4.99571 & 241 &
-         21.286\\
-         misex3TMR & 0 & 4205 & 24 & 60 & 5.64103 & 197 &
-         91.433\\
-         \midrule pdc & \multicolumn{7}{c}{Could Not Route} \\
-         pdcTMR &
-         \multicolumn{7}{c}{Could Not Route} \\
-         \midrule s298 & 8 & 1930 & 17 &
-         60 & 4.62137 & 122 & 27.868\\
-         s298TMR & 24 & 5796 & 29 & 60 & 4.75444
-         & 118 & 120.257\\
-         \midrule s38417 & 1463 & 6042 & 30 & 60 & 3.66998 &
-         160 & 172.413\\
-         s38417TMR & 4389 & 18232 & 51 & 60 & 3.87309 & 153 &
-         758.585\\
-         \midrule s38584.1 & 1260 & 6177 & 30 & 60 & 3.83166 & 202 &
-         195.832\\
-         s38584.1TMR & 3780 & 18835 & 52 & 60 & 4.67375 & 159 &
-         944.364\\
-         \midrule seq & 0 & 1750 & 16 & 60 & 5.30778 & 245 & 32.426\\
-
-         seqTMR & 0 & 5285 & 27 & 60 & 6.56298 & 188 & 149.187\\
-         \midrule spla &
-         0 & 3690 & 23 & 60 & 6.46323 & 188 & 86.03\\
-         splaTM &
-         \multicolumn{7}{c}{Could Not Route}\\
-         \midrule tseng & 385 & 1046 & 13
-         & 60 & 3.22621 & 161 & 20.384\\
-         tsengTMR & 1155 & 3260 & 22 & 60 &
-         3.93092 & 164 & 79.889\\
-         \bottomrule 
-      \end{tabularx}
-      \caption{Results
-         for 60 width channels} \label{Results60} 
-   \end{adjustwidth}
-
-\end{table}
-
-
-\begin{table}
-   \footnotesize 
-   \begin{adjustwidth}
-      {-1cm}{-1.2cm}
-
-      \begin{tabularx}
-         {1.1\textwidth}{llllp{1.5cm}p{2.2cm}p{1.5cm}X} \toprule
-         Name & Num. Latches & Num. LUTs & FPGA Width & Channel Width & Av. No.
-         Wire\newline Segments & Frequency (MHz) & CPU Time (s)\\
-         \midrule alu4
-         & 0 & 1522 & 15 & 34 & 5.61203 & 196 & 88.236\\
-         alu4TMR & 0 & 4574 &
-         25 & 48 & 5.6293 & 182 & 245.343\\
-         \midrule apex2 & 0 & 1878 & 16 & 48
-         & 5.78099 & 204 & 80.968\\
-         apex2 TMR & 0 & 5637 & 29 & 60 & 6.3913 &
-         167 & 885.343\\
-         \midrule apex4 & 0 & 1262 & 14 & 48 & 5.74387 & 175 &
-         55.509\\
-         apex4 TMR & 0 & 3805 & 23 & 58 & 5.59716 & 181 &
-         357.909\\
-         \midrule bigkey & 224 & 1699 & 16 & 42 & 4.00538 & 422 &
-         84.037\\
-         bigkey TMR & 672 & 5294 & 27 & 48 & 5.46703 & 351 &
-         314.02\\
-         \midrule clma & 33 & 8365 & 34 & 64 & 5.9249 & 111 & 826.48\\
-
-         clma TMR & 99 & 25177 & 59 & 74 & 6.81963 & 94.3 & 6225.16\\
-         \midrule
-         des & 0 & 1591 & 16 & 46 & 4.46904 & 248 & 85.209\\
-         des TMR & 0 & 5018
-         & 27 & 44 & 4.43131 & 229 & 329.551\\
-         \midrule diffeq & 377 & 1494 & 15
-         & 38 & 3.67617 & 152 & 53.137\\
-         diffeq TMR & 1131 & 4521 & 25 & 44 &
-         3.94535 & 156 & 238.817\\
-         \midrule dsip & 224 & 1362 & 14 & 40 &
-         4.14675 & 446 & 86.123\\
-         dsip TMR & 672 & 4283 & 24 & 38 & 5.10172 &
-         377 & 207.014\\
-         \midrule elliptic & 1122 & 3602 & 23 & 50 & 5.19297 &
-         133 & 289.63\\
-         elliptic TMR & 3366 & 10920 & 39 & 60 & 5.74707 & 133 &
-         1562.75\\
-         \midrule ex1010 & 0 & 4598 & 25 & 64 & 5.33384 & 172 &
-         401.434\\
-         ex1010 TMR & 0 & 13804 & 44 & 62 & 5.70191 & 131 &
-         1399.9\\
-         \midrule ex5p & 0 & 1064 & 13 & 50 & 5.64865 & 229 & 53.45\\
-
-         ex5p TMR & 0 & 3255 & 22 & 62 & 6.03046 & 174 & 452.114\\
-         \midrule
-         frisc & 886 & 3539 & 23 & 56 & 6.66421 & 96.2 & 429.658\\
-         frisc TMR &
-         2658 & 10733 & 39 & 66 & 6.5103 & 90.1 & 1383.44\\
-         \midrule misex3 & 0
-         & 1397 & 14 & 42 & 5.74857 & 233 & 60.019\\
-         misex3 TMR & 0 & 4205 & 24
-         & 50 & 5.86212 & 190 & 368.648\\
-         \midrule pdc & 0 & 4575 & 25 & 64 &
-         7.8308 & 156 & 397.958\\
-         pdc TMR & 0 & 13765 & 44 & 72 & 7.74884 & 121
-         & 1005.6\\
-         \midrule s298 & 8 & 1930 & 17 & 30 & 5.16031 & 117 &
-         2620.11\\
-         s298 TMR & 24 & 5796 & 29 & 34 & 4.97929 & 119 &
-         425.303\\
-         \midrule s38417 & 1463 & 6042 & 30 & 42 & 4.02152 & 158 &
-         376.671\\
-         s38417 TMR & 4389 & 18232 & 51 & 50 & 3.96346 & 147 &
-         7381.12\\
-         \midrule s38584.1 & 1260 & 6177 & 30 & 44 & 4.22808 & 200 &
-         459.989\\
-         s38584.1 TMR & 3780 & 18835 & 52 & 56 & 4.69062 & 156 &
-         2790.9\\
-         \midrule seq & 0 & 1750 & 16 & 46 & 5.86111 & 207 & 105.526\\
-
-         seq TMR & 0 & 5285 & 27 & 58 & 6.68624 & 190 & 448.058\\
-         \midrule spla
-         & 0 & 3690 & 23 & 54 & 7.08891 & 144 & 357.396\\
-         spla TMR & 0 & 11116
-         & 39 & 66 & 6.92343 & 145 & 1320.57\\
-         \midrule tseng & 385 & 1046 & 13
-         & 34 & 3.63807 & 163 & 49.618\\
-         tseng TMR & 1155 & 3260 & 22 & 42 &
-         4.36026 & 163 & 183.167\\
-         \bottomrule 
-      \end{tabularx}
-      \caption{Results
-         for autosized width channels} \label{Results-1} 
-   \end{adjustwidth}
-
-
-\end{table}
