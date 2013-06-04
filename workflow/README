@@ -1,3 +1,15 @@
+Requires Python 3.3 or later to run.
+May run with earlier version of Python 3.
+is halfway compatible with Python 2, but will probably require minor tweaks.
+
 To setup, need blifJoin.py, blifTMR.py, partitioner(.exe), vpr(.exe) and abc(.exe) links from workflow to where they are located.
 Use latest Mercurial version of abc, not the vtr version.
+To setup, obtain the latest mercurial version of ABC from bitbucket, and a recent version of VTR.
+Create a link in this folder (workflow) to the abc and vpr (in VTR) binaries.
+Next create a link (or just copy the binary) for partitioner in this folder.
 
+blifTMR triplicates, blifJoin joins.
+main.py runs the entire process on one BLIF file, run ./main.py -h for commands.
+Will likely only run successfully when you cd into this folder first (no path/from/somewhere/else/main.py).
+generate.py will run main on a whole folder of files, dumps results to a specified file, and provides a nice progress display.
+run.sh provides an example of calling generate.

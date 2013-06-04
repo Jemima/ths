@@ -1,4 +1,0 @@
-digraph G{
-   bgcolor="transparent"
-    Input -> A -> B -> Output;
-}

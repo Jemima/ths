@@ -1,9 +1,0 @@
-digraph G{
-   bgcolor="transparent"
-   Input -> A1 -> B1 -> Voter1;
-   Input -> A2 -> B2 -> Voter1;
-   Input -> A3 -> B3 -> Voter1;
-
-   Voter1 -> Output;
-   
-}

@@ -1,5 +1,0 @@
-blif.pdf sourced from http://www.ece.cmu.edu/~ee760/760docs/blif.pdf
-VPR 6.0 contained in VTR 1.0 sourced from http://code.google.com/p/vtr-verilog-to-routing/
-
-http://cadlab.cs.ucla.edu/~kirill/ - Benchmarks and BLIF -> VHDL
-http://www-lab13.kuee.kyoto-u.ac.jp/eda/benchmark/mcnc/benchmarks/ - Benchmarks
