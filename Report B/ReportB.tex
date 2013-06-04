@@ -1487,7 +1487,7 @@
 
    Lines 3-13 update the appropriate signals, adding the node as a source or
    sink to the relevant signals if they exist within the partition, or creating them implicitly if they don't already exist.
-   Line 4 checks if the input signal referred to has been renamed by CutSignal in Algorithm \ref{cutsignal}.
+   Line 4 checks if the input signal referred to has been renamed by CutSignal in Algorithm \ref{algCutsignal}.
    If it has, retrieve the new name for the signal and rename the input signal accordingly.
    CutSignal only renames inputs, not outputs, thus this check only needs to be performed for circuit inputs.
    Lines 14-22 then update the maximum path length (or latency in
@@ -1610,7 +1610,7 @@
    recursively, updating the maximum cost to reach each node as we travel.
    Eventually, in our example we reach our newly added node again indicating
    a cycle. We thus cut the cycle as detailed in Algorithm
-   \ref{cutsignal}, recurse back a step,
+   \ref{algCutsignal}, recurse back a step,
    and continue until the entire \gls{DFG} has been traversed, at which
    point all cycles have been cut, and all nodes have the maximum path
    length to them updated.
@@ -1622,7 +1622,7 @@
    detected a cycle. If so, cut it through cutting the signal, which splits
    the signal into two: A primary output with the same source, and a primary
    input with the same sinks, as detailed further in Algorithm
-   \ref{cutsignal}.
+   \ref{algCutsignal}.
 
    \newpage 
    \subsection{CutSignal}
@@ -1659,7 +1659,7 @@
 
 
       \end{center}
-      \caption{CutSignal}\label{cutsignal}
+      \caption{CutSignal}\label{algCutsignal}
 
       \begin{algorithmic}[1]
       	\Procedure{CutSignal}{$partition, signal$}
@@ -1786,7 +1786,7 @@
    \gls{SAT}.  The circuits are then simplified by merging equivalent nodes,
    removing redundant logic and testing inputs.
    This proceeds until a counter example is found, or the circuit is shown to
-   have constant output 0 for all possible inputs \ref{abcSEC, abcCEC}.  While
+   have constant output 0 for all possible inputs \cite{abcSEC, abcCEC}.  While
    solving a \gls{SAT} is NP-complete, in practice the large amount of
    redundancy in \gls{TMR}'d circuits allows testing to complete in only a few
    seconds for the twenty largest \gls{MCNC} benchmarks.
@@ -1976,7 +1976,7 @@
    2.5\times10^{-4}$, $1.2\times10^{-4}$ and $7.5\times10^{-5}$s.  The voter used is a simple
    3-input \gls{LUT}, which uses one \gls{BLE} per output signal from each
    partition.
-   Table \ref{Results1E-3} in the Appendix, where each circuit had only one partition, contains equivalent values for area overhead and clock slowdown as if a 
+   Table \ref{Results1e-3} in the Appendix, where each circuit had only one partition, contains equivalent values for area overhead and clock slowdown as if a 
    more traditional \gls{TMR} approach were used, which simply triplicated the entire circuit allowing our approach the be compared.
 
    \begin{table}
@@ -2267,7 +2267,7 @@ tseng  & 25\\
    \end{table}
    As shown in table \ref{runningtimes}, the largest contributor to the running time in our toolflow is \gls{VPR}, taking several orders of magnitude longer than any other step. Of the time \gls{VPR} took, routing is generally the largest contributor, followed by placement, followed by packing.
    Routing for standard \gls{FPGA} architectures is NP-Complete \cite{npcomplete} with the specific routing algorithm used by \gls{VPR} being $O(k^2\log{k})$ per net on average,
-   where k is the number of terminals for the net \ref{VPRBook}.
+   where k is the number of terminals for the net \cite{VPRBook}.
    
 
 
